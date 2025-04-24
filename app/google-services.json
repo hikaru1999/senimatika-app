@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "598191743797",
+    "project_id": "ethnomathematic-learning",
+    "storage_bucket": "ethnomathematic-learning.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598191743797:android:279c7a542ce62b1453227c",
+        "android_client_info": {
+          "package_name": "com.LambdaProject.MathArt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDftgs4GXSSuu4NjJtEL8jak9wM_aeyhrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598191743797:android:4331593cdc07774f53227c",
+        "android_client_info": {
+          "package_name": "com.example.learnapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDftgs4GXSSuu4NjJtEL8jak9wM_aeyhrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

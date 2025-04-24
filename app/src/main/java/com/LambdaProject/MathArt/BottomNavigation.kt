@@ -1,0 +1,159 @@
+package com.LambdaProject.MathArt
+
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+
+@Composable
+fun BottomNavigationMenu(navController: NavController) {
+    val currentRoute = navController.currentDestination?.route
+
+    BottomNavigation (
+        backgroundColor = Color.White,
+        modifier = Modifier.height(70.dp)
+    ) {
+        BottomNavigationItem(
+            icon = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(top = 10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_home_blue),
+                        contentDescription = "Beranda",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "Beranda",
+                        fontSize = 12.sp,
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.DarkGray
+                    )
+                }
+            },
+            selected = currentRoute?.startsWith("dashboard") == true,
+            onClick = {
+                if (currentRoute?.startsWith("dashboard") != true) {
+                    navController.navigate("dashboard/{userName}") {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                    }
+                }
+            }
+        )
+
+        LockedMenuItem(
+            iconRes = R.drawable.ic_book_blue,
+            label = "Belajarku"
+        )
+
+        // ==== Bookmark (Locked) ====
+        LockedMenuItem(
+            iconRes = R.drawable.ic_bookmark_blue,
+            label = "Bookmark"
+        )
+
+        BottomNavigationItem(
+            icon = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(top = 10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_user_blue),
+                        contentDescription = "Profilku",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "Profil",
+                        fontSize = 12.sp,
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.DarkGray
+                    )
+                }
+            },
+            selected = currentRoute == "profile",
+            onClick = {
+                if (currentRoute != "profile") {
+                    navController.navigate("profile") {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun MenuIcon(iconRes: Int, label: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(top = 10.dp)
+    ) {
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = label,
+            modifier = Modifier.size(24.dp)
+        )
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontFamily = interFontFamily,
+            fontWeight = FontWeight.Bold,
+            color = Color.DarkGray
+        )
+    }
+}
+
+@Composable
+fun RowScope.LockedMenuItem(iconRes: Int, label: String) {
+    BottomNavigationItem(
+        icon = {
+            Box(contentAlignment = Alignment.Center) {
+                MenuIcon(iconRes = iconRes, label = label)
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.White.copy(alpha = 0.6f))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Terkunci",
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(20.dp),
+                        tint = Color.Gray
+                    )
+                }
+            }
+        },
+        selected = false,
+        onClick = { } // Tidak melakukan navigasi
+    )
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="com_google_android_gms_fonts_certs">
+        <item>@array/certs</item>
+    </array>
+
+    <array name="certs">
+        <item>
+            MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnYzcf77LQqHDBovfqNlX
+            Rbwkr4YqUn7IPD9M8UbTu0zXw7g6vNmpKR1VZ0LsGlEiSkcZ5dDoOYnGCy4XxV4a
+            lQIDAQAB
+        </item>
+    </array>
+</resources>
