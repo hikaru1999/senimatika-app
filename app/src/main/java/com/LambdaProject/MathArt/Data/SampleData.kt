@@ -72,3 +72,10 @@ val stepOfDilate = listOf(
     "Bangun geometri yang diperbesar (didilatasi) akan mengalami perubahan ukuran tetapi tidak mengalami peruabah bentuk jika faktor skala yang ditentukan bernilai positif.",
     "Bangun geometri yang diperbesar (didilatasi) akan mengalami perubahan ukuran dan bentuk jika faktor skala yang ditentukan bernilai negatif."
 )
+
+val grades = listOf("SMP", "SMA")
+
+val kelasMap = mapOf(
+    "SMP" to listOf("7", "8", "9"),
+    "SMA" to listOf("10", "11", "12")
+)

@@ -16,18 +16,31 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.LambdaProject.MathArt.model.DashboardViewModel
-import com.LambdaProject.MathArt.model.QuizViewModel
+import com.LambdaProject.MathArt.ViewModels.DashboardViewModel
+import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import com.LambdaProject.MathArt.model.StudyDurationManager
-import com.LambdaProject.MathArt.ui.Screen.*
-import com.LambdaProject.MathArt.ui.Screen.Materi.QuizScreen
+import com.LambdaProject.MathArt.ui.Pages.Material.QuizScreen
 import com.LambdaProject.MathArt.ui.theme.LearnApplicationTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatDelegate
+import com.LambdaProject.MathArt.ui.Pages.Profile.AchievementPage
+import com.LambdaProject.MathArt.ui.Pages.Dashboard.DashboardScreen
+import com.LambdaProject.MathArt.ui.Pages.IntroScreen
+import com.LambdaProject.MathArt.ui.Pages.LoginScreen
+import com.LambdaProject.MathArt.ui.Pages.Material.MaterialScreen
+import com.LambdaProject.MathArt.ui.Pages.Dashboard.NotificationScreen
+import com.LambdaProject.MathArt.ui.Pages.Profile.ProfileScreen
+import com.LambdaProject.MathArt.ui.Pages.RegisterScreen
+import com.LambdaProject.MathArt.ui.Pages.Profile.SenimatikaScreen
+import com.LambdaProject.MathArt.ui.Pages.ProfileForm
+import com.LambdaProject.MathArt.ui.Pages.SplashScreen
+import com.LambdaProject.MathArt.ui.Pages.SuccessPage
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private var sessionStartTime: Long = 0L
     private val db = FirebaseFirestore.getInstance()
@@ -80,20 +93,42 @@ class MainActivity : ComponentActivity() {
                         composable(route = "achievement") { AchievementPage(navController) }
                         composable(route = "Senimatika_screen") { SenimatikaScreen(navController) }
                         composable("notification") { navBackStackEntry ->
-                            // Ambil ViewModel yang sesuai di sini
-                            val viewModel: DashboardViewModel = viewModel() // Mengambil ViewModel
-                            // Pass ViewModel ke NotificationScreen
-                            NotificationScreen(navController) // Kirim ViewModel ke NotificationScreen
+                            val viewModel: DashboardViewModel = viewModel()
+                            NotificationScreen(navController)
+                        }
+                        composable("login") { LoginScreen(navController) }
+                        composable("register") { RegisterScreen(navController) }
+                        composable("ProfileForm/{username}/{email}/{password}",
+                            arguments = listOf(
+                                navArgument("username") { type = NavType.StringType },
+                                navArgument("email") { type = NavType.StringType },
+                                navArgument("password") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val username = backStackEntry.arguments?.getString("username") ?: ""
+                            val email = backStackEntry.arguments?.getString("email") ?: ""
+                            val password = backStackEntry.arguments?.getString("password") ?: ""
+
+                            ProfileForm(
+                                navController = navController,
+                                username = username,
+                                email = email,
+                                password = password
+                            )
+                        }
+                        composable("success/{username}") { backStackEntry ->
+                            val username = backStackEntry.arguments?.getString("username") ?: ""
+                            SuccessPage(navController = navController, username = username)
                         }
                         composable(
-                            route = "login?message={message}",
-                            arguments = listOf(navArgument("message") { type = NavType.StringType; nullable = true })
+                            route = "dashboard/{userName}",
+                            arguments = listOf(
+                                navArgument("userName") {
+                                    type = NavType.StringType
+                                    nullable = false
+                                }
+                            )
                         ) { backStackEntry ->
-                            val message = backStackEntry.arguments?.getString("message") ?: ""
-                            LoginScreen(navController)
-                        }
-                        composable("register") { RegisterScreen(navController) }
-                        composable(route = "dashboard/{userName}") { backStackEntry ->
                             val viewModel: DashboardViewModel = viewModel()
                             val userName = backStackEntry.arguments?.getString("userName") ?: "User"
                             DashboardScreen(navController, userName, viewModel)
