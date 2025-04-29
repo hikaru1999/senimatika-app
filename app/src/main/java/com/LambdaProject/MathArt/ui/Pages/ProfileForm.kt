@@ -73,7 +73,8 @@ fun ProfileForm(
         IconButton(
             onClick = {
                 navController.navigate("register") {
-                    popUpTo("ProfileForm") { inclusive = true }
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
                 }
             },
             modifier = Modifier

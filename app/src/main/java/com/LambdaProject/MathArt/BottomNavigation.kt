@@ -15,9 +15,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
 fun BottomNavigationMenu(navController: NavController) {
+    val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     val currentRoute = navController.currentDestination?.route
 
     BottomNavigation (
@@ -46,16 +48,26 @@ fun BottomNavigationMenu(navController: NavController) {
             },
             selected = currentRoute?.startsWith("dashboard") == true,
             onClick = {
-                if (currentRoute?.startsWith("dashboard") != true) {
-                    navController.navigate("dashboard/{userName}") {
+                val targetRoute = "dashboard/{userName}"
+                if (currentRoute != targetRoute) {
+                    navController.navigate(targetRoute) {
+                        popUpTo(targetRoute) { inclusive = true }
                         launchSingleTop = true
-                        restoreState = true
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
                     }
                 }
             }
+
+            /* onClick = {
+                if (currentRoute?.startsWith("dashboard") != true) {
+                    navController.navigate("dashboard/{userName}") {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = false
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            } */
         )
 
         LockedMenuItem(
@@ -94,14 +106,23 @@ fun BottomNavigationMenu(navController: NavController) {
             onClick = {
                 if (currentRoute != "profile") {
                     navController.navigate("profile") {
+                        popUpTo("profile") { inclusive = true }
                         launchSingleTop = true
-                        restoreState = true
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
                     }
                 }
             }
+
+            /* onClick = {
+                if (currentRoute != "profile") {
+                    navController.navigate("profile") {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = false
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            } */
         )
     }
 }

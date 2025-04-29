@@ -1,6 +1,7 @@
 package com.LambdaProject.MathArt.ui.Pages
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedVisibility
 
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.interFontFamily
@@ -8,11 +9,17 @@ import com.LambdaProject.MathArt.ViewModels.RegisterViewModel
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -47,9 +54,16 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var passwordStrength by remember { mutableIntStateOf(0) }
     var isSubmitted by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         registerViewModel.resetRegisterForm()
+    }
+
+    LaunchedEffect(showError) {
+        if (showError) delay(3500)
+        showError = false
     }
 
     Box(
@@ -57,6 +71,12 @@ fun RegisterScreen(
             .fillMaxSize()
             .consumeWindowInsets(WindowInsets.ime)
     ) {
+        TopSnackbar(
+            visible = showError,
+            message = errorMessage,
+            onDismiss = { showError = false}
+        )
+
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
@@ -197,15 +217,25 @@ fun RegisterScreen(
                         onClick = {
                             isSubmitted = true
                             if (allValid) {
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    delay(1500)
-                                    registerViewModel.saveTemporaryUserData(
-                                        username = registerViewModel.username,
-                                        email = registerViewModel.email,
-                                        password = registerViewModel.password,
-                                    )
-                                    navController.navigate("ProfileForm/${username}/${email}/${password}") {
-                                        popUpTo("register") { inclusive = true }
+                                registerViewModel.checkUsernameOrEmailExists(
+                                    username = registerViewModel.username,
+                                    email = registerViewModel.email
+                                ) { exists ->
+                                    if (exists) {
+                                        errorMessage = "Username atau Email telah terdaftar"
+                                        showError = true
+                                        isSubmitted = false
+                                    } else {
+                                        isSubmitted = true
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            delay(1500)
+                                            registerViewModel.saveTemporaryUserData(
+                                                username = registerViewModel.username,
+                                                email = registerViewModel.email,
+                                                password = registerViewModel.password,
+                                            )
+                                            navController.navigate("ProfileForm/${username}/${email}/${password}")
+                                        }
                                     }
                                 }
                             }
@@ -226,6 +256,29 @@ fun RegisterScreen(
                                 color = Color.White
                             )
                         }
+
+                        /* if (showError) {
+                            AlertDialog(
+                                onDismissRequest = { showError = false },
+                                title = {
+                                    Text(text = "Registrasi Gagal", fontWeight = FontWeight.Bold, fontFamily = interFontFamily, fontSize = 18.sp)
+                                },
+                                text = {
+                                    Text(text = errorMessage, fontFamily = interFontFamily)
+                                },
+                                confirmButton = {
+                                    Button(
+                                        onClick = { showError = false },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
+                                        shape = RoundedCornerShape(5.dp)
+                                    ) {
+                                        Text("Ubah Data", color = Color.White, fontFamily = interFontFamily)
+                                    }
+                                },
+                                containerColor = Color.White,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        } */
                     }
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -245,7 +298,10 @@ fun RegisterScreen(
                             fontStyle = FontStyle.Normal,
                             fontSize = 14.sp,
                             modifier = Modifier.clickable {
-                                navController.navigate("login")
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                    launchSingleTop = true
+                                }
                             }
                         )
                     }
@@ -304,6 +360,52 @@ fun PasswordStrengthIndicator(strength: Int) {
             },
             fontSize = 12.sp
         )
+    }
+}
+
+@Composable
+fun TopSnackbar(
+    visible: Boolean,
+    message: String,
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(initialOffsetY =  { -it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .zIndex(1f)
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2f)),
+            shape = RoundedCornerShape(2.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .clickable { onDismiss() }
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Info",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = message,
+                    color = Color.White,
+                    fontFamily = interFontFamily,
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }
 

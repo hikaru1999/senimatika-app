@@ -2,6 +2,8 @@ package com.LambdaProject.MathArt.Data
 
 import com.LambdaProject.MathArt.ViewModels.RegisterViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -28,14 +30,21 @@ class AuthRepo @Inject constructor(
                             db.collection("users").document(userId).get()
                                 .addOnSuccessListener { document ->
                                     val username = document.getString("username") ?: "User"
-                                    onComplete(true, null, username)  // Kirim username ke callback
+                                    onComplete(true, null, username)
                                 }
-                                .addOnFailureListener { e -> onComplete(false, e.message, null) }
+                                .addOnFailureListener { e ->
+                                    onComplete(false, "Gagal mengambil data pengguna", null) }
                         } else {
-                            onComplete(false, "User ID tidak ditemukan", null)
+                            onComplete(false, "Kredensial tidak ditemukan", null)
                         }
                     } else {
-                        onComplete(false, task.exception?.message, null)
+                        val errorMsg = when (task.exception) {
+                            is FirebaseAuthInvalidUserException -> "Email tidak terdaftar"
+                            is FirebaseAuthInvalidCredentialsException -> "Password tidak tepat"
+                            else -> task.exception?.message ?: "Terjadi kesalahan saat login"
+                        }
+                        /* onComplete(false, task.exception?.message, null) */
+                        onComplete(false, errorMsg, null)
                     }
                 }
         } else {
@@ -55,14 +64,20 @@ class AuthRepo @Inject constructor(
                                             }
                                             .addOnFailureListener { e -> onComplete(false, e.message, null) }
                                     } else {
-                                        onComplete(false, "User ID tidak ditemukan", null)
+                                        onComplete(false, "Kredensial tidak ditemukan", null)
                                     }
                                 } else {
-                                    onComplete(false, task.exception?.message, null)
+                                    val errorMsg = when (task.exception) {
+                                        is FirebaseAuthInvalidUserException -> "Username tidak terdaftar"
+                                        is FirebaseAuthInvalidCredentialsException -> "Password tidak tepat"
+                                        else -> task.exception?.message ?: "Terjadi kesalahan saat login"
+                                    }
+                                    /* onComplete(false, task.exception?.message, null) */
+                                    onComplete(false, errorMsg, null)
                                 }
                             }
                     } else {
-                        onComplete(false, "Username tidak ditemukan", null)
+                        onComplete(false, "Kredensial tidak ditemukan", null)
                     }
                 }
                 .addOnFailureListener { e -> onComplete(false, e.message, null) }

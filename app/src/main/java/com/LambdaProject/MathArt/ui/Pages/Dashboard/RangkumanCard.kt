@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.Data.*
+import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.model.MaterialItem
 import com.LambdaProject.MathArt.model.unlockPemulaAchievement
 import com.LambdaProject.MathArt.ui.Pages.Material.updateAccessiblePage
@@ -148,7 +149,7 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
                         shape = RoundedCornerShape(5.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5294ff))
                     ) {
-                        Text("Mulai Belajar", color = Color.White)
+                        Text("Mulai Belajar", color = Color.White, fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }

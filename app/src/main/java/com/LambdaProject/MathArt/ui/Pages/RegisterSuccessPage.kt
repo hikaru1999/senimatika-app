@@ -21,7 +21,8 @@ fun SuccessPage(navController: NavController, username: String) {
     LaunchedEffect(true) {
         delay(5000)
         navController.navigate("dashboard/$username") {
-            popUpTo("success") { inclusive = true }
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
         }
     }
 

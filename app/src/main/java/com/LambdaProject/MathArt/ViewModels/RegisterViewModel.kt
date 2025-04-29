@@ -59,6 +59,31 @@ class RegisterViewModel @Inject constructor(
         onResult: (Boolean) -> Unit
     ) {
         val db = FirebaseFirestore.getInstance()
+        /* var usernameExists = false
+        var emailExists = false
+
+        db.collection("users")
+            .whereIn("username", listOf(username))
+            .get()
+            .addOnSuccessListener { usernameDocs ->
+                usernameExists = !usernameDocs.isEmpty
+
+                db.collection("users")
+                    .whereEqualTo("email", email)
+                    .get()
+                    .addOnSuccessListener { emailDocs ->
+                        emailExists = !emailDocs.isEmpty
+
+                        onResult(usernameExists, emailExists)
+                    }
+                    .addOnSuccessListener { e ->
+                        onResult(false, false)
+                    }
+
+            }
+            .addOnSuccessListener { e ->
+                onResult(false, false)
+            } */
 
         db.collection("users")
             .whereIn("username", listOf(username))

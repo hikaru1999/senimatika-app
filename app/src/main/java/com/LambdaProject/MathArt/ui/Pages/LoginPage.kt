@@ -7,6 +7,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -43,7 +45,7 @@ fun LoginScreen(navController: NavController) {
     var isSubmitted by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    AnimatedVisibility(
+    /* AnimatedVisibility(
         visible = showErrorBanner,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
@@ -70,13 +72,19 @@ fun LoginScreen(navController: NavController) {
                 )
             }
         }
-    }
+    } */
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .consumeWindowInsets(WindowInsets.ime)
     ) {
+        TopSnackbar(
+            visible = showErrorBanner,
+            message = errorMessage,
+            onDismiss = { showErrorBanner = false}
+        )
+
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
@@ -252,6 +260,52 @@ fun LoginScreen(navController: NavController) {
         }
     }
 
+    @Composable
+    fun TopSnackbar(
+        visible: Boolean,
+        message: String,
+        modifier: Modifier = Modifier,
+        onDismiss: () -> Unit
+    ) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY =  { -it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .zIndex(1f)
+        ) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2f)),
+                shape = RoundedCornerShape(2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .clickable { onDismiss() }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Info",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = message,
+                        color = Color.White,
+                        fontFamily = interFontFamily,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+    }
+
     LaunchedEffect(loginState) {
         when (val state = loginState) {
             is LoginResult.Success -> {
@@ -271,7 +325,7 @@ fun LoginScreen(navController: NavController) {
                 errorMessage = state.message
                 showErrorBanner = true
                 coroutineScope.launch {
-                    delay(5000)
+                    delay(3500)
                     showErrorBanner = false
                 }
             }

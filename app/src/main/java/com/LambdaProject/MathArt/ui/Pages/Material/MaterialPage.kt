@@ -177,7 +177,8 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                         viewModel = quizViewModel,
                         onBackToDashboard = {
                             navController.navigate("dashboard/{userName}") {
-                                popUpTo("material_screen") { inclusive = true }
+                                popUpTo(0) { inclusive = true }
+                                launchSingleTop = true
                             }
 
                         }
