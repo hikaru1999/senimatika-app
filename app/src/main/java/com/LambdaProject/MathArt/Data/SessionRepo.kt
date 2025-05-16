@@ -4,7 +4,6 @@ import android.util.Log
 import com.LambdaProject.MathArt.model.MaterialItem
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 
 object SessionRepository {
@@ -32,7 +31,6 @@ object SessionRepository {
                     val existingStatus = doc.getString("status")
 
                     if (existingStatus == "completed") {
-                        // Update status dari completed ke active
                         db.collection("sessions")
                             .document(doc.id)
                             .update(
@@ -77,7 +75,7 @@ object SessionRepository {
             }
     }
 
-    fun checkActiveSession(userId: String, materialId: String, onResult: (Boolean) -> Unit) {
+    /* fun checkActiveSession(userId: String, materialId: String, onResult: (Boolean) -> Unit) {
         val db = Firebase.firestore
         db.collection("sessions")
             .whereEqualTo("userId", userId)
@@ -87,5 +85,5 @@ object SessionRepository {
             .addOnSuccessListener { result ->
                 onResult(result.isEmpty.not())
             }
-    }
+    } */
 }

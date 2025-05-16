@@ -20,12 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.Popup
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.*
 import com.LambdaProject.MathArt.ViewModels.*
+import com.LambdaProject.MathArt.ui.Pages.Register.TopSnackbar
 import kotlinx.coroutines.*
 
 @Composable

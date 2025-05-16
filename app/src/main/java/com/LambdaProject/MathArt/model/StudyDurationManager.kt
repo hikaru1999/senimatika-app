@@ -1,13 +1,10 @@
 package com.LambdaProject.MathArt.model
 
+import android.annotation.SuppressLint
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import java.util.Calendar
 
 object StudyDurationManager {
     private var startTime = 0L
@@ -15,11 +12,15 @@ object StudyDurationManager {
     private var periodicJob: Job? = null
 
     private val firebaseAuth = FirebaseAuth.getInstance()
+    @SuppressLint("StaticFieldLeak")
     private val firestore = FirebaseFirestore.getInstance()
 
     fun onAppForegrounded() {
         isAppInForeground = true
         startTime = System.currentTimeMillis()
+        firebaseAuth.currentUser?.uid?.let { userId ->
+            checkAndResetWeeklyDuration(userId)
+        }
         startPeriodicSave()
     }
 
@@ -28,6 +29,9 @@ object StudyDurationManager {
             stopPeriodicSave()
             val elapsedTime = System.currentTimeMillis() - startTime
             saveStudyDuration(elapsedTime)
+            firebaseAuth.currentUser?.uid?.let { userId ->
+                checkAndResetWeeklyDuration(userId)
+            }
             isAppInForeground = false
         }
     }
@@ -79,7 +83,40 @@ object StudyDurationManager {
         periodicJob = null
     }
 
-    fun checkAndResetWeeklyDuration(userId: String, onDone: () -> Unit = {}) {
+    fun checkAndResetWeeklyDuration(userId: String, onDone: () -> Unit = {} ) {
+        val docRef = firestore.collection("durations").document(userId)
+        docRef.get().addOnSuccessListener { document ->
+            val now = System.currentTimeMillis()
+
+            val calendar = Calendar.getInstance().apply {
+                timeInMillis = now
+                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            val mondayMidnight = calendar.timeInMillis
+            val fiveMinutesAgo = now - 5 * 60 * 1000
+
+            if (document.exists()) {
+                val lastTimestamp = document.getLong("startTimestamp") ?: 0L
+
+                if (lastTimestamp < mondayMidnight) {
+                    docRef.set(
+                        mapOf(
+                            "duration" to 0L,
+                            "startTimestamp" to now
+                        )
+                    )
+                }
+            }
+            onDone()
+        }
+    }
+
+    /* fun checkAndResetWeeklyDuration(userId: String, onDone: () -> Unit = {}) {
         val docRef = firestore.collection("durations").document(userId)
         docRef.get().addOnSuccessListener { document ->
             if (document.exists()) {
@@ -96,7 +133,7 @@ object StudyDurationManager {
             }
             onDone()
         }
-    }
+    } */
 }
 
 

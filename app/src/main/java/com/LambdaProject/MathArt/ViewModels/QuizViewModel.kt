@@ -3,8 +3,8 @@ package com.LambdaProject.MathArt.ViewModels
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
-import com.LambdaProject.MathArt.Data.UserAnswer
-import com.LambdaProject.MathArt.Data.QuizQuestion
+import com.LambdaProject.MathArt.model.UserAnswer
+import com.LambdaProject.MathArt.model.QuizQuestion
 import com.LambdaProject.MathArt.R
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
@@ -40,7 +40,6 @@ class QuizViewModel : ViewModel() {
 
     var selectedAnswers by mutableStateOf(listOf<String>())
         private set
-
 
     private val _userAnswers = mutableStateListOf<UserAnswer>()
     val userAnswers: List<UserAnswer> get() = _userAnswers

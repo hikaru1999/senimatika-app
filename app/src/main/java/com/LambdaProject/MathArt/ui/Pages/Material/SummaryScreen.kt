@@ -198,12 +198,12 @@ fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit
                             }
                             onBackToDashboard()
                         }) {
-                            Text("Ya", fontFamily = interFontFamily)
+                            Text("Ya", fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDialog = false }) {
-                            Text("Batal", fontFamily = interFontFamily, color = Color.Gray)
+                            Text("Batal", fontFamily = interFontFamily, color = Color.Gray, fontWeight = FontWeight.Bold)
                         }
                     }
                 )

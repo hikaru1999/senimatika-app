@@ -1,4 +1,4 @@
-package com.LambdaProject.MathArt.ui.Pages
+package com.LambdaProject.MathArt.ui.Pages.Register
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
@@ -66,7 +66,7 @@ fun ProfileForm(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxSize()
-                    .background(Color(0xFF3490De))
+                    .background(Color(0xFF3490DE))
             )
         }
 

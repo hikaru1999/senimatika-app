@@ -3,16 +3,12 @@ package com.LambdaProject.MathArt.ui.Pages.Profile
 import com.LambdaProject.MathArt.BottomNavigationMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.LambdaProject.MathArt.ViewModels.ProfileViewModel
@@ -23,6 +19,8 @@ fun ProfileScreen(navController: NavController) {
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val username by profileViewModel.username
     val email by profileViewModel.email
+    val fullName by profileViewModel.fullName
+    val coins by profileViewModel.coins
     val studyDuration by profileViewModel.studyDuration
     val activeSessions = profileViewModel.activeSessions
     val unlockedAchievements = profileViewModel.unlockedAchievements
@@ -52,7 +50,7 @@ fun ProfileScreen(navController: NavController) {
                 .background(Color(0xFFFFFFFF)),
             verticalArrangement = Arrangement.Top
         ) {
-            ProfileHeader(username, email)
+            ProfileHeader(username, fullName, email, coins)
             ProfileBody(
                 navController = navController,
                 studyDuration = studyDuration,

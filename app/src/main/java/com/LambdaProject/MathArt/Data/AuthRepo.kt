@@ -1,11 +1,10 @@
 package com.LambdaProject.MathArt.Data
 
 import com.LambdaProject.MathArt.ViewModels.RegisterViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
+import com.LambdaProject.MathArt.model.OnlineUser
+import com.google.firebase.Firebase
+import com.google.firebase.auth.*
+import com.google.firebase.firestore.*
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -90,7 +89,7 @@ class AuthRepo @Inject constructor(
         password: String,
         fullName: String,
         grade: String,
-        kelas: String
+        kelas: String,
     ) : RegisterViewModel.RegisterState {
         return try {
             auth.createUserWithEmailAndPassword(email, password).await()
@@ -103,14 +102,36 @@ class AuthRepo @Inject constructor(
                 "fullname" to fullName,
                 "grade" to grade,
                 "kelas" to kelas,
+                "isOnline" to true,
+                "coins" to 0,
+                "completedQuizzes" to emptyList<String>(),
                 "createdAt" to FieldValue.serverTimestamp()
             )
 
             firestore.collection("users").document(userId).set(userData).await()
+
             RegisterViewModel.RegisterState.Success(userId)
         } catch  (e: Exception) {
             RegisterViewModel.RegisterState.Error(e.message ?: "Unknown Error")
         }
     }
 
+    suspend fun getUsersOnline(): List<OnlineUser> {
+        val currentUserUid = auth.currentUser?.uid
+
+        return try {
+            val snapshot = firestore.collection("users")
+                .whereEqualTo("isOnline", true)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { doc ->
+                val uid = doc.id
+                val username = doc.getString("username") ?: return@mapNotNull null
+                if (uid != currentUserUid) OnlineUser(uid = uid, username = username) else null
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 }

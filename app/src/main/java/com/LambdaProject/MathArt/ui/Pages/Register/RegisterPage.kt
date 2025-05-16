@@ -1,4 +1,4 @@
-package com.LambdaProject.MathArt.ui.Pages
+package com.LambdaProject.MathArt.ui.Pages.Register
 
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -9,10 +9,7 @@ import com.LambdaProject.MathArt.ViewModels.RegisterViewModel
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*

@@ -1,4 +1,4 @@
-package com.LambdaProject.MathArt.ui.Pages
+package com.LambdaProject.MathArt.ui.Pages.Register
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*

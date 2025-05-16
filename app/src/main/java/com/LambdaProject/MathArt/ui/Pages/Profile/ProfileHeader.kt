@@ -1,32 +1,22 @@
 package com.LambdaProject.MathArt.ui.Pages.Profile
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.interFontFamily
 
 @Composable
-fun ProfileHeader(username: String, email: String) {
+fun ProfileHeader(username: String, fullName: String, email: String, coins: Int) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -42,17 +32,17 @@ fun ProfileHeader(username: String, email: String) {
                 painter = painterResource(id = R.drawable.ic_profile),
                 contentDescription = "Foto Profil",
                 modifier = Modifier
-                    .size(75.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
                     .border(2.dp, Color.Gray, CircleShape)
             )
             Spacer(modifier = Modifier.width(20.dp))
             Column {
                 Text(
-                    text = username,
+                    text = fullName,
                     fontFamily = interFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 16.sp
                 )
                 Text(
                     text = email,
@@ -60,6 +50,27 @@ fun ProfileHeader(username: String, email: String) {
                     color = Color.DarkGray,
                     fontSize = 14.sp
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .background(Color.White, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_coin),
+                            contentDescription = "Coin Icon",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "$coins",
+                            fontFamily = interFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
         }
     }

@@ -70,6 +70,22 @@ class DashboardViewModel : ViewModel() {
                         }
                     }
                 }
+
+            Firebase.firestore.collection("challenges")
+                .whereEqualTo("toUserId", userId)
+                .whereEqualTo("status", "pending")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener { snapshot, error ->
+                    val latestChallengeTime = snapshot?.documents?.firstOrNull()
+                        ?.getLong("timestamp") ?: 0L
+
+                    val isNewChallenge = Date(latestChallengeTime) > lastSeen
+
+                    if (isNewChallenge) {
+                        _hasNewNotification.value = true
+                    }
+                }
         }
     }
 

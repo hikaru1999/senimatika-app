@@ -16,13 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.Popup
 import com.LambdaProject.MathArt.*
 import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import kotlinx.coroutines.launch
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
+import com.LambdaProject.MathArt.BottomNavigationMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +54,7 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
     }
 
     Scaffold(
-        bottomBar = { BottomNavigationMenu(navController) },
+        /* bottomBar = { BottomNavigationMenu(navController) },*/
         topBar = {
             TopAppBar(
                 title = { Text("Transformasi Geometri", fontWeight = FontWeight.Bold) },
@@ -180,7 +180,6 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                                 popUpTo(0) { inclusive = true }
                                 launchSingleTop = true
                             }
-
                         }
                     )
                 }

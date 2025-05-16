@@ -1,12 +1,15 @@
 package com.LambdaProject.MathArt.ViewModels
 
+import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.LambdaProject.MathArt.Data.sampleMaterials
 import com.LambdaProject.MathArt.model.MaterialItem
+import com.LambdaProject.MathArt.model.unlockExplorerAchievement
 import com.LambdaProject.MathArt.model.StudyDurationManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,8 +25,14 @@ class  ProfileViewModel @Inject constructor(
     private val _username = mutableStateOf("User")
     val username: State<String> = _username
 
+    private val _fullName = mutableStateOf("User")
+    val fullName: State<String> = _fullName
+
     private val _email = mutableStateOf("Email Tidak Diketahui")
     val email: State<String> = _email
+
+    private val _coins = mutableIntStateOf(0)
+    val coins: State<Int> = _coins
 
     private val _studyDuration = mutableLongStateOf(0L)
     val studyDuration: State<Long> = _studyDuration
@@ -37,6 +46,7 @@ class  ProfileViewModel @Inject constructor(
     val userId = auth.currentUser?.uid ?: ""
 
     init {
+        checkAndResetDuration()
         loadUserProfile()
         loadActiveSessions()
         observeStudyDuration()
@@ -48,7 +58,9 @@ class  ProfileViewModel @Inject constructor(
         firestore.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
                 _username.value = doc.getString("username") ?: "User"
+                _fullName.value = doc.getString("fullname") ?: "User"
                 _email.value = doc.getString("email") ?: "Email Tidak Diketahui"
+                _coins.intValue = doc.getLong("coins")?.toInt() ?: 0
             }
     }
 
@@ -65,8 +77,9 @@ class  ProfileViewModel @Inject constructor(
     }
 
     private fun observeStudyDuration() {
-        StudyDurationManager.observeStudyDuration(userId) {
-            _studyDuration.value = it
+        StudyDurationManager.observeStudyDuration(userId) { duration ->
+            _studyDuration.longValue = duration
+            unlockExplorerAchievement(userId, duration)
         }
     }
 
@@ -83,8 +96,28 @@ class  ProfileViewModel @Inject constructor(
             }
     }
 
+    private fun checkAndResetDuration() {
+        if (userId.isNotEmpty()) {
+            StudyDurationManager.checkAndResetWeeklyDuration(userId) {
+                // Setelah reset, refresh nilai durasi
+                observeStudyDuration()
+            }
+        }
+    }
+
     fun logout(onSuccess: () -> Unit) {
-        auth.signOut()
-        onSuccess()
+        val uid = auth.currentUser?.uid
+
+        if (uid != null) {
+            firestore.collection("users").document(uid)
+                .update("isOnline", false)
+                .addOnSuccessListener {
+                    auth.signOut()
+                    onSuccess()
+                }
+                .addOnFailureListener{
+                    Log.d("ProfileModel", "Ada kesalahan")
+                }
+        }
     }
 }

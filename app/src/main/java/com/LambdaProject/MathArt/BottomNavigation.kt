@@ -70,16 +70,50 @@ fun BottomNavigationMenu(navController: NavController) {
             } */
         )
 
+        BottomNavigationItem(
+            icon = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(top = 10.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_play),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "Quiz",
+                        fontSize = 12.sp,
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.DarkGray
+                    )
+
+                }
+            },
+            selected = currentRoute == "OnlineQuizPage",
+            onClick = {
+                if (currentRoute != "OnlineQuizPage") {
+                    navController.navigate("OnlineQuizPage") {
+                        popUpTo("OnlineQuizPage") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        )
+
+        // ==== Menu (Locked) ==== //
         LockedMenuItem(
             iconRes = R.drawable.ic_book_blue,
             label = "Belajarku"
         )
 
-        // ==== Bookmark (Locked) ====
-        LockedMenuItem(
+        /* LockedMenuItem(
             iconRes = R.drawable.ic_bookmark_blue,
-            label = "Bookmark"
-        )
+            label = "Kuis"
+        ) */
+
 
         BottomNavigationItem(
             icon = {
