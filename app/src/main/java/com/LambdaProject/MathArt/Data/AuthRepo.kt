@@ -116,6 +116,35 @@ class AuthRepo @Inject constructor(
         }
     }
 
+    suspend fun sendResetPassword(identifier: String): Result<String> {
+        return try {
+            val email = if (identifier.contains("@")) {
+                identifier
+            } else {
+                val userSnapshot = firestore.collection("users")
+                    .whereEqualTo("username", identifier)
+                    .limit(1)
+                    .get()
+                    .await()
+
+                if (userSnapshot.isEmpty) {
+                    return Result.failure(Exception("Username tidak ditemukan."))
+                }
+
+                val emailFromDb = userSnapshot.documents.first().getString("email")
+                if (emailFromDb.isNullOrBlank()) {
+                    return Result.failure(Exception("Email tidak tersedia untuk username tersebut."))
+                }
+
+                emailFromDb
+            }
+            auth.sendPasswordResetEmail(email).await()
+            Result.success("Link reset berhasil dikirim ke $email")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getUsersOnline(): List<OnlineUser> {
         val currentUserUid = auth.currentUser?.uid
 

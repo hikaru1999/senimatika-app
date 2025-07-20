@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -22,12 +21,8 @@ import com.google.firebase.auth.FirebaseAuth
 fun DashboardHeader(navController: NavController, userName: String, viewModel: DashboardViewModel = viewModel()) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userId = currentUser?.uid ?: return
-    val context = LocalContext.current
+    /* val context = LocalContext.current */
     val username by viewModel.username.collectAsState()
-
-    /* val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    val savedUserName = sharedPreferences.getString("USERNAME_KEY", userName) */
-
     val hasNewNotification by viewModel.hasNewNotification.observeAsState(false)
 
     LaunchedEffect(userId) {

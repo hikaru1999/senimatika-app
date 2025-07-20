@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Multiplayer
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -7,11 +8,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -33,11 +37,14 @@ fun BottomQuizNav(
     totalQuestions: Int,
     onNextClick: () -> Unit,
     onFinishQuiz: () -> Unit,
+    onPowerUpClicked: () -> Unit,
     viewModel: OnlineQuizViewModel,
     materialId: String
 ) {
     var isLoading by remember { mutableStateOf(false) }
     var isAnswered by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     BottomNavigation(
         backgroundColor = Color.White,
@@ -51,14 +58,15 @@ fun BottomQuizNav(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Power-up
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            /* Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(3) { index ->
                     Box(
                         modifier = Modifier
                             .size(32.dp)
                             .shadow(4.dp, CircleShape)
-                            .background(powerUpColors[index], CircleShape),
+                            .background(powerUpColors[index], CircleShape)
+                            .clickable { onPowerUpClicked() },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -68,8 +76,50 @@ fun BottomQuizNav(
                         )
                     }
                 }
+            } */
+            // Power-up
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(3) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp) // beri ruang untuk badge di luar lingkaran
+                            .clickable { onPowerUpClicked() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Lingkaran utama power-up
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .shadow(4.dp, CircleShape)
+                                .background(powerUpColors[index], CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = powerUpIcons[index]),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = 4.dp, y = (-4).dp) // posisi di luar lingkaran
+                                .background(Color.DarkGray, shape = CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Terkunci",
+                                tint = Color.White,
+                                modifier = Modifier.size(8.dp)
+                            )
+                        }
+                    }
+                }
             }
-            // Tombol Next / Finish
+
             Button(
                 onClick = {
                     isLoading = true
@@ -92,7 +142,7 @@ fun BottomQuizNav(
                         Log.d("QuizDebug", "currentIndex: $currentIndex | totalQuestions: $totalQuestions")
 
                         if (currentIndex == totalQuestions - 1) {
-                            delay(750)
+                            delay(1250)
 
                             val userId = viewModel.getCurrentUserId() ?: return@launch
                             Log.d("QuizDebug", "Trying to save: userId=$userId, materialId=$materialId")

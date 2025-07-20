@@ -19,7 +19,7 @@ import com.LambdaProject.MathArt.R
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MateriRefleksi(onNext: () -> Unit) {
+fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isAnswered by remember { mutableStateOf(false) }
 
@@ -27,6 +27,12 @@ fun MateriRefleksi(onNext: () -> Unit) {
     val userId = user?.uid
     val correctAnswer = "Sido Mulyo"
     val isCorrect = selectedOption == correctAnswer
+
+    LaunchedEffect(currentPage) {
+        if (currentPage != myPage) {
+            YouTubePlayerManager.pauseAll()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -57,7 +63,6 @@ fun MateriRefleksi(onNext: () -> Unit) {
                     )
                 ) {
                     append("Refleksi merupakan perpindahan geometri yang memindahkan setiap titik suatu objek dengan menggunakan sifat bayangan cermin.\n")
-
                 }
             },
             fontFamily = interFontFamily,
@@ -102,7 +107,6 @@ fun MateriRefleksi(onNext: () -> Unit) {
                     )
                 ) {
                     append("Perhatikan motif batik berikut! Kita dapat menemukan pola yang dihasilkan dari proses refleksi.\n")
-
                 }
             },
             fontFamily = interFontFamily,
@@ -118,10 +122,39 @@ fun MateriRefleksi(onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Motif yang ditandai dengan warna merah menunjukkan bahwa terdapat bentuk hasil refleksi pada motif batik di atas.",
+            text = "Motif yang ditandai dengan warna merah menunjukkan bahwa terdapat bentuk hasil refleksi pada motif batik di atas.\n",
             fontFamily = interFontFamily,
             textAlign = TextAlign.Justify
         )
+        Text(
+            text = "Nah, sekarang perhatikan motif batik di bawah ini:",
+            fontFamily = interFontFamily,
+            textAlign = TextAlign.Justify
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Image(
+            painter = painterResource(id = R.drawable.img_batik_parang_sido),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Dapatkah kamu menentukan mana motif yang merepresentasikan refleksi dari batik di atas? Yuk kita simak video ini!",
+            fontFamily = interFontFamily,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Justify
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) {
+            MyYouTubePlayer(videoId = "Cv_zkDAU6UY")
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Box(
             modifier = Modifier

@@ -19,9 +19,15 @@ import com.LambdaProject.MathArt.R
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MateriDilatasi(onQuizNavigate: () -> Unit, onNext: () -> Unit) {
+fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, onNext: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+
+    LaunchedEffect(currentPage) {
+        if (currentPage != myPage) {
+            YouTubePlayerManager.pauseAll()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -114,10 +120,24 @@ fun MateriDilatasi(onQuizNavigate: () -> Unit, onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Motif yang ditandai dengan warna putih menunjukkan bahwa terdapat hasil dilatasi pada motif batik tersebut.",
+            text = "Motif yang ditandai dengan warna putih menunjukkan bahwa terdapat hasil dilatasi pada motif batik tersebut.\n",
             fontFamily = interFontFamily,
             textAlign = TextAlign.Justify
         )
+        Text(
+            text = "Agar lebih jelas, yuk simak penjelasan di bawah ini:",
+            fontFamily = interFontFamily,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Justify
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) {
+            MyYouTubePlayer(videoId = "yaBqwLIK2H8")
+        }
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(thickness = 1.dp)
         Spacer(Modifier.height(16.dp))

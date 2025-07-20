@@ -89,175 +89,181 @@ fun ProfileForm(
             )
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Tinggal selangkah lagi!",
-                fontFamily = interFontFamily,
-                fontSize = 35.sp,
-                lineHeight = 40.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Hanya masukan namamu, jenjang, dan kelas sekarang. Kami akan menyajikan konten yang sesuai dengan preferensimu.",
-                fontFamily = interFontFamily,
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 5.dp),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                    .windowInsetsPadding(WindowInsets.ime)
             ) {
-                Column(
+                Text(
+                    text = "Tinggal selangkah lagi!",
+                    fontFamily = interFontFamily,
+                    fontSize = 35.sp,
+                    lineHeight = 40.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Hanya masukan namamu, jenjang, dan kelas sekarang. Kami akan menyajikan konten yang sesuai dengan preferensimu.",
+                    fontFamily = interFontFamily,
+                    fontSize = 14.sp,
+                    lineHeight = 18.sp,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
                     modifier = Modifier
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    OutlinedTextField(
-                        value = fullName,
-                        onValueChange = { fullName = it },
-                        label = { Text("Nama Lengkapmu", fontFamily = interFontFamily) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp),
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier
+                            .padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        ExposedDropdownMenuBox(
-                            expanded = expandedJenjang,
-                            onExpandedChange = {
-                                expandedJenjang = !expandedJenjang
-                            },
+                        OutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            label = { Text("Nama Lengkapmu", fontFamily = interFontFamily) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(8.dp),
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedTextField(
-                                value = grade,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Jenjang", fontFamily = interFontFamily, fontSize = 12.sp) },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedJenjang) },
-                                modifier = Modifier
-                                    .width(135.dp)
-                                    .menuAnchor(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF2196F3),
-                                    unfocusedBorderColor = Color.Gray
-                                )
-                            )
-                            ExposedDropdownMenu(
+                            ExposedDropdownMenuBox(
                                 expanded = expandedJenjang,
-                                onDismissRequest = {
-                                    expandedJenjang = false
+                                onExpandedChange = {
+                                    expandedJenjang = !expandedJenjang
                                 },
-                                modifier = Modifier
-                                    .background(Color.White)
                             ) {
-                                grades.forEach { selectedGrade ->
-                                    DropdownMenuItem(
-                                        text = { Text(selectedGrade) },
-                                        onClick = {
-                                            grade = selectedGrade
-                                            expandedJenjang = false
-                                        }
+                                OutlinedTextField(
+                                    value = grade,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Jenjang", fontFamily = interFontFamily, fontSize = 12.sp) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedJenjang) },
+                                    modifier = Modifier
+                                        .width(135.dp)
+                                        .menuAnchor(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Color(0xFF2196F3),
+                                        unfocusedBorderColor = Color.Gray
                                     )
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedJenjang,
+                                    onDismissRequest = {
+                                        expandedJenjang = false
+                                    },
+                                    modifier = Modifier
+                                        .background(Color.White)
+                                ) {
+                                    grades.forEach { selectedGrade ->
+                                        DropdownMenuItem(
+                                            text = { Text(selectedGrade) },
+                                            onClick = {
+                                                grade = selectedGrade
+                                                expandedJenjang = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        val kelasOptions = kelasMap[grade] ?: emptyList()
+                            val kelasOptions = kelasMap[grade] ?: emptyList()
 
-                        ExposedDropdownMenuBox(
-                            expanded = expandedKelas,
-                            onExpandedChange = { expandedKelas = !expandedKelas }
-                        ) {
-                            OutlinedTextField(
-                                value = kelas,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Kelas", fontFamily = interFontFamily, fontSize = 12.sp) },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedKelas) },
-                                enabled = grade.isNotEmpty(),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .menuAnchor(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF2196F3),
-                                    unfocusedBorderColor = Color.Gray
-                                )
-                            )
-                            ExposedDropdownMenu(
+                            ExposedDropdownMenuBox(
                                 expanded = expandedKelas,
-                                onDismissRequest = { expandedKelas = false },
-                                modifier = Modifier
-                                    .background(Color.White)
+                                onExpandedChange = { expandedKelas = !expandedKelas }
                             ) {
-                                kelasOptions.forEach { selectedKelas ->
-                                    DropdownMenuItem(
-                                        text = { Text(selectedKelas, fontFamily = interFontFamily) },
-                                        onClick = {
-                                            kelas = selectedKelas
-                                            expandedKelas = false
-                                        }
+                                OutlinedTextField(
+                                    value = kelas,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Kelas", fontFamily = interFontFamily, fontSize = 12.sp) },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedKelas) },
+                                    enabled = grade.isNotEmpty(),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .menuAnchor(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Color(0xFF2196F3),
+                                        unfocusedBorderColor = Color.Gray
                                     )
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expandedKelas,
+                                    onDismissRequest = { expandedKelas = false },
+                                    modifier = Modifier
+                                        .background(Color.White)
+                                ) {
+                                    kelasOptions.forEach { selectedKelas ->
+                                        DropdownMenuItem(
+                                            text = { Text(selectedKelas, fontFamily = interFontFamily) },
+                                            onClick = {
+                                                kelas = selectedKelas
+                                                expandedKelas = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = {
-                            isSubmitted = true
-                            if(allValid) {
-                                registerView.registerUser(
-                                    fullName = fullName,
-                                    grade = grade,
-                                    kelas = kelas
+                        Button(
+                            onClick = {
+                                isSubmitted = true
+                                if(allValid) {
+                                    registerView.registerUser(
+                                        fullName = fullName,
+                                        grade = grade,
+                                        kelas = kelas
+                                    )
+                                }
+                            },
+                            enabled = allValid && registerState !is RegisterViewModel.RegisterState.Loading && !isSubmitted,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
+                            shape = RoundedCornerShape(4.dp),
+                        ) {
+                            if (registerState is RegisterViewModel.RegisterState.Loading) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                Text(
+                                    text = "Daftar!",
+                                    fontFamily = interFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color.White
                                 )
                             }
-                        },
-                        enabled = allValid && registerState !is RegisterViewModel.RegisterState.Loading && !isSubmitted,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
-                        shape = RoundedCornerShape(4.dp),
-                    ) {
-                        if (registerState is RegisterViewModel.RegisterState.Loading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        } else {
-                            Text(
-                                text = "Daftar!",
-                                fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = Color.White
-                            )
                         }
                     }
                 }

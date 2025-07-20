@@ -89,218 +89,203 @@ fun RegisterScreen(
             )
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Daftar dulu yuk!",
-                fontFamily = interFontFamily,
-                fontSize = 35.sp,
-                lineHeight = 40.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Buat username, masukkan email aktif dan password untuk mengakses konten pembelajaran kami ya...",
-                fontFamily = interFontFamily,
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 5.dp),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                    .windowInsetsPadding(WindowInsets.ime)
             ) {
-                Column(
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Daftar dulu yuk!",
+                    fontFamily = interFontFamily,
+                    fontSize = 35.sp,
+                    lineHeight = 40.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Buat username, masukkan email aktif dan password untuk mengakses konten pembelajaran kami ya...",
+                    fontFamily = interFontFamily,
+                    fontSize = 14.sp,
+                    lineHeight = 18.sp,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
                     modifier = Modifier
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    val usernameValid = registerViewModel.username.isNotBlank() && registerViewModel.username.length <= 15 /* && !registerViewModel.username.contains(" ") */
-                    val emailValid = registerViewModel.email.isNotBlank() && registerViewModel.email.contains("@") /* && !registerViewModel.email.contains(" ") */
-                    val passwordValid = registerViewModel.password.isNotBlank() && passwordStrength > 0 && registerViewModel.password.length <= 20
-                    val allValid = usernameValid && emailValid && passwordValid
-
-                    OutlinedTextField(
-                        value = registerViewModel.username,
-                        onValueChange = { newUsername ->
-                            if (newUsername.length <= 15 && !newUsername.contains(" ")) {
-                                registerViewModel.username = newUsername
-                            }
-                        },
-                        label = { Text("Masukkan username", fontFamily = interFontFamily, fontWeight = FontWeight.Normal) },
-                        isError = isSubmitted && (registerViewModel.username.isEmpty() || registerViewModel.username.length > 15 || registerViewModel.username.contains(" ")),
-                        modifier = Modifier.fillMaxWidth(),
-                        /* supportingText = {
-                            when {
-                                registerViewModel.username.length > 15 ->
-                                    Text("Username tidak boleh lebih dari 15 karakter", fontFamily = interFontFamily, color = Color.Red, fontSize = 12.sp)
-                            }
-                        } */
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = registerViewModel.email,
-                        onValueChange = { registerViewModel.email = it.replace(Regex("\\s"), "") },
-                        interactionSource = emailInteractionSource,
-                        singleLine = true,
-                        label = { Text("Email", fontFamily = interFontFamily, fontWeight = FontWeight.Normal) },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
-                        isError = registerViewModel.email.isNotEmpty() && !registerViewModel.email.contains("@"),
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged { focusState ->
-                                emailFieldFocused = focusState.isFocused
+                            .padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        val usernameValid = registerViewModel.username.isNotBlank() && registerViewModel.username.length <= 15 /* && !registerViewModel.username.contains(" ") */
+                        val emailValid = registerViewModel.email.isNotBlank() && registerViewModel.email.contains("@") /* && !registerViewModel.email.contains(" ") */
+                        val passwordValid = registerViewModel.password.isNotBlank() && passwordStrength > 0 && registerViewModel.password.length <= 20
+                        val allValid = usernameValid && emailValid && passwordValid
+
+                        OutlinedTextField(
+                            value = registerViewModel.username,
+                            onValueChange = { newUsername ->
+                                if (newUsername.length <= 15 && !newUsername.contains(" ")) {
+                                    registerViewModel.username = newUsername
+                                }
                             },
-                    )
+                            singleLine = true,
+                            label = { Text("Masukkan username", fontFamily = interFontFamily, fontWeight = FontWeight.Normal) },
+                            isError = isSubmitted && (registerViewModel.username.isEmpty() || registerViewModel.username.length > 15 || registerViewModel.username.contains(" ")),
+                            modifier = Modifier.fillMaxWidth(),
+                            /* supportingText = {
+                                when {
+                                    registerViewModel.username.length > 15 ->
+                                        Text("Username tidak boleh lebih dari 15 karakter", fontFamily = interFontFamily, color = Color.Red, fontSize = 12.sp)
+                                }
+                            } */
+                        )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = registerViewModel.password,
-                        onValueChange = {
-                            registerViewModel.password = it.replace(Regex("\\s"), "").take(20)
-                            passwordStrength = checkPasswordStrength(registerViewModel.password)
-                        },
-                        interactionSource = passwordInteractionSource,
-                        label = { Text("Masukkan Password", fontFamily = interFontFamily) },
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    painter = painterResource(id = if (passwordVisible) R.drawable.ic_eye_open else R.drawable.ic_eye_close),
-                                    contentDescription = "Toggle Password Visibility",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Password),
-                        isError = (isSubmitted && registerViewModel.password.isEmpty()) || (registerViewModel.password.isNotEmpty() && passwordStrength == 0),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onFocusChanged { focusState ->
-                                passwordFieldFocused = focusState.isFocused
-                            },
-                    )
-
-                    if (registerViewModel.password.isNotEmpty() && passwordStrength != -1) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        PasswordStrengthIndicator(passwordStrength)
-                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = registerViewModel.email,
+                            onValueChange = { registerViewModel.email = it.replace(Regex("\\s"), "") },
+                            interactionSource = emailInteractionSource,
+                            singleLine = true,
+                            label = { Text("Email", fontFamily = interFontFamily, fontWeight = FontWeight.Normal) },
+                            /* keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email), */
+                            isError = registerViewModel.email.isNotEmpty() && !registerViewModel.email.contains("@"),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { focusState ->
+                                    emailFieldFocused = focusState.isFocused
+                                },
+                        )
 
-                    Button(
-                        onClick = {
-                            isSubmitted = true
-                            if (allValid) {
-                                registerViewModel.checkUsernameOrEmailExists(
-                                    username = registerViewModel.username,
-                                    email = registerViewModel.email
-                                ) { exists ->
-                                    if (exists) {
-                                        errorMessage = "Username atau Email telah terdaftar"
-                                        showError = true
-                                        isSubmitted = false
-                                    } else {
-                                        isSubmitted = true
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            delay(1500)
-                                            registerViewModel.saveTemporaryUserData(
-                                                username = registerViewModel.username,
-                                                email = registerViewModel.email,
-                                                password = registerViewModel.password,
-                                            )
-                                            navController.navigate("ProfileForm/${username}/${email}/${password}")
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = registerViewModel.password,
+                            onValueChange = {
+                                registerViewModel.password = it.replace(Regex("\\s"), "").take(20)
+                                passwordStrength = checkPasswordStrength(registerViewModel.password)
+                            },
+                            interactionSource = passwordInteractionSource,
+                            label = { Text("Masukkan Password", fontFamily = interFontFamily) },
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        painter = painterResource(id = if (passwordVisible) R.drawable.ic_eye_open else R.drawable.ic_eye_close),
+                                        contentDescription = "Toggle Password Visibility",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next, keyboardType = KeyboardType.Password),
+                            isError = (isSubmitted && registerViewModel.password.isEmpty()) || (registerViewModel.password.isNotEmpty() && passwordStrength == 0),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { focusState ->
+                                    passwordFieldFocused = focusState.isFocused
+                                },
+                        )
+
+                        if (registerViewModel.password.isNotEmpty() && passwordStrength != -1) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            PasswordStrengthIndicator(passwordStrength)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                isSubmitted = true
+                                if (allValid) {
+                                    registerViewModel.checkUsernameOrEmailExists(
+                                        username = registerViewModel.username,
+                                        email = registerViewModel.email
+                                    ) { exists ->
+                                        if (exists) {
+                                            errorMessage = "Username atau Email telah terdaftar"
+                                            showError = true
+                                            isSubmitted = false
+                                        } else {
+                                            isSubmitted = true
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                delay(1500)
+                                                registerViewModel.saveTemporaryUserData(
+                                                    username = registerViewModel.username,
+                                                    email = registerViewModel.email,
+                                                    password = registerViewModel.password,
+                                                )
+                                                navController.navigate("ProfileForm/${username}/${email}/${password}")
+                                            }
                                         }
                                     }
                                 }
+                            },
+                            enabled = allValid && registerState !is RegisterViewModel.RegisterState.Loading && !isSubmitted,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (isSubmitted) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                Text(
+                                    text = "Lanjut!",
+                                    fontFamily = interFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = Color.White
+                                )
                             }
-                        },
-                        enabled = allValid && registerState !is RegisterViewModel.RegisterState.Loading && !isSubmitted,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (isSubmitted) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        } else {
-                            Text(
-                                text = "Lanjut!",
-                                fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = Color.White
-                            )
                         }
 
-                        /* if (showError) {
-                            AlertDialog(
-                                onDismissRequest = { showError = false },
-                                title = {
-                                    Text(text = "Registrasi Gagal", fontWeight = FontWeight.Bold, fontFamily = interFontFamily, fontSize = 18.sp)
-                                },
-                                text = {
-                                    Text(text = errorMessage, fontFamily = interFontFamily)
-                                },
-                                confirmButton = {
-                                    Button(
-                                        onClick = { showError = false },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
-                                        shape = RoundedCornerShape(5.dp)
-                                    ) {
-                                        Text("Ubah Data", color = Color.White, fontFamily = interFontFamily)
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row {
+                            Text(text = "Sudah punya akun? ",
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.DarkGray,
+                                fontSize = 14.sp)
+
+                            Text(
+                                text = "Log In",
+                                color = Color(0xFF1E88E5),
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontStyle = FontStyle.Normal,
+                                fontSize = 14.sp,
+                                modifier = Modifier.clickable {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                        launchSingleTop = true
                                     }
-                                },
-                                containerColor = Color.White,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        } */
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Row {
-                        Text(text = "Sudah punya akun? ",
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Normal,
-                            color = Color.DarkGray,
-                            fontSize = 14.sp)
-
-                        Text(
-                            text = "Log In",
-                            color = Color(0xFF1E88E5),
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontStyle = FontStyle.Normal,
-                            fontSize = 14.sp,
-                            modifier = Modifier.clickable {
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
-                                    launchSingleTop = true
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -365,6 +350,7 @@ fun TopSnackbar(
     visible: Boolean,
     message: String,
     modifier: Modifier = Modifier,
+    containerColor: Color = Color(0xFFD32F2F),
     onDismiss: () -> Unit
 ) {
     AnimatedVisibility(
@@ -377,7 +363,7 @@ fun TopSnackbar(
             .zIndex(1f)
     ) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2f)),
+            colors = CardDefaults.cardColors(containerColor = containerColor),
             shape = RoundedCornerShape(2.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -399,7 +385,8 @@ fun TopSnackbar(
                     text = message,
                     color = Color.White,
                     fontFamily = interFontFamily,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    lineHeight = 16.sp
                 )
             }
         }

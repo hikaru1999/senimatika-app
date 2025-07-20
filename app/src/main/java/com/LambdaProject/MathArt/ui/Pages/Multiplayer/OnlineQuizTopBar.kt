@@ -1,5 +1,8 @@
 package com.LambdaProject.MathArt.ui.Pages.Multiplayer
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,7 +52,7 @@ fun QuizTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(60.dp)
             .background(Color.White),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -60,7 +63,6 @@ fun QuizTopBar(
             contentAlignment = Alignment.Center
         ) {
             Column(
-                /* modifier = Modifier.padding(top = 12.dp) */
             ) {
                 IconButton(
                     onClick = { showDialog = true }
@@ -82,7 +84,6 @@ fun QuizTopBar(
             contentAlignment = Alignment.Center
         ) {
             Column(
-                /* modifier = Modifier.padding(top = 12.dp) */
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -130,13 +131,10 @@ fun QuizTopBar(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(
-                    text = "$currentBasePoints",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = Color.White,
-                    fontFamily = interFontFamily
+                AnimatedBasePts(
+                    value = currentBasePoints
                 )
+
                 Spacer(modifier = Modifier.width(4.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_poin),
@@ -146,4 +144,26 @@ fun QuizTopBar(
             }
         }
     }
+}
+
+@Composable
+private fun AnimatedBasePts(value: Int) {
+    val animatedValue = remember { Animatable(0f) }
+
+    LaunchedEffect(value) {
+        animatedValue.animateTo(
+            targetValue = value.toFloat(),
+            animationSpec = tween(durationMillis = 250, easing = LinearOutSlowInEasing)
+        )
+    }
+
+    Text(
+        text = "${animatedValue.value.toInt()}",
+        style = MaterialTheme.typography.bodyMedium.copy(
+            fontWeight = FontWeight.Bold
+        ),
+        fontFamily = interFontFamily,
+        fontSize = 14.sp,
+        color = Color.White
+    )
 }

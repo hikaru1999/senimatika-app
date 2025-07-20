@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Multiplayer
 
+import android.annotation.SuppressLint
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -7,6 +8,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
@@ -17,8 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.LambdaProject.MathArt.Data.ScoreSoundManager
 import com.LambdaProject.MathArt.Data.powerUpColors
 import com.LambdaProject.MathArt.Data.powerUpIcons
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
@@ -26,6 +32,7 @@ import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.model.*
 import kotlinx.coroutines.*
 
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun OnlineQuizMaster(
     onFinishQuiz: () -> Unit,
@@ -37,9 +44,6 @@ fun OnlineQuizMaster(
     userId: String,
     viewModel: OnlineQuizViewModel = hiltViewModel()
 ) {
-
-    Log.d("ViewModelCheck", "ViewModel instance in MainActivity hash: ${viewModel.hashCode()}")
-
     LaunchedEffect(materialId) {
         viewModel.loadQuizForSelectedMaterial(userId, materialId)
     }
@@ -47,8 +51,8 @@ fun OnlineQuizMaster(
     val questions by viewModel.questions.collectAsState()
     val currentIndex by viewModel.currentQuestionIndex.collectAsState()
     val currentBasePoints by viewModel.currentBasePoints.collectAsState()
-
-    /* val currentPoints by viewModel.currentPoints.collectAsState() */
+    val context = LocalContext.current
+    val scorestreakState by viewModel.scorestreakState.collectAsState()
 
     if (questions.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -60,16 +64,17 @@ fun OnlineQuizMaster(
     val question = questions[currentIndex]
     val selectedAnswers = remember(question.questionNumber) { mutableStateOf(mutableSetOf<Int>()) }
     val animatedProgress = remember { Animatable(1f) }
-    val typedAnswer = remember { mutableStateOf("") }
+    val typedAnswer = remember(question) { mutableStateOf("") }
     val totalQuestions = questions.size
-    var showZoomDialog by remember { mutableStateOf(false) }
     val imageRes = question.imageRes
 
     var timer by remember(question.questionNumber) { mutableIntStateOf(question.durationSeconds) }
     var showScoreSnackbar by remember { mutableStateOf(false) }
+    var showZoomDialog by remember { mutableStateOf(false) }
     var scoreState by remember { mutableStateOf<ScorestreakState?>(null) }
     var isAnswered by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
+    var showPowerUpInfoDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = currentIndex) {
         isAnswered = false
@@ -120,7 +125,8 @@ fun OnlineQuizMaster(
 
     LaunchedEffect(showScoreSnackbar) {
         if (showScoreSnackbar) {
-            delay(2500)
+            ScoreSoundManager.playSound(context, scorestreakState!!.type)
+            delay(3000)
             showScoreSnackbar = false
         }
     }
@@ -146,6 +152,37 @@ fun OnlineQuizMaster(
                     Text("Batal", fontFamily = interFontFamily, color = Color.Gray, fontWeight = FontWeight.Bold)
                 }
             }
+        )
+    }
+
+    if (showPowerUpInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showPowerUpInfoDialog = false },
+            title = {
+                Text(
+                    text = "Power Up",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interFontFamily
+                )
+            },
+            text = {
+                Text(
+                    text = "Power Up masih dalam tahap pengembangan. Harap bersabar ya dan stay tuned!",
+                    fontFamily = interFontFamily
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showPowerUpInfoDialog = false }) {
+                    Text(
+                        text = "OK",
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            },
+            shape = RoundedCornerShape(12.dp),
+            containerColor = Color.White
         )
     }
 
@@ -183,212 +220,253 @@ fun OnlineQuizMaster(
                 )
             },
             bottomBar = {
-                BottomQuizNav(
-                    selectedAnswers = selectedAnswers.value.toList(),
-                    userTextAnswer = typedAnswer.value,
-                    timeLeft = timer,
-                    onTriggerScorestreak = { streakState ->
-                        scoreState = streakState
-                        showScoreSnackbar = true
-                    },
-                    powerUpIcons = powerUpIcons,
-                    powerUpColors = powerUpColors,
-                    currentIndex = currentIndex,
-                    totalQuestions = questions.size,
-                    onNextClick = {
-                        Log.d("onNextClick", "Material aktif saat ini: $materialId")
-                        if (currentIndex < questions.lastIndex) {
-                            viewModel.nextQuestion()
-                        } else {
-                            onFinishQuiz()
-                        }
-                    },
-                    viewModel = viewModel,
-                    onFinishQuiz = onFinishQuiz,
-                    materialId = materialId
-                )
-            }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Spacer(modifier = Modifier.height(4.dp))
-
-                val progressColor = when {
-                    animatedProgress.value > 0.6f -> Color(0xFF4CAF50)
-                    animatedProgress.value > 0.3f -> Color(0xFFFF9800)
-                    else -> Color(0xFFF44336)
-                }
-
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(Color(0xFFBDBDBD), RoundedCornerShape(4.dp))
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(animatedProgress.value)
-                            .align(Alignment.CenterEnd)
-                            .background(progressColor, RoundedCornerShape(4.dp))
-                    )
-                }
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val progressColor = when {
+                            animatedProgress.value > 0.6f -> Color(0xFF4CAF50)
+                            animatedProgress.value > 0.3f -> Color(0xFFFF9800)
+                            else -> Color(0xFFF44336)
+                        }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
-                ) {
-                    question.imageRes?.let {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Image(
-                            painter = painterResource(id = it),
-                            contentDescription = null,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(160.dp)
-                                .clickable { showZoomDialog = true }
+                                .height(10.dp)
+                                .background(Color(0xFFBDBDBD), RoundedCornerShape(0.dp))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(animatedProgress.value)
+                                    .align(Alignment.CenterEnd)
+                                    .background(progressColor, RoundedCornerShape(0.dp))
+                            )
+                        }
+                        BottomQuizNav(
+                            selectedAnswers = selectedAnswers.value.toList(),
+                            userTextAnswer = typedAnswer.value,
+                            timeLeft = timer,
+                            onTriggerScorestreak = { streakState ->
+                                scoreState = streakState
+                                showScoreSnackbar = true
+                            },
+                            powerUpIcons = powerUpIcons,
+                            powerUpColors = powerUpColors,
+                            currentIndex = currentIndex,
+                            totalQuestions = questions.size,
+                            onNextClick = {
+                                Log.d("onNextClick", "Material aktif saat ini: $materialId")
+                                if (currentIndex < questions.lastIndex) {
+                                    viewModel.nextQuestion()
+                                } else {
+                                    onFinishQuiz()
+                                }
+                            },
+                            viewModel = viewModel,
+                            onFinishQuiz = onFinishQuiz,
+                            materialId = materialId,
+                            onPowerUpClicked = { showPowerUpInfoDialog = true }
+                        )
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
+                    ) {
+                        question.imageRes?.let {
+                            Column(
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0XFFE8F9FE), shape = RoundedCornerShape(8.dp))
+                                        .padding(6.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "Informasi",
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Ketuk gambar untuk melakukan pembesaran",
+                                            fontFamily = interFontFamily,
+                                            fontSize = 10.sp,
+                                            color = Color(0xFF2BA2FF)
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Image(
+                                painter = painterResource(id = it),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp)
+                                    .clickable { showZoomDialog = true }
+                            )
+                        }
+                        Text(
+                            text = question.questionText,
+                            modifier = Modifier.padding(16.dp),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center
                         )
                     }
 
-                    Text(
-                        text = question.questionText,
-                        modifier = Modifier.padding(16.dp),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    if (showZoomDialog && imageRes != null) {
+                        ZoomableImageDialog(imageRes = imageRes, onDismiss = { showZoomDialog = false })
+                    }
 
-                if (showZoomDialog && imageRes != null) {
-                    ZoomableImageDialog(imageRes = imageRes, onDismiss = { showZoomDialog = false })
-                }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.CenterHorizontally),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (question.type == QuestionType.SHORT_ANSWER) "Ayo isi jawabanmu!" else "Ayo pilih jawabanmu!",
+                            fontFamily = interFontFamily,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterHorizontally),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Pilih/Isi Jawabanmu",
-                        fontFamily = interFontFamily,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    if (question.type == QuestionType.SHORT_ANSWER) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
-                        ) {
-                            OutlinedTextField(
-                                value = typedAnswer.value,
-                                onValueChange = { typedAnswer.value = it },
-                                label = { Text("Jawabanmu", fontFamily = interFontFamily) },
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 16.dp, bottom = 18.dp, start = 16.dp, end = 16.dp)
-                                    .background(Color.White, shape = MaterialTheme.shapes.medium),
-                            )
-                        }
-                    } else {
-                        question.choices.forEachIndexed { index, choice ->
-                            val isSelected = selectedAnswers.value.contains(index)
-                            val isUnanswered = !isSelected
-
-                            val backgroundBrush = if (isSelected) {
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFFF1FAF0),
-                                        Color(0xFFB9F6CA),
-                                        Color(0xFFADEEBE)
-                                    ),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(400f, 400f)
-                                )
-                            } else {
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFFFFFFFF),
-                                        Color(0xFFF5F5F5)
-                                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        if (question.type == QuestionType.SHORT_ANSWER) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
+                            ) {
+                                OutlinedTextField(
+                                    value = typedAnswer.value,
+                                    onValueChange = { typedAnswer.value = it },
+                                    label = { Text("Jawabanmu", fontFamily = interFontFamily) },
+                                    singleLine = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp, bottom = 18.dp, start = 16.dp, end = 16.dp)
+                                        .background(Color.White, shape = MaterialTheme.shapes.medium),
                                 )
                             }
+                        } else {
+                            question.choices.forEachIndexed { index, choice ->
+                                val isSelected = selectedAnswers.value.contains(index)
+                                val isUnanswered = !isSelected
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(60.dp)
-                                    .background(brush = backgroundBrush, shape = MaterialTheme.shapes.medium)
-                                    .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.medium)
-                                    .clickable {
-                                        if (question.type == QuestionType.CHECKBOX) {
-                                            if (isSelected) selectedAnswers.value.remove(index)
-                                            else selectedAnswers.value.add(index)
-                                        } else {
-                                            selectedAnswers.value.clear()
-                                            selectedAnswers.value.add(index)
-                                        }
-                                    }
-                                    .padding(horizontal = 12.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    if (question.type == QuestionType.CHECKBOX) {
-                                        Checkbox(
-                                            checked = isSelected,
-                                            onCheckedChange = {
-                                                if (isSelected) selectedAnswers.value.remove(index)
-                                                else selectedAnswers.value.add(index)
-                                            },
-                                        )
-                                    } else {
-                                        RadioButton(
-                                            selected = isSelected,
-                                            onClick = {
-                                                selectedAnswers.value.clear()
-                                                selectedAnswers.value.add(index)
-                                            },
-                                            colors = RadioButtonDefaults.colors(
-                                                selectedColor = Color.Black,
-                                                unselectedColor = Color.Gray,
-                                                disabledSelectedColor = Color.LightGray
-                                            )
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    Text(
-                                        text = choice,
-                                        style = TextStyle(
-                                            fontSize = 13.sp,
-                                            lineHeight = 15.sp
+                                val backgroundBrush = if (isSelected) {
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(0xFFF1FAF0),
+                                            Color(0xFFB9F6CA),
+                                            Color(0xFFADEEBE)
                                         ),
-                                        fontFamily = interFontFamily,
-                                        fontWeight = FontWeight.Bold
+                                        start = Offset(0f, 0f),
+                                        end = Offset(400f, 400f)
                                     )
+                                } else {
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(0xFFFFFFFF),
+                                            Color(0xFFF5F5F5)
+                                        )
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(60.dp)
+                                        .background(brush = backgroundBrush, shape = MaterialTheme.shapes.medium)
+                                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.medium)
+                                        .clickable {
+                                            if (question.type == QuestionType.CHECKBOX) {
+                                                val newSet = selectedAnswers.value.toMutableSet()
+                                                if (isSelected) newSet.remove(index)
+                                                else newSet.add(index)
+                                                selectedAnswers.value = newSet
+                                            } else {
+                                                selectedAnswers.value = mutableSetOf(index)
+                                            }
+                                        }
+                                        .padding(horizontal = 12.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        if (question.type == QuestionType.CHECKBOX) {
+                                            Checkbox(
+                                                checked = isSelected,
+                                                onCheckedChange = {
+                                                    val newSet = selectedAnswers.value.toMutableSet()
+                                                    if (isSelected) newSet.remove(index)
+                                                    else newSet.add(index)
+                                                    selectedAnswers.value = newSet
+                                                },
+                                            )
+                                        } else {
+                                            RadioButton(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    selectedAnswers.value = mutableSetOf(index)
+                                                },
+                                                colors = RadioButtonDefaults.colors(
+                                                    selectedColor = Color.Black,
+                                                    unselectedColor = Color.Gray,
+                                                    disabledSelectedColor = Color.LightGray
+                                                )
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Text(
+                                            text = choice,
+                                            style = TextStyle(
+                                                fontSize = 13.sp,
+                                                lineHeight = 15.sp
+                                            ),
+                                            fontFamily = interFontFamily,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Profile
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -14,19 +15,25 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
 @Composable
-fun CompactMaterialCard(userId: String, material: MaterialItem) {
+fun MaterialTracker(userId: String, material: MaterialItem) {
     val db = Firebase.firestore
-    var progress by remember { mutableStateOf(0f) }
     val totalPage = 6
+    var progress by remember { mutableStateOf(0f) }
 
     LaunchedEffect(userId) {
         db.collection("userProgress").document(userId)
             .addSnapshotListener { snapshot, _ ->
                 snapshot?.let {
                     val maxPage = it.getLong("maxPage")?.toInt() ?: 0
-                    progress = ((maxPage + 1).toFloat() / totalPage).coerceIn(0f, 1f)
+                    progress = (maxPage.toFloat() / totalPage).coerceIn(0f, 1f)
                 }
             }
+    }
+
+    val progressColor = when {
+        progress < 0.4f -> Color(0xFFF44336)
+        progress < 0.7f -> Color(0xFFFF9800)
+        else -> Color(0xFF4CAF50)
     }
 
     Card(
@@ -54,23 +61,27 @@ fun CompactMaterialCard(userId: String, material: MaterialItem) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                LinearProgressIndicator(
-                    progress = {
-                        progress
-                    },
+                Box(
                     modifier = Modifier
-                        .height(6.dp)
-                        .width(260.dp),
-                    color = Color(0xFF6781FF),
-                    trackColor = Color.LightGray,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                        .height(10.dp)
+                        .weight(1f)
+                        .background(Color.LightGray)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(progress)
+                            .background(progressColor)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "${(progress * 100).toInt()}%",
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontFamily = interFontFamily,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF6781FF)
+                    color = Color(0xFF6781FF),
+                    modifier = Modifier.wrapContentWidth(Alignment.End)
                 )
             }
         }

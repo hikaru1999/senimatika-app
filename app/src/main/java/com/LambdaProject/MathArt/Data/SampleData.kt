@@ -10,6 +10,7 @@ import com.LambdaProject.MathArt.model.OnlineQuizDesc
 import com.LambdaProject.MathArt.model.QuestionType
 import com.LambdaProject.MathArt.model.ScoreType
 import com.LambdaProject.MathArt.model.ScorestreakState
+import com.LambdaProject.MathArt.model.ValidatorQuestion
 
 val sampleMaterials = listOf(
     MaterialItem("transformasi_geometri", "Transformasi Geometri", R.drawable.img_geo, "11 SMA"),
@@ -31,26 +32,26 @@ val sampleOnlineQuiz = listOf(
 )
 
 val sampleCategories = listOf(
-    CategoryItem("Aritmetika", R.drawable.ic_arithmetic),
-    CategoryItem("Aljabar", R.drawable.ic_algebra),
-    CategoryItem("Geometri", R.drawable.ico_geometry),
-    CategoryItem("Trigonometri", R.drawable.ico_trigo),
-    CategoryItem("Kalkulus", R.drawable.ico_calculus),
-    CategoryItem("Statistika", R.drawable.ico_statistic)
+    CategoryItem("Aritmetika", R.drawable.ic_arithmetic, isLocked = true),
+    CategoryItem("Aljabar", R.drawable.ic_algebra, isLocked = true),
+    CategoryItem("Geometri", R.drawable.ico_geometry, isLocked = true),
+    CategoryItem("Trigonometri", R.drawable.ico_trigo, isLocked = true),
+    CategoryItem("Kalkulus", R.drawable.ico_calculus, isLocked = true),
+    CategoryItem("Statistika", R.drawable.ico_statistic, isLocked = true)
 )
 
 val sampleAchievements = listOf(
-    AchievementItem("Penjelajah", R.drawable.ic_explorer, isUnlocked = false),
-    AchievementItem("Pemula", R.drawable.img_rocket_pemula, isUnlocked = false),
-    AchievementItem("Profesional", R.drawable.img_pros, isUnlocked = false),
-    AchievementItem("Ilmuan", R.drawable.ic_scientist, isUnlocked = false),
-    AchievementItem("Math Magician", R.drawable.ic_magician, isUnlocked = false),
-    AchievementItem("Master Aljabar", R.drawable.ic_algebra_master, isUnlocked = false),
-    AchievementItem("Master Geometri", R.drawable.ic_geometry_master, isUnlocked = false),
-    AchievementItem("Ahli Ramalan", R.drawable.ic_statistic_master, isUnlocked = false),
-    AchievementItem("Ahli Matematika", R.drawable.ic_expert, isUnlocked = false),
-    AchievementItem("Ahli Kalkulus", R.drawable.ic_calculus_master, isUnlocked = false),
-    AchievementItem("Jenius Matematika", R.drawable.ic_genius, isUnlocked = false)
+    AchievementItem("Penjelajah", R.drawable.ic_explorer, "Aktif menggunakan Senimatika selama 5 menit", isUnlocked = false),
+    AchievementItem("Pemula", R.drawable.img_rocket_pemula, "Ambil 1 materi aktif", isUnlocked = false),
+    AchievementItem("Profesional", R.drawable.img_pros, "Selesaikan 1 materi yang sedang aktif dipelajari", isUnlocked = false),
+    AchievementItem("Ilmuan", R.drawable.ic_scientist, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Math Magician", R.drawable.ic_magician, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Master Aljabar", R.drawable.ic_algebra_master, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Master Geometri", R.drawable.ic_geometry_master, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Ahli Ramalan", R.drawable.ic_statistic_master, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Ahli Matematika", R.drawable.ic_expert, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Ahli Kalkulus", R.drawable.ic_calculus_master, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Jenius Matematika", R.drawable.ic_genius, "Akan ditambahkan", isUnlocked = false)
 )
 
 val sampleMaterialStep = mapOf("transformasi_geometri" to listOf(
@@ -60,6 +61,21 @@ val sampleMaterialStep = mapOf("transformasi_geometri" to listOf(
     "Rotasi",
     "Dilatasi",
     "Kuis: Transformasi Geometri"
+    )
+)
+
+val sampleMaterialTopic = mapOf(
+    "transformasi_geometri" to listOf(
+        "Pengantar",
+        "Translasi",
+        "Refleksi",
+        "Rotasi",
+        "Dilatasi",
+        "Kuis",
+        "Hasil Belajar"
+    ),
+    "lingkaran" to listOf(
+        ""
     )
 )
 
@@ -97,7 +113,7 @@ val transform_geo = mapOf(
         ),
         OnlineQuizQuestion(
             questionNumber = 3,
-            questionText = "Suatu segitiga memiliki titik-titik A(2,1), B(6,1), dan C(2,5). Segitiga ini didilatasi terhadap titik pusat (2,1) dengan faktor skala 1/4. Tentukan luas segitiga hasil dilatasi tersebut!.",
+            questionText = "Suatu segitiga memiliki titik-titik A(2,1), B(6,1), dan C(2,5). Segitiga ini didilatasi terhadap titik pusat (2,1) dengan faktor skala 1/4. Tentukan luas segitiga hasil dilatasi tersebut!",
             imageRes = null,
             correctTextAnswers = listOf("0.5", "0,5", "0, 5", "0. 5"),
             type = QuestionType.SHORT_ANSWER,
@@ -206,15 +222,18 @@ val transform_geo = mapOf(
 )
 
 val powerUpColors = listOf(
-    Color(0xFF5E35B1),
+    Color(0xF1E5E5E5),
+    Color(0xF1E5E5E5),
+    Color(0xF1E5E5E5),
+    /* Color(0xFF5E35B1),
     Color(0xFF0097A7),
-    Color(0xFFF57C00)
+    Color(0xFFF57C00) */
 )
 
 val powerUpIcons = listOf(
-    R.drawable.ic_pu_freeze,
-    R.drawable.ic_pu_magic,
-    R.drawable.ic_pu_shield
+    R.drawable.ic_pu_freeze_locked,
+    R.drawable.ic_pu_magic_locked,
+    R.drawable.ic_pu_shield_locked
 )
 
 val materialGoals = mapOf("transformasi_geometri" to listOf(
@@ -281,13 +300,13 @@ val sampleStates = listOf(
     ScorestreakState(
         type = ScoreType.UPS,
         imageRes = R.drawable.ic_ss_wrong1,
-        title = "Ups, coba lagi!!",
+        title = "Ups, coba lagi!",
         subtitle = "Kamu menjawab salah 1 soal"
     ),
     ScorestreakState(
         type = ScoreType.NOT_FOCUSED,
         imageRes = R.drawable.ic_ss_wrong2,
-        title = "Gak fokus ya??",
+        title = "Gak fokus ya?",
         subtitle = "Kamu menjawab salah lebih dari 2 soal beruntun"
     ),
     ScorestreakState(
@@ -297,3 +316,43 @@ val sampleStates = listOf(
         subtitle = "Jawab soal berikutnya dengan lebih cepat"
     )
 )
+
+val likertScaleLabels = listOf(
+    "Sangat Tidak Setuju",
+    "Tidak Setuju",
+    "Netral",
+    "Setuju",
+    "Sangat Setuju"
+)
+
+val validatorQuestion = listOf(
+    ValidatorQuestion("m1", "Materi yang disajikan dalam media pembelajaran sesuai dengan kurikulum yang digunakan.", 1, "Ketepatan"),
+    ValidatorQuestion("m2", "Materi yang disajikan sesuai dengan Standar Kompetensi (SK) dan Kompetensi Dasar (KD).", 1, "Kepentingan"),
+    ValidatorQuestion("m3", "Materi yang disajikan lengkap.", 1 ,"Kelengkapan"),
+    ValidatorQuestion("m4", "Penjelasan materi yang disajikan jelas.", 1, "Keseimbangan"),
+    ValidatorQuestion("m5", "Materi yang disajikan menarik.", 1, "Minat/perhatian" ),
+    ValidatorQuestion("m6", "Materi dijelaskan dengan urutan yang benar.", 1, "Kesesuaian dengan situasi siswa"),
+    ValidatorQuestion("m7", "Terdapat soal-soal latihan.", 2, "Kesempatan belajar" ),
+    ValidatorQuestion("m8", "Materi yang disajikan sesuai dengan level siswa kelas XI.", 2, "Bantuan untuk belajar"),
+    ValidatorQuestion("m9", "Penjelasan yang disajikan dapat memudahkan siswa dalam memahami materi.", 2, "Bantuan untuk belajar"),
+    ValidatorQuestion("m10", "Konten yang terdapat pada media pembelajaran dapat memotivasi semangat belajar siswa.", 2, "Kualitas memotivasi"),
+    ValidatorQuestion("m11", "Terdapat sumber belajar lain berupa tautan ke laman.", 2, "Hubungan dengan program pembelajaran lain"),
+    ValidatorQuestion("m12", "Media sesuai untuk digunakan dalam kegiatan belajar secara berkelompok.", 2, "Kualitas sosial interaksi instruksional"),
+    ValidatorQuestion("m13", "Terdapat evaluasi untuk mengukur penguasaan materi.", 2, "Kualitas tes dan penilaiannya" ),
+    ValidatorQuestion("m14", "Media yang digunakan mampu memberikan pengalaman belajar bagi siswa.", 2, "Dampak bagi siswa"),
+    ValidatorQuestion("m15", "Media pembelelajaran dapat digunakan dalam kegiatan belajar-mengajar di kelas.", 2, "Dampak bagi guru dan pembelajaran"),
+    ValidatorQuestion("me1", "Perintah yang terdapat di dalam media dapat diulang kapan pun.", 1, "Fleksibilitas instruksional"),
+    ValidatorQuestion("me2", "Evaluasi yang terdapat di dalam media dapat meningkatkan motivasi belajar siswa.", 1, "Kualitas Memotivasi"),
+    ValidatorQuestion("me3", "Jenis huruf yang digunakan terlihat jelas dan mudah dibaca.", 2, "Keterbacaan"),
+    ValidatorQuestion("me4", "Bahasa yang digunakan sesuai dengan PUEBI.", 2, "Keterbacaan"),
+    ValidatorQuestion("me5", "Terdapat petunjuk penggunaan media.", 2, "Kemudahan Penggunaan"),
+    ValidatorQuestion("me6", "Media mudah untuk dioperasikan.", 2, "Kemudahan Penggunaan"),
+    ValidatorQuestion("me7", "Gambar yang disajikan terlihat jelas dan tidak terpecah-pecah.", 2, "Kualitas tampilan"),
+    ValidatorQuestion("me8", "Animasi yang digunakan dalam media sesuai dengan tingkatan siswa SMA.", 2, "Kualitas tampilan"),
+    ValidatorQuestion("me9", "Tampilan di setiap halaman konsisten.", 2, "Kualitas tampilan"),
+    ValidatorQuestion("me10", "Warna teks dalam media yang disajikan selaras dengan latar belakang yang digunakan.", 2, "Kualitas tampilan"),
+    ValidatorQuestion("me11", "Semua tombol yang terdapat di dalam media berfungsi dengan semestinya.", 2, "Kualitas penanganan jawaban"),
+    ValidatorQuestion("me12", "Media dapat dibuka dengan cepat.", 2, "Kualitas pengelolaan program"),
+    ValidatorQuestion("me13", "Media yang dikembangkan dapat dengan mudah diakses oleh pengguna.", 2, "Kualitas pendokumentasian")
+)
+

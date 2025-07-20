@@ -3,6 +3,8 @@ package com.LambdaProject.MathArt.ui.Pages.Dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -10,6 +12,7 @@ import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,11 +22,17 @@ import com.LambdaProject.MathArt.Data.sampleMaterials
 import com.LambdaProject.MathArt.ViewModels.DashboardViewModel
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.model.MaterialItem
+import com.google.accompanist.pager.HorizontalPager
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SectionTitle(title: String) {
-    Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    Text(
+        text = title,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(start = 16.dp)
+    )
     Spacer(modifier = Modifier.height(8.dp))
 }
 
@@ -31,14 +40,13 @@ fun SectionTitle(title: String) {
 fun DashboardBody (navController: NavController, viewModel: DashboardViewModel = viewModel(), onMaterialSelected: (MaterialItem) -> Unit) {
     val materialStatusMap by viewModel.materialStatusMap.collectAsState()
     val isLoading = materialStatusMap.isEmpty()
-    /* var selectedMaterial by remember { mutableStateOf<MaterialItem?>(null) }
-    var showRangkumanCard by remember { mutableStateOf(false) } */
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val horizontalPadding = (screenWidth - 300.dp) / 2
 
     Box(
         modifier = Modifier
-            .padding(horizontal = 16.dp)
             .background(Color(0xFFF7FAFF))
     ) {
         Column {
@@ -54,38 +62,36 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                         .fillMaxWidth()
                         .height(220.dp),
                 ) {
-                    LazyRow(
+                    val pagerState = rememberPagerState(pageCount = { sampleMaterials.size })
+                    val itemCount = sampleMaterials.size
+
+                    HorizontalPager(
+                        state = pagerState,
+                        contentPadding = if (itemCount == 1)
+                            PaddingValues(start = horizontalPadding, end = horizontalPadding)
+                        else
+                            PaddingValues(start = 20.dp, end = 48.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        items(sampleMaterials, key = { it.id }) { material ->
-                            val isActive = materialStatusMap[material.id] == true
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        val material = sampleMaterials[page]
+                        val isActive = materialStatusMap[material.id] == true
+
+                        Box(modifier = Modifier.padding(end = if (page == itemCount - 1) 0.dp else 20.dp)) {
                             MaterialCard(
                                 material = material,
                                 isActive = isActive,
                                 onClickLearn = {
                                     if (!isActive) {
-                                        onMaterialSelected(it)
+                                        onMaterialSelected(material)
                                     } else {
                                         navController.navigate("material_screen/${userId}/${material.id}")
                                     }
                                 }
                             )
                         }
-                    }
 
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .width(75.dp)
-                            .fillMaxHeight()
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(Color.Transparent, Color(0xFFf7f7f7).copy(alpha = 0.9f))
-                                )
-                            )
-                            .blur(12.dp)
-                    )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -99,25 +105,22 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    items(sampleCategories) { category ->
-                        CategoryCard(category)
+                    itemsIndexed(sampleCategories) { index, category ->
+                        Row {
+                            if (index == 0) {
+                                Spacer(modifier = Modifier.width(16.dp))
+                            }
+                            CategoryCard(category)
+
+                            if (index == sampleCategories.lastIndex) {
+                                Spacer(modifier = Modifier.width(16.dp))
+                            }
+                        }
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .width(75.dp)
-                        .fillMaxHeight()
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(Color.Transparent, Color(0xFFf7f7f7).copy(alpha = 0.9f))
-                            )
-                        )
-                        .blur(12.dp)
-                )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            SectionTitle(title = "Yang Sedang Dipelajari")
+            SectionTitle(title = "Sedang Dipelajari")
             val activeSessions = remember(materialStatusMap) {
                 sampleMaterials.filter { materialStatusMap[it.id] == true }
             }
@@ -127,15 +130,37 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                 if (activeSessions.isEmpty()) {
                     EmptyKategoriBox()
                 } else {
-                    LazyRow {
-                        items(activeSessions, key = { it.id }) { material ->
-                            MaterialCard(
-                                material = material,
-                                isActive = true,
-                                onClickLearn = {
-                                    navController.navigate("material_screen/${userId}/${material.id}")
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(175.dp),
+                    ) {
+                        val pagerState = rememberPagerState(pageCount = { activeSessions.size })
+                        val itemCount = activeSessions.size
+
+                        HorizontalPager(
+                            state = pagerState,
+                            contentPadding = /*if (itemCount == 1)
+                                PaddingValues(start = horizontalPadding, end = horizontalPadding)
+                            else */
+                                PaddingValues(start = 20.dp, end = 48.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top
+                        ) { page ->
+                            val material = activeSessions[page]
+
+                            Box(modifier = Modifier.padding(end = if (page == itemCount - 1) 0.dp else 20.dp)) {
+                                userId?.let { uid ->
+                                    ActiveMaterialCard(
+                                        userId = uid,
+                                        material = material,
+                                        isActive = true,
+                                        onClickLearn = {
+                                            navController.navigate("material_screen/$uid/${material.id}")
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }

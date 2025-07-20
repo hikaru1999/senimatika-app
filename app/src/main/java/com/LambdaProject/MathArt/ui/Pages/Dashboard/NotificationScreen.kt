@@ -36,7 +36,7 @@ import java.util.Locale
 import java.text.SimpleDateFormat
 import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class, /* ExperimentalMaterialApi::class */)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationScreen(navController: NavController) {
     val viewModel: NotificationViewModel = viewModel()
@@ -83,7 +83,7 @@ fun NotificationScreen(navController: NavController) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Belum ada notifikasi",
+                        text = "Tidak ada notifikasi",
                         fontFamily = helveticaFont,
                         fontWeight = FontWeight.Medium
                     )

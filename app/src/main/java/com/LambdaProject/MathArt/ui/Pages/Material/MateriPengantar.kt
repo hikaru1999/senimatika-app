@@ -19,13 +19,19 @@ import com.LambdaProject.MathArt.R
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MateriPengantar(onNext: () -> Unit) {
+fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isAnswered by remember { mutableStateOf(false) }
     val correctAnswer = "Parang"
     val isCorrect = selectedOption == correctAnswer
+
+    LaunchedEffect(currentPage) {
+        if (currentPage != myPage) {
+            YouTubePlayerManager.pauseAll()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -39,7 +45,17 @@ fun MateriPengantar(onNext: () -> Unit) {
             fontFamily = interFontFamily,
             fontWeight = FontWeight.Bold
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(16.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) {
+            MyYouTubePlayer(videoId = "1M86rKgqdzo")
+        }
+
+        Spacer(Modifier.height(16.dp))
         Text(
             text = buildAnnotatedString {
                 withStyle(
@@ -175,12 +191,23 @@ fun MateriPengantar(onNext: () -> Unit) {
                 ) {
                     append("Transformasi geometri adalah sebuah ilmu yang mempelajari proses perubahan suatu bidang geometri yang meliputi posisi, besar, dan bentuknya sendiri yang diakibatkan karena translasi, refleksi, rotasi, dilatasi, transformasi bersesuaian, perubahan skala, dan komposisi dua transformasi.\n\n")
                     append("Transformasi geometri juga dapat dinyatakan sebagai perubahan pada sebuah bidang geometri yang mencamtukan posisi, besar, dan bentuknya sendiri.\n\n")
-                    append("Pada kesempatan pembelajaran ini, transformasi geometri akan dibatasi menjadi translasi, refleksi, rotasi, dan dilatasi.")
+                    append("Pada kesempatan pembelajaran ini, transformasi geometri akan dibatasi menjadi translasi, refleksi, rotasi, dan dilatasi.\n\n")
+                    append("Sebelum eksplorasi lebih lanjut, yuk coba renungkan dan jawab pertanyaan yang terdapat pada video ini:")
                 }
             },
             fontFamily = interFontFamily,
             style = MaterialTheme.typography.bodyLarge
         )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) {
+            MyYouTubePlayer(videoId = "akQBAB5cyIk")
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {

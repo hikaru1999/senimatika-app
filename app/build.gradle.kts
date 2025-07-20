@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     id("com.google.gms.google-services")
     id("com.google.dagger.hilt.android")
     kotlin("kapt")
@@ -15,9 +16,8 @@ android {
         applicationId = "com.LambdaProject.MathArt"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "3.0.0"
-
+        versionCode = 7
+        versionName = "3.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -81,15 +81,20 @@ dependencies {
     // Navigation & Media
     implementation("androidx.navigation:navigation-compose:2.8.9")
     implementation(libs.androidx.media3.common.ktx)
+    implementation("androidx.webkit:webkit:1.14.0")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+
 
     // Datastore
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation(libs.kotlinx.serialization.json)
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.datastore:datastore:1.1.7")
 
     // Coil (Image loading)
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     // Material3
-    implementation("androidx.compose.material3:material3:1.4.0-alpha13") // ⚠️ Periksa kompatibilitas dengan BOM
+    implementation("androidx.compose.material3:material3:1.4.0-alpha13")
     implementation(libs.androidx.material3)
 
     // AndroidX Core & Activity

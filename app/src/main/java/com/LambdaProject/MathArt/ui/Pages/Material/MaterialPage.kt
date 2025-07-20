@@ -27,6 +27,7 @@ import com.LambdaProject.MathArt.BottomNavigationMenu
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaterialScreen(userId: String, materialId: String, navController: NavController) {
+
     val tabs = listOf("Pengantar", "Translasi", "Refleksi", "Rotasi", "Dilatasi", "Kuis", "Hasil Belajar")
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
@@ -54,13 +55,12 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
     }
 
     Scaffold(
-        /* bottomBar = { BottomNavigationMenu(navController) },*/
         topBar = {
             TopAppBar(
-                title = { Text("Transformasi Geometri", fontWeight = FontWeight.Bold) },
+                title = { Text("Transformasi Geometri", fontWeight = FontWeight.Bold, fontFamily = interFontFamily) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack()}) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -134,11 +134,37 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                     coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
                 }
                 when (page) {
-                    0 -> MateriPengantar(onNext = { goToNextPage(1) })
-                    1 -> MateriTranslasi(onNext = { goToNextPage(2) })
-                    2 -> MateriRefleksi(onNext = { goToNextPage(3) })
-                    3 -> MateriRotasi(onNext = { goToNextPage(4) })
+                    0 -> MateriPengantar(
+                        currentPage = pagerState.currentPage,
+                        myPage = 0,
+                        onNext = {
+                            goToNextPage(1)
+                        }
+                    )
+                    1 -> MateriTranslasi(
+                        currentPage = pagerState.currentPage,
+                        myPage = 1,
+                        onNext = {
+                            goToNextPage(2)
+                        }
+                    )
+                    2 -> MateriRefleksi(
+                        currentPage = pagerState.currentPage,
+                        myPage = 2,
+                        onNext = {
+                            goToNextPage(3)
+                        }
+                    )
+                    3 -> MateriRotasi(
+                        currentPage = pagerState.currentPage,
+                        myPage = 3,
+                        onNext = {
+                            goToNextPage(4)
+                        }
+                    )
                     4 -> MateriDilatasi(
+                        currentPage = pagerState.currentPage,
+                        myPage = 4,
                         onNext = {
                             goToNextPage(5)
                         },
@@ -156,6 +182,8 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
 
                         if (isQuizReady) {
                             QuizScreen(
+                                currentPage = pagerState.currentPage,
+                                myPage = 5,
                                 viewModel = quizViewModel,
                                 onQuizFinished = {
                                     quizViewModel.resetQuizReadyState()

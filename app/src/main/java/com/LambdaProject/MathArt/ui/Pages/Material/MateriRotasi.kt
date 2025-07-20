@@ -19,9 +19,15 @@ import com.LambdaProject.MathArt.interFontFamily
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MateriRotasi(onNext: () -> Unit) {
+fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+
+    LaunchedEffect(currentPage) {
+        if (currentPage != myPage) {
+            YouTubePlayerManager.pauseAll()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -67,7 +73,7 @@ fun MateriRotasi(onNext: () -> Unit) {
         ) {
             Column {
                 Text(
-                    text = "Sifat-sifat Translasi",
+                    text = "Sifat-sifat Rotasi",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = interFontFamily,
@@ -111,6 +117,21 @@ fun MateriRotasi(onNext: () -> Unit) {
                 .fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Agar lebih jelas, yuk simak penjelasan di bawah ini:",
+            fontFamily = interFontFamily,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Justify
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) {
+            MyYouTubePlayer(videoId = "iUt_Clfri4w")
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {

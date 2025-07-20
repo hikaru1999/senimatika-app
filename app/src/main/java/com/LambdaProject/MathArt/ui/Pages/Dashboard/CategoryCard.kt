@@ -1,8 +1,11 @@
 package com.LambdaProject.MathArt.ui.Pages.Dashboard
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.*
@@ -13,10 +16,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.model.CategoryItem
 
-@Composable
+/* @Composable
 fun CategoryCard(category: CategoryItem) {
     Card(
         modifier = Modifier
@@ -51,6 +55,63 @@ fun CategoryCard(category: CategoryItem) {
                 fontFamily = interFontFamily,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+} */
+
+@Composable
+fun CategoryCard(category: CategoryItem) {
+    Box(
+        modifier = Modifier
+            .size(100.dp)
+            .padding(8.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxSize(),
+            shape = RoundedCornerShape(5.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFD7EBFF)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    painter = painterResource(id = category.imageRes),
+                    contentDescription = category.name,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(5.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = category.name,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interFontFamily,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        if (category.isLocked) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color(0xAA888888), shape = RoundedCornerShape(5.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "locked",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color.White
+                )
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ fun ProfileHeader(username: String, fullName: String, email: String, coins: Int)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xffF7FAFF))
+            .background(Color(0xFFF7FAFF))
             .padding(20.dp),
         contentAlignment = Alignment.CenterStart
     ) {

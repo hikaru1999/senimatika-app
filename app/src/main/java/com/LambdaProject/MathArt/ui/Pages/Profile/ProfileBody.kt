@@ -48,7 +48,6 @@ fun ProfileBody(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
                 .height(125.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(12.dp),
@@ -56,28 +55,39 @@ fun ProfileBody(
                 containerColor = Color(0xFFFFFFFF)
             ),
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.CenterStart
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
                     modifier = Modifier
-                        .padding(16.dp)
+                        .weight(0.3f)
+                        .padding(start = 20.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Image(
                         painter = painterResource(R.drawable.ic_clock_yellow),
                         contentDescription = "Durasi Belajar",
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(100.dp)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(0.7f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column (horizontalAlignment = Alignment.Start
+                    ) {
                         Text(
                             text = "Durasi Belajar Minggu Ini",
                             fontFamily = interFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                            fontSize = 14.sp
                         )
                         Text(
                             text = formatDuration(studyDuration),
@@ -97,7 +107,7 @@ fun ProfileBody(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Materi Aktif",
@@ -109,7 +119,7 @@ fun ProfileBody(
         Spacer(modifier = Modifier.height(16.dp))
 
         activeSessions.forEach { material ->
-            CompactMaterialCard(userId, material = material)
+            MaterialTracker(userId, material = material)
         }
 
         if (activeSessions.isEmpty()) {
@@ -142,6 +152,35 @@ fun ProfileBody(
             fontFamily = interFontFamily
         )
         Spacer(modifier = Modifier.height(16.dp))
+        OutlinedButton(
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            border = BorderStroke(1.dp, Color.Black),
+            onClick = { navController.navigate("validator_screen") },
+            shape = RoundedCornerShape(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_assessment),
+                    contentDescription = "Button Assessment",
+                    modifier = Modifier.height(20.dp),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Beri Penilaian Aplikasi",
+                    color = Color.Black,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interFontFamily
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedButton(
             modifier = Modifier.fillMaxWidth().height(50.dp),
             border = BorderStroke(1.dp, Color.Black),

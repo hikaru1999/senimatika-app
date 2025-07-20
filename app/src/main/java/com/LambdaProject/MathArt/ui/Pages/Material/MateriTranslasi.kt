@@ -19,9 +19,15 @@ import com.LambdaProject.MathArt.R
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MateriTranslasi(onNext: () -> Unit) {
+fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+
+    LaunchedEffect(currentPage) {
+        if (currentPage != myPage) {
+            YouTubePlayerManager.pauseAll()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -106,6 +112,7 @@ fun MateriTranslasi(onNext: () -> Unit) {
             fontFamily = interFontFamily,
             style = MaterialTheme.typography.bodyLarge
         )
+
         Image(
             painter = painterResource(id = R.drawable.img_parang_ann),
             contentDescription = "Batik Parang Translasi",
@@ -116,10 +123,39 @@ fun MateriTranslasi(onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Motif yang ditandai dengan warna merah menunjukkan bahwa terdapat bentuk hasil translasi pada motif batik Parang di atas.",
+            text = "Motif yang ditandai dengan warna merah menunjukkan bahwa terdapat bentuk hasil translasi pada motif batik Parang di atas.\n",
             fontFamily = interFontFamily,
             textAlign = TextAlign.Justify
         )
+        Text(
+            text = "Nah, sekarang perhatikan motif batik di bawah ini:",
+            fontFamily = interFontFamily,
+            textAlign = TextAlign.Justify
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Image(
+            painter = painterResource(id = R.drawable.img_batik_garutan_sida_luhur),
+            contentDescription = "Batik Parang Translasi",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Dapatkah kamu menentukan mana motif yang merepresentasikan translasi dari batik di atas? Yuk kita simak video ini!",
+            fontFamily = interFontFamily,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Justify
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+        ) {
+            MyYouTubePlayer(videoId = "baskAXQZxAc")
+        }
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(thickness = 1.dp)
         Spacer(Modifier.height(16.dp))

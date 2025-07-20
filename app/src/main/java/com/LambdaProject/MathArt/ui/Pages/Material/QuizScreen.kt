@@ -19,7 +19,7 @@ import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import com.LambdaProject.MathArt.model.unlockProAchievement
 
 @Composable
-fun QuizScreen(viewModel: QuizViewModel, onQuizFinished: () -> Unit, userId: String, materialId: String) {
+fun QuizScreen(viewModel: QuizViewModel, onQuizFinished: () -> Unit, userId: String, materialId: String, currentPage: Int, myPage: Int,) {
     /* val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid */
     val question = viewModel.currentQuestion
@@ -31,6 +31,11 @@ fun QuizScreen(viewModel: QuizViewModel, onQuizFinished: () -> Unit, userId: Str
     val scrollState = rememberScrollState()
     var isReady by remember { mutableStateOf(false) }
 
+    LaunchedEffect(currentPage) {
+        if (currentPage != myPage) {
+            YouTubePlayerManager.pauseAll()
+        }
+    }
 
     LaunchedEffect(totalQuestions) {
         if (totalQuestions > 0) {

@@ -3,39 +3,27 @@ package com.LambdaProject.MathArt
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
-/* import android.util.Log */
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.remember
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.*
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.LambdaProject.MathArt.ViewModels.DashboardViewModel
 import com.LambdaProject.MathArt.ViewModels.QuizViewModel
+import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.model.StudyDurationManager
+import com.LambdaProject.MathArt.model.ScorestreakState
 import com.LambdaProject.MathArt.ui.Pages.Material.QuizScreen
 import com.LambdaProject.MathArt.ui.theme.LearnApplicationTheme
-/* import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.first */
 import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.*
 import com.LambdaProject.MathArt.Data.AppLifeCycleObserver
-import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.ui.Pages.Profile.AchievementPage
 import com.LambdaProject.MathArt.ui.Pages.Dashboard.DashboardScreen
 import com.LambdaProject.MathArt.ui.Pages.IntroScreen
@@ -51,17 +39,21 @@ import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizPage
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizMaster
 import com.LambdaProject.MathArt.ui.Pages.SplashScreen
 import com.LambdaProject.MathArt.ui.Pages.Register.SuccessPage
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
-import androidx.lifecycle.viewModelScope
-import com.LambdaProject.MathArt.model.ScorestreakState
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizResult
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.LambdaProject.MathArt.Data.validatorQuestion
+import com.LambdaProject.MathArt.ViewModels.ValidatorViewModel
+import com.LambdaProject.MathArt.model.ValidatorQuestion
+import com.LambdaProject.MathArt.model.ValidatorRole
+import com.LambdaProject.MathArt.ui.Pages.ForgotPasswordScreen
+import com.LambdaProject.MathArt.ui.Pages.Profile.QuestionnaireMasterScreen
+import com.LambdaProject.MathArt.ui.Pages.Profile.ValidationSummaryScreen
+import com.LambdaProject.MathArt.ui.Pages.Profile.ValidatorRoleScreen
+import com.google.firebase.auth.FirebaseAuth
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    /* private var sessionStartTime: Long = 0L
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance() */
 
     private fun forceLightMode() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
@@ -75,10 +67,6 @@ class MainActivity : ComponentActivity() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifeCycleObserver())
         val userPreferences = UserPreferences(this)
         lifecycleScope.launch {
-            /* val user = FirebaseAuth.getInstance().currentUser
-            val userId = user?.uid */
-
-            /* val isIntroAlreadyShown = userPreferences.isIntroShown.first() */
             val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
             sharedPreferences.getString("USERNAME_KEY", null)
 
@@ -95,7 +83,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable("splash") { SplashScreen(navController) }
                         composable("intro") { IntroScreen(navController, userPreferences) }
-                        composable(route = "profile") { ProfileScreen(navController) }
+                        composable("profile") { ProfileScreen(navController) }
                         composable(
                             route = "material_screen/{userId}/{materialId}",
                             arguments = listOf(
@@ -111,14 +99,46 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
+                        composable(
+                            route = "kuesioner_screen/{role}",
+                            arguments = listOf(navArgument("role") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val roleArg = backStackEntry.arguments?.getString("role") ?: return@composable
+                            val role = ValidatorRole.valueOf(roleArg.uppercase())
+                            val viewModel: ValidatorViewModel = hiltViewModel()
+                            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                            val allQuestions = validatorQuestion
+
+                            QuestionnaireMasterScreen(
+                                viewModel = viewModel,
+                                role = role,
+                                allQuestions = allQuestions,
+                                userId = userId,
+                                onSuccessSubmit = { navController.popBackStack() },
+                                navController = navController
+                            )
+                        }
+                        composable(
+                            route = "validation_summary/{role}",
+                            arguments = listOf(navArgument("role") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val roleArg = backStackEntry.arguments?.getString("role")
+                            val role = ValidatorRole.valueOf(roleArg?.uppercase() ?: "MATERI")
+                            ValidationSummaryScreen(role = role, navController = navController)
+                        }
+                        composable("validator_screen") {
+                            ValidatorRoleScreen(
+                                navController = navController,
+                                onSelectMediaExpert = { navController.navigate("kuesioner_screen/media") },
+                                onSelectMaterialExpert = { navController.navigate("kuesioner_screen/materi") }
+                            )
+                        }
                         composable(route = "achievement") { AchievementPage(navController) }
                         composable(route = "Senimatika_screen") { SenimatikaScreen(navController) }
-                        composable("notification") { /* navBackStackEntry ->
-                            val viewModel: DashboardViewModel = viewModel() */
-                            NotificationScreen(navController)
-                        }
+                        composable("notification") { NotificationScreen(navController) }
                         composable("login") { LoginScreen(navController) }
                         composable("register") { RegisterScreen(navController) }
+                        composable("ForgotPassword") { ForgotPasswordScreen(navController) }
                         composable("ProfileForm/{username}/{email}/{password}",
                             arguments = listOf(
                                 navArgument("username") { type = NavType.StringType },
@@ -150,9 +170,9 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         ) { backStackEntry ->
-                            val viewModel: DashboardViewModel = viewModel()
+                            val DashViewModel: DashboardViewModel = viewModel()
                             val userName = backStackEntry.arguments?.getString("userName") ?: "User"
-                            DashboardScreen(navController, userName, viewModel)
+                            DashboardScreen(navController, userName, DashViewModel)
                         }
 
                         composable(
@@ -164,8 +184,12 @@ class MainActivity : ComponentActivity() {
                         ) { backStackEntry ->
                             val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
                             val materialId = backStackEntry.arguments?.getString("materialId") ?: "transformasi_geometri"
+                            val tabs = listOf("Pengantar", "Translasi", "Refleksi", "Rotasi", "Dilatasi", "Kuis", "Hasil Belajar")
+                            val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
 
                             QuizScreen(
+                                currentPage = pagerState.currentPage,
+                                myPage = 5,
                                 viewModel = quizViewModel,
                                 onQuizFinished = { navController.navigate("summary") },
                                 userId = userId,
@@ -218,13 +242,9 @@ class MainActivity : ComponentActivity() {
                             val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
                             val questions by viewModel.questions.collectAsState()
                             val currentIndex by viewModel.currentQuestionIndex.collectAsState()
+                            val viewModel: OnlineQuizViewModel = hiltViewModel()
                             var showScoreSnackbar by remember { mutableStateOf(false) }
                             var scoreState by remember { mutableStateOf<ScorestreakState?>(null) }
-                            val viewModel: OnlineQuizViewModel = hiltViewModel()
-
-
-                            Log.d("QuizMaster", "Material aktif saat ini: $materialId")
-                            Log.d("ViewModelCheck", "ViewModel instance in MainActivity hash: ${viewModel.hashCode()}")
 
                             OnlineQuizMaster(
                                 navController = navController,
@@ -239,7 +259,6 @@ class MainActivity : ComponentActivity() {
                                 },
                                 viewModel = viewModel,
                                 onNextClick = {
-                                    Log.d("onNextClick", "Material aktif saat ini: $materialId")
                                     if (currentIndex < questions.lastIndex) {
                                         viewModel.nextQuestion()
                                     }
@@ -262,14 +281,11 @@ class MainActivity : ComponentActivity() {
                             val materialId = backStackEntry.arguments?.getString("materialId") ?: ""
                             val userId = backStackEntry.arguments?.getString("userId") ?: ""
 
-                            Log.d("QuizResult", "Material aktif saat ini: $materialId")
-                            Log.d("QuizResult", "UserId aktif saat ini: $userId")
-
                             OnlineQuizResult(
                                 onClickLeaderboard = {
                                     navController.navigate("OnlineQuizLobby/$userId/leaderboard") {
                                         popUpTo("OnlineQuizPage") {
-                                            inclusive = false // Jangan hapus landing-nya
+                                            inclusive = false
                                         }
                                         launchSingleTop = true
                                     }
@@ -291,6 +307,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
                 when (event) {

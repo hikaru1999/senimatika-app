@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ViewModels
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.LiveData
@@ -10,6 +11,7 @@ import com.LambdaProject.MathArt.Data.AuthRepo
 import com.LambdaProject.MathArt.model.Challenge
 import com.LambdaProject.MathArt.Data.ChallengeRepo
 import com.LambdaProject.MathArt.Data.QuizResultRepository
+import com.LambdaProject.MathArt.Data.ScoreSoundManager
 import com.LambdaProject.MathArt.model.OnlineUser
 import com.LambdaProject.MathArt.Data.sampleOnlineQuiz
 import com.LambdaProject.MathArt.Data.sampleStates
@@ -40,6 +42,9 @@ class OnlineQuizViewModel @Inject constructor(
 
     private val _materials = MutableStateFlow(sampleOnlineQuiz)
     val materials: StateFlow<List<OnlineQuizDesc>> = _materials
+
+    private val _scorestreakState = MutableStateFlow<ScorestreakState?>(null)
+    val scorestreakState: StateFlow<ScorestreakState?> = _scorestreakState
 
     private val _selectedMaterial = MutableStateFlow<OnlineQuizDesc?>(null)
     val selectedMaterial: StateFlow<OnlineQuizDesc?> = _selectedMaterial
@@ -127,7 +132,7 @@ class OnlineQuizViewModel @Inject constructor(
     }
 
     fun loadQuizForSelectedMaterial(UserId: String, materialId: String) {
-        Log.d("OnlineQuizViewModel","Loading quiz for: $$UserId")
+        Log.d("OnlineQuizViewModel","Loading quiz for: $UserId")
         Log.d("OnlineQuizViewModel","Loading quiz for: $materialId")
 
         val quiz = transform_geo[materialId] ?: run {
@@ -139,7 +144,7 @@ class OnlineQuizViewModel @Inject constructor(
             question.copy(questionNumber = index + 1) // supaya nomor soal tetap urut dari 1
         } */
 
-        _questions.value = quiz /*shuffledQuiz*/
+        _questions.value = quiz
         _currentQuestionIndex.value = 0
         Log.d("OnlineQuizViewModel", "Soal berhasil dimuat: ${_questions.value.size} soal")
     }
@@ -175,8 +180,8 @@ class OnlineQuizViewModel @Inject constructor(
             }
 
             QuestionType.CHECKBOX -> {
-                !isTimeout && currentQuestion.correctAnswers.toList() == selectedAnswers
-                /* !isTimeout && currentQuestion.correctAnswers.toSet() == selectedAnswers.toSet() */
+                /* !isTimeout && currentQuestion.correctAnswers.toList() == selectedAnswers */
+                !isTimeout && currentQuestion.correctAnswers.toSet() == selectedAnswers.toSet()
             }
 
             QuestionType.SHORT_ANSWER -> {
@@ -238,6 +243,7 @@ class OnlineQuizViewModel @Inject constructor(
 
         scoreType?.let {
             sampleStates.find { it.type == scoreType }?.let { state ->
+                _scorestreakState.value = state
                 onStreakUpdate(state)
             }
         }

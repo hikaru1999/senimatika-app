@@ -63,7 +63,6 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 10.dp, start = 0.dp, end = 0.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top
             ) {
@@ -84,7 +83,7 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 selectedMaterial?.let { material ->
-                    if (showRangkumanCard && selectedMaterial != null)
+                    if (showRangkumanCard /* && selectedMaterial != null */)
                     {
                         RangkumanCard(
                             material = selectedMaterial!!,
