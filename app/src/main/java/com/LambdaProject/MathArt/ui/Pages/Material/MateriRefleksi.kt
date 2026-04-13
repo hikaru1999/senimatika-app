@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -14,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.*
-import com.LambdaProject.MathArt.Data.stepOfReflect
+import com.LambdaProject.MathArt.data.ReflectIndicator
 import com.LambdaProject.MathArt.R
 import com.google.firebase.auth.FirebaseAuth
 
@@ -37,263 +39,215 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 16.dp)
-            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.img_reflection),
-            contentDescription = "Refleksi",
+        // Section: Header Image
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp),
-            contentScale = ContentScale.Fit
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Refleksi",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = buildAnnotatedString {
-                withStyle(
-                    style = ParagraphStyle(
-                        textAlign = TextAlign.Justify,
-                        lineHeight = 24.sp
-                    )
-                ) {
-                    append("Refleksi merupakan perpindahan geometri yang memindahkan setiap titik suatu objek dengan menggunakan sifat bayangan cermin.\n")
-                }
-            },
-            fontFamily = interFontFamily,
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0XFFE8F9FE))
-            .padding(16.dp)
+                .height(200.dp)
+                .shadow(12.dp, RoundedCornerShape(24.dp)),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Column {
+            Image(
+                painter = painterResource(id = R.drawable.img_reflection),
+                contentDescription = "Refleksi",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().padding(16.dp)
+            )
+        }
+
+        // Section: Definition
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Refleksi (Pencerminan)",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E)
+                )
+            )
+            Text(
+                text = "Refleksi merupakan perpindahan geometri yang memindahkan setiap titik suatu objek dengan menggunakan sifat bayangan cermin.",
+                fontFamily = interFontFamily,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Justify,
+                lineHeight = 24.sp,
+                color = Color(0xFF455A64)
+            )
+        }
+
+        // Section: Properties
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFFE3F2FD),
+            border = BorderStroke(1.dp, Color(0xFF1976D2).copy(alpha = 0.1f))
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = "Sifat-sifat Refleksi",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
                     fontFamily = interFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = Color(0XFF2BA2FF)
+                    color = Color(0xFF1565C0)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                stepOfReflect.forEachIndexed{ index, poin ->
-                    Row(modifier = Modifier.padding(bottom = 8.dp)) {
-                        Text(
-                            text = "${index + 1}. ",
-                            fontFamily = interFontFamily,
-                        )
+                Spacer(modifier = Modifier.height(16.dp))
+                ReflectIndicator.forEachIndexed { index, poin ->
+                    Row(
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFF1976D2),
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("${index + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                         Text(
                             text = poin,
                             fontFamily = interFontFamily,
-                            textAlign = TextAlign.Justify
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Justify,
+                            lineHeight = 20.sp,
+                            color = Color(0xFF0D47A1)
                         )
                     }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = buildAnnotatedString {
-                withStyle(
-                    style = ParagraphStyle(
-                        textAlign = TextAlign.Justify,
-                        lineHeight = 24.sp
-                    )
-                ) {
-                    append("Perhatikan motif batik berikut! Kita dapat menemukan pola yang dihasilkan dari proses refleksi.\n")
-                }
-            },
-            fontFamily = interFontFamily,
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Image(
-            painter = painterResource(id = R.drawable.img_batik_refleksi),
-            contentDescription = "Batik Refleksi",
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Motif yang ditandai dengan warna merah menunjukkan bahwa terdapat bentuk hasil refleksi pada motif batik di atas.\n",
-            fontFamily = interFontFamily,
-            textAlign = TextAlign.Justify
-        )
-        Text(
-            text = "Nah, sekarang perhatikan motif batik di bawah ini:",
-            fontFamily = interFontFamily,
-            textAlign = TextAlign.Justify
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Image(
-            painter = painterResource(id = R.drawable.img_batik_parang_sido),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp),
-            contentScale = ContentScale.Crop
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Dapatkah kamu menentukan mana motif yang merepresentasikan refleksi dari batik di atas? Yuk kita simak video ini!",
-            fontFamily = interFontFamily,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Justify
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-        ) {
-            MyYouTubePlayer(videoId = "Cv_zkDAU6UY")
+
+        // Section: Case Study
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = "Eksplorasi Budaya",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = interFontFamily,
+                color = Color(0xFF1A237E)
+            )
+            Image(
+                painter = painterResource(id = R.drawable.img_batik_refleksi),
+                contentDescription = "Batik Refleksi",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.Crop
+            )
+            Text(
+                text = "Motif yang ditandai dengan warna merah menunjukkan adanya bentuk hasil refleksi pada motif batik di atas.",
+                fontFamily = interFontFamily,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFF8FFF5), shape = RoundedCornerShape(12.dp))
-                .padding(16.dp)
+
+        // Section: Interactive Quiz Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFFF0F4FF),
+            border = BorderStroke(1.dp, Color(0xFF5294FF).copy(alpha = 0.2f))
         ) {
-            Column {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "Kuis Singkat!",
+                    text = "Kuis Cepat",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
                     fontFamily = interFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    color = Color(0xFF1A237E)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.img_batik_parang_sido),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Berdasarkan ilustrasi di atas, apa nama dari motif batik tersebut?",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = interFontFamily
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF37474F)
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     listOf("Sido Mulyo", "Sido Luhur").forEach { option ->
                         val isSelected = selectedOption == option
-                        OutlinedButton(
-                            onClick = {
-                                if (!isAnswered) {
-                                    selectedOption = option
-                                    isAnswered = true
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f),
-                            shape = RoundedCornerShape(5.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = if (isSelected) Color(0xFFF4F4F4) else Color(0xFFFFFFFF)
-                            ),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
-                            )
+                        Surface(
+                            onClick = { if (!isAnswered) { selectedOption = option; isAnswered = true } },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) Color(0xFF5294FF) else Color.White,
+                            border = BorderStroke(1.dp, if (isSelected) Color.Transparent else Color(0xFFCFD8DC))
                         ) {
                             Text(
                                 text = option,
-                                fontFamily = interFontFamily,
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = if (isAnswered && isSelected && isCorrect) Color.Blue else Color.Black
+                                color = if (isSelected) Color.White else Color(0xFF1A237E)
                             )
                         }
                     }
                 }
-
+                
                 if (isAnswered) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = ParagraphStyle(
-                                    textAlign = TextAlign.Justify,
-                                    lineHeight = 22.sp
-                                )
-                            ) {
-                                if (isCorrect) {
-                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("Jawaban kamu benar! motif batik di atas merupakan Sido Mulyo.\n\n")
-                                    }
-                                } else {
-                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("Jawaban kamu belum tepat. Motif batik di atas merupakan Sido Mulyo.\n\n")
-                                    }
-                                }
-                                append("Batik Sido Mulyo berasal dari Surakarta, Jawa Tengah, dan Daerah Istimewa Yogyakarta. Motif ini memiliki makna yaitu kebahagiaan dan ketentraman.\n\n")
-                                append("Biasanya, motif batik ini digunakan dalam acara pernikahan adat Jawa")
-                            }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = if (isCorrect) "Tepat sekali! Ini adalah Batik Sido Mulyo." else "Hampir benar! Ini adalah Batik Sido Mulyo.",
+                        color = if (isCorrect) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        fontWeight = FontWeight.Bold,
                         fontFamily = interFontFamily
                     )
-                    Spacer(modifier = Modifier.align(Alignment.End))
                 }
-
             }
         }
-        Spacer(Modifier.height(16.dp))
-        HorizontalDivider(thickness = 1.dp)
-        Spacer(Modifier.height(16.dp))
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFF8FFF5), shape = RoundedCornerShape(12.dp))
-            .padding(16.dp)
+
+        // Section: Video
+        Surface(
+            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).shadow(8.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.Black
         ) {
-            Column {
-                Text(
-                    text = "Waktunya Mencoret!",
-                    fontFamily = interFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Tandai bagian dari motif batik berikut yang berhubungan dengan hasil refleksi",
-                    fontFamily = interFontFamily
-                )
+            MyYouTubePlayer(videoId = "Cv_zkDAU6UY")
+        }
+
+        // Section: Annotation
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFFF1F8E9),
+            border = BorderStroke(1.dp, Color(0xFF4CAF50).copy(alpha = 0.2f))
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("Waktunya Mencoret!", fontWeight = FontWeight.ExtraBold, color = Color(0xFF2E7D32))
                 Spacer(modifier = Modifier.height(12.dp))
                 PictureAnnotation(
                     imageRes = R.drawable.img_batik_sido_asih,
                     explanationImageRes = R.drawable.img_batik_sido_asih_ans,
-                    explanationText = "Motif batik di atas merupakan motif Sido Asih dari Daerah Istimewa Yogyakarta. Contoh hasil refleksi dapat dilihat pada gambar berikut.\n"
+                    explanationText = "Motif batik di atas merupakan motif Sido Asih dari Yogyakarta. Contoh hasil refleksi dapat dilihat pada gambar berikut."
                 )
             }
         }
-        Spacer(Modifier.height(16.dp))
+
+        // Bottom Button
         Button(
-            onClick = {
-                if (userId != null) {
-                    updateAccessiblePage(userId, 3)
-                }
-                onNext ()
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(5.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF0E60DD)
-            )
+            onClick = { if (userId != null) updateAccessiblePage(userId, 3); onNext() },
+            modifier = Modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
         ) {
-            Text(
-                text = "Buka: Rotasi",
-                fontFamily = interFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = Color.White
-            )
+            Text("Buka: Rotasi", fontFamily = interFontFamily, fontWeight = FontWeight.Black, fontSize = 16.sp)
         }
+        
+        Spacer(Modifier.height(32.dp))
     }
 }

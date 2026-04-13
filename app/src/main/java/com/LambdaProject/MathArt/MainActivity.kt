@@ -15,15 +15,15 @@ import androidx.navigation.navArgument
 import com.LambdaProject.MathArt.ViewModels.DashboardViewModel
 import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
-import com.LambdaProject.MathArt.model.StudyDurationManager
-import com.LambdaProject.MathArt.model.ScorestreakState
+import com.LambdaProject.MathArt.data.model.StudyDurationManager
+import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.ui.Pages.Material.QuizScreen
 import com.LambdaProject.MathArt.ui.theme.LearnApplicationTheme
 import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
-import com.LambdaProject.MathArt.Data.AppLifeCycleObserver
+import com.LambdaProject.MathArt.data.AppLifeCycleObserver
 import com.LambdaProject.MathArt.ui.Pages.Profile.AchievementPage
 import com.LambdaProject.MathArt.ui.Pages.Dashboard.DashboardScreen
 import com.LambdaProject.MathArt.ui.Pages.IntroScreen
@@ -42,10 +42,12 @@ import com.LambdaProject.MathArt.ui.Pages.Register.SuccessPage
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizResult
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.LambdaProject.MathArt.Data.validatorQuestion
+import com.LambdaProject.MathArt.data.validatorQuestion
 import com.LambdaProject.MathArt.ViewModels.ValidatorViewModel
-import com.LambdaProject.MathArt.model.ValidatorQuestion
-import com.LambdaProject.MathArt.model.ValidatorRole
+import com.LambdaProject.MathArt.data.model.ValidatorRole
+import com.LambdaProject.MathArt.ui.Pages.Exploration.ExplorationLandingScreen
+import com.LambdaProject.MathArt.ui.Pages.Exploration.ExplorationMapScreen
+import com.LambdaProject.MathArt.ui.Pages.Exploration.ExplorationLobbyScreen
 import com.LambdaProject.MathArt.ui.Pages.ForgotPasswordScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.QuestionnaireMasterScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.ValidationSummaryScreen
@@ -139,6 +141,16 @@ class MainActivity : ComponentActivity() {
                         composable("login") { LoginScreen(navController) }
                         composable("register") { RegisterScreen(navController) }
                         composable("ForgotPassword") { ForgotPasswordScreen(navController) }
+                        composable("ExplorationLandingPage") { ExplorationLandingScreen(navController) }
+                        
+                        composable(
+                            route = "ExplorationLobby/{mapId}",
+                            arguments = listOf(navArgument("mapId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val mapId = backStackEntry.arguments?.getString("mapId") ?: ""
+                            ExplorationLobbyScreen(mapId = mapId, navController = navController)
+                        }
+
                         composable("ProfileForm/{username}/{email}/{password}",
                             arguments = listOf(
                                 navArgument("username") { type = NavType.StringType },
@@ -301,6 +313,22 @@ class MainActivity : ComponentActivity() {
                                 materialId = materialId,
                                 userId = userId,
                                 quizList = quizList
+                            )
+                        }
+
+                        composable(
+                            route = "map/{mapId}/{bagItems}",
+                            arguments = listOf(
+                                navArgument("mapId") { type = NavType.StringType },
+                                navArgument("bagItems") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val mapId = backStackEntry.arguments?.getString("mapId") ?: "level_1"
+                            val bagItems = backStackEntry.arguments?.getString("bagItems") ?: ""
+                            ExplorationMapScreen(
+                                mapId = mapId,
+                                initialBag = bagItems,
+                                onBack = { navController.popBackStack() }
                             )
                         }
                     }

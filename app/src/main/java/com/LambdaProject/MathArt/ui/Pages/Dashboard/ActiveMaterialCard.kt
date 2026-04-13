@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.MaterialItem
+import com.LambdaProject.MathArt.data.model.MaterialItem
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.*

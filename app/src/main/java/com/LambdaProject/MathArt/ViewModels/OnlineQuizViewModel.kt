@@ -1,46 +1,45 @@
 package com.LambdaProject.MathArt.ViewModels
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.LambdaProject.MathArt.Data.AuthRepo
-import com.LambdaProject.MathArt.model.Challenge
-import com.LambdaProject.MathArt.Data.ChallengeRepo
-import com.LambdaProject.MathArt.Data.QuizResultRepository
-import com.LambdaProject.MathArt.Data.ScoreSoundManager
-import com.LambdaProject.MathArt.model.OnlineUser
-import com.LambdaProject.MathArt.Data.sampleOnlineQuiz
-import com.LambdaProject.MathArt.Data.sampleStates
-import com.LambdaProject.MathArt.Data.transform_geo
-import com.LambdaProject.MathArt.model.LeaderboardEntry
-import com.LambdaProject.MathArt.model.OnlineQuizDesc
-import com.LambdaProject.MathArt.model.OnlineQuizQuestion
-import com.LambdaProject.MathArt.model.QuestionType
-import com.LambdaProject.MathArt.model.QuizResult
-import com.LambdaProject.MathArt.model.ScoreType
-import com.LambdaProject.MathArt.model.ScorestreakState
-import com.LambdaProject.MathArt.model.UserAnswerState
-import com.google.firebase.Firebase
+import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.data.repository.AuthRepository
+import com.LambdaProject.MathArt.data.model.Challenge
+import com.LambdaProject.MathArt.data.repository.ChallengeRepository
+import com.LambdaProject.MathArt.data.repository.QuizResultRepository
+import com.LambdaProject.MathArt.data.model.OnlineUser
+import com.LambdaProject.MathArt.data.DataStates
+import com.LambdaProject.MathArt.data.model.LeaderboardEntry
+import com.LambdaProject.MathArt.data.model.OnlineQuizDesc
+import com.LambdaProject.MathArt.data.model.OnlineQuizQuestion
+import com.LambdaProject.MathArt.data.model.QuestionType
+import com.LambdaProject.MathArt.data.model.QuizResult
+import com.LambdaProject.MathArt.data.model.ScoreType
+import com.LambdaProject.MathArt.data.model.ScorestreakState
+import com.LambdaProject.MathArt.data.model.UserAnswerState
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class OnlineQuizViewModel @Inject constructor(
-    private val authRepo: AuthRepo,
-    private val challengeRepo: ChallengeRepo,
+    private val authRepo: AuthRepository,
+    private val challengeRepo: ChallengeRepository,
     private val repository: QuizResultRepository
 ): ViewModel() {
 
-    private val _materials = MutableStateFlow(sampleOnlineQuiz)
+    private val firestore = FirebaseFirestore.getInstance()
+
+    private val _materials = MutableStateFlow<List<OnlineQuizDesc>>(emptyList())
     val materials: StateFlow<List<OnlineQuizDesc>> = _materials
 
     private val _scorestreakState = MutableStateFlow<ScorestreakState?>(null)
@@ -94,6 +93,32 @@ class OnlineQuizViewModel @Inject constructor(
     private val _leaderboard = MutableStateFlow<List<LeaderboardEntry>>(emptyList())
     val leaderboard: StateFlow<List<LeaderboardEntry>> = _leaderboard
 
+    init {
+        loadAllQuizzes()
+    }
+
+    private fun loadAllQuizzes() {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("online_quizzes").get().await()
+                val quizList = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(OnlineQuizDesc::class.java)?.let { quiz ->
+                        // Fallback image for Firestore-loaded quizzes that don't have local resource IDs
+                        val fixedQuiz = if (quiz.imageRes == 0) {
+                            quiz.copy(imageRes = R.drawable.img_geo)
+                        } else {
+                            quiz
+                        }
+                        fixedQuiz.copy(id = doc.id)
+                    }
+                }
+                _materials.value = quizList
+            } catch (e: Exception) {
+                Log.e("OnlineQuizViewModel", "Error loading quizzes: ${e.message}")
+            }
+        }
+    }
+
     fun sendChallenge(toUserId: String) {
         val selected = selectedMaterial.value ?: return
 
@@ -131,22 +156,57 @@ class OnlineQuizViewModel @Inject constructor(
         }
     }
 
-    fun loadQuizForSelectedMaterial(UserId: String, materialId: String) {
-        Log.d("OnlineQuizViewModel","Loading quiz for: $UserId")
-        Log.d("OnlineQuizViewModel","Loading quiz for: $materialId")
+    fun loadQuizForSelectedMaterial(userId: String, materialId: String) {
+        viewModelScope.launch {
+            try {
+                Log.d("OnlineQuizViewModel", "Loading quiz for: $materialId")
+                
+                val quizDoc = firestore.collection("online_quizzes").document(materialId).get().await()
+                val quizData = quizDoc.toObject(OnlineQuizDesc::class.java) ?: return@launch
+                
+                val questionRefs = quizData.questions
+                if (questionRefs.isEmpty()) {
+                    Log.d("OnlineQuizViewModel", "No questions found for kuis: $materialId")
+                    return@launch
+                }
 
-        val quiz = transform_geo[materialId] ?: run {
-            Log.d("OnlineQuizViewModel","Soal tidak ditemukan untuk id: $materialId") // debug
-            return
+                val fullQuestions = mutableListOf<OnlineQuizQuestion>()
+                
+                questionRefs.forEachIndexed { index, ref ->
+                    val qDoc = firestore.collection("questions").document(ref.id).get().await()
+                    if (qDoc.exists()) {
+                        val choices = qDoc.get("options") as? List<String> ?: emptyList()
+                        val correctAnswers = (qDoc.get("answerKey") as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList()
+                        val qTypeStr = qDoc.getString("questionType") ?: "multiple_choice"
+                        
+                        val type = when(qTypeStr.lowercase()) {
+                            "checkbox" -> QuestionType.CHECKBOX
+                            "short_answer" -> QuestionType.SHORT_ANSWER
+                            else -> QuestionType.MULTIPLE_CHOICE
+                        }
+
+                        fullQuestions.add(OnlineQuizQuestion(
+                            questionNumber = index + 1,
+                            questionText = qDoc.getString("question") ?: "",
+                            imageUrl = qDoc.getString("imageUrl"),
+                            choices = choices,
+                            correctAnswers = correctAnswers,
+                            correctTextAnswers = if (type == QuestionType.SHORT_ANSWER) qDoc.get("answerKey") as? List<String> ?: emptyList() else emptyList(),
+                            type = type,
+                            durationSeconds = ref.timer,
+                            basePoints = ref.points
+                        ))
+                    }
+                }
+
+                _questions.value = fullQuestions
+                _currentQuestionIndex.value = 0
+                Log.d("OnlineQuizViewModel", "Loaded ${fullQuestions.size} questions from Firestore")
+                
+            } catch (e: Exception) {
+                Log.e("OnlineQuizViewModel", "Error loading quiz questions: ${e.message}")
+            }
         }
-
-        /* val shuffledQuiz = quiz.shuffled().mapIndexed { index, question ->
-            question.copy(questionNumber = index + 1) // supaya nomor soal tetap urut dari 1
-        } */
-
-        _questions.value = quiz
-        _currentQuestionIndex.value = 0
-        Log.d("OnlineQuizViewModel", "Soal berhasil dimuat: ${_questions.value.size} soal")
     }
 
     fun nextQuestion() {
@@ -166,13 +226,10 @@ class OnlineQuizViewModel @Inject constructor(
 
         val alreadyAnswered = _userAnswers.any { it.questionNumber == currentQuestion.questionNumber }
 
-        /* val alreadyAnswered = _userAnswers.indices.contains(_currentQuestionIndex.value) */
-
         if (alreadyAnswered) return
 
         val timeTaken = currentQuestion.durationSeconds - timeLeft
         val isTimeout = timeLeft == 0 && selectedAnswers.isEmpty()
-        /* val isCorrect = !isTimeout && currentQuestion.correctAnswers.toList() == selectedAnswers */
 
         val isCorrect = when (currentQuestion.type) {
             QuestionType.MULTIPLE_CHOICE -> {
@@ -180,7 +237,6 @@ class OnlineQuizViewModel @Inject constructor(
             }
 
             QuestionType.CHECKBOX -> {
-                /* !isTimeout && currentQuestion.correctAnswers.toList() == selectedAnswers */
                 !isTimeout && currentQuestion.correctAnswers.toSet() == selectedAnswers.toSet()
             }
 
@@ -242,7 +298,7 @@ class OnlineQuizViewModel @Inject constructor(
         }
 
         scoreType?.let {
-            sampleStates.find { it.type == scoreType }?.let { state ->
+            DataStates.find { it.type == scoreType }?.let { state ->
                 _scorestreakState.value = state
                 onStreakUpdate(state)
             }
@@ -301,7 +357,7 @@ class OnlineQuizViewModel @Inject constructor(
             if (isGranted) {
                 _rewardStatus.value = "Reward Diberikan"
                 val quiz = quizList.find { it.id == materialId }
-                _rewardCoins.value = quiz?.coints ?: 0
+                _rewardCoins.value = quiz?.rewardCoin ?: 0
             } else {
                 _rewardStatus.value = ""
                 _rewardCoins.value = 0
@@ -321,9 +377,7 @@ class OnlineQuizViewModel @Inject constructor(
                     val userIds = results.map { it.userId }.distinct()
                     val usernameMap = repository.getUsernamesForUserIds(userIds)
 
-                    /* val userMap = onlineUsers.associateBy { it.uid } */
                     val leaderboardEntries = results.map { result ->
-                        /* val username = userMap[result.userId]?.username ?: (result.userId.take(6) + "...") */
                         val username = usernameMap[result.userId] ?: (result.userId.take(6) + "...")
 
                         LeaderboardEntry(

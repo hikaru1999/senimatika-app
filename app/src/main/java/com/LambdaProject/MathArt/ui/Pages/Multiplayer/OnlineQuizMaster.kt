@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
@@ -20,16 +21,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.LambdaProject.MathArt.Data.ScoreSoundManager
-import com.LambdaProject.MathArt.Data.powerUpColors
-import com.LambdaProject.MathArt.Data.powerUpIcons
+import com.LambdaProject.MathArt.data.model.ScoreSoundManager
+import com.LambdaProject.MathArt.data.powerUpColors
+import com.LambdaProject.MathArt.data.powerUpIcons
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
+import com.LambdaProject.MathArt.data.model.QuestionType
+import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.*
+import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.ui.components.MathText
 import kotlinx.coroutines.*
 
 @SuppressLint("MutableCollectionMutableState")
@@ -56,7 +63,7 @@ fun OnlineQuizMaster(
 
     if (questions.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color(0xFF1976D2))
         }
         return
     }
@@ -138,20 +145,24 @@ fun OnlineQuizMaster(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Keluar dari Kuis?", fontFamily = interFontFamily, fontWeight = FontWeight.Bold) },
-            text = { Text("Jika kamu keluar kuis maka progresmu akan hilang. Yakin ingin keluar?", fontFamily = interFontFamily, textAlign = TextAlign.Justify) },
+            title = { Text("Keluar dari Kuis?", fontFamily = interFontFamily, fontWeight = FontWeight.Black, color = Color(0xFF1A237E)) },
+            text = { Text("Jika kamu keluar kuis maka progresmu akan hilang. Yakin ingin keluar?", fontFamily = interFontFamily, textAlign = TextAlign.Center) },
             confirmButton = {
-                TextButton(onClick = onBackPressed) {
-                    Text("Ya", fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = onBackPressed,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF5350)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Ya, Keluar", fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(12.dp),
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
                     Text("Batal", fontFamily = interFontFamily, color = Color.Gray, fontWeight = FontWeight.Bold)
                 }
-            }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(28.dp)
         )
     }
 
@@ -160,53 +171,45 @@ fun OnlineQuizMaster(
             onDismissRequest = { showPowerUpInfoDialog = false },
             title = {
                 Text(
-                    text = "Power Up",
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = interFontFamily
+                    text = "Fitur Power Up",
+                    fontWeight = FontWeight.Black,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E)
                 )
             },
             text = {
                 Text(
-                    text = "Power Up masih dalam tahap pengembangan. Harap bersabar ya dan stay tuned!",
-                    fontFamily = interFontFamily
+                    text = "Power Up masih dalam tahap pengembangan. Harap bersabar dan tunggu update selanjutnya!",
+                    fontFamily = interFontFamily,
+                    textAlign = TextAlign.Center
                 )
             },
             confirmButton = {
-                TextButton(onClick = { showPowerUpInfoDialog = false }) {
-                    Text(
-                        text = "OK",
-                        fontFamily = interFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
+                Button(
+                    onClick = { showPowerUpInfoDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti", fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
                 }
             },
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(28.dp),
             containerColor = Color.White
         )
     }
 
     Box(
         modifier = Modifier
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFFDBF1FF),
-                        Color(0xFFB3E5FC),
-                        Color(0xFFE1F5FE)
-                    ),
-                    start = Offset.Zero,
-                    end = Offset.Infinite
-                )
-            )
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FE))
             .consumeWindowInsets(WindowInsets.ime)
     ) {
         ScorestreakSnackbar(
             state = scoreState,
             visible = showScoreSnackbar,
             modifier = Modifier
-                .zIndex(1f)
-                .padding(top = 20.dp)
+                .zIndex(10f)
+                .padding(top = 80.dp)
                 .align(Alignment.TopCenter)
         )
         Scaffold(
@@ -216,255 +219,241 @@ fun OnlineQuizMaster(
                     currentIndex = currentIndex,
                     totalQuestions = questions.size,
                     currentBasePoints = currentBasePoints,
-                    onBackPressed = { navController.popBackStack() }
+                    onBackPressed = { showDialog = true }
                 )
             },
             bottomBar = {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val progressColor = when {
-                            animatedProgress.value > 0.6f -> Color(0xFF4CAF50)
-                            animatedProgress.value > 0.3f -> Color(0xFFFF9800)
-                            else -> Color(0xFFF44336)
-                        }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Time Indicator Bar (Modernized)
+                    val progressColor = when {
+                        animatedProgress.value > 0.6f -> Color(0xFF66BB6A)
+                        animatedProgress.value > 0.3f -> Color(0xFFFFB300)
+                        else -> Color(0xFFEF5350)
+                    }
 
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .background(Color(0xFFEEEEEE))
+                    ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(10.dp)
-                                .background(Color(0xFFBDBDBD), RoundedCornerShape(0.dp))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .fillMaxWidth(animatedProgress.value)
-                                    .align(Alignment.CenterEnd)
-                                    .background(progressColor, RoundedCornerShape(0.dp))
-                            )
-                        }
-                        BottomQuizNav(
-                            selectedAnswers = selectedAnswers.value.toList(),
-                            userTextAnswer = typedAnswer.value,
-                            timeLeft = timer,
-                            onTriggerScorestreak = { streakState ->
-                                scoreState = streakState
-                                showScoreSnackbar = true
-                            },
-                            powerUpIcons = powerUpIcons,
-                            powerUpColors = powerUpColors,
-                            currentIndex = currentIndex,
-                            totalQuestions = questions.size,
-                            onNextClick = {
-                                Log.d("onNextClick", "Material aktif saat ini: $materialId")
-                                if (currentIndex < questions.lastIndex) {
-                                    viewModel.nextQuestion()
-                                } else {
-                                    onFinishQuiz()
-                                }
-                            },
-                            viewModel = viewModel,
-                            onFinishQuiz = onFinishQuiz,
-                            materialId = materialId,
-                            onPowerUpClicked = { showPowerUpInfoDialog = true }
+                                .fillMaxHeight()
+                                .fillMaxWidth(animatedProgress.value)
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(progressColor.copy(alpha = 0.7f), progressColor)
+                                    )
+                                )
                         )
                     }
+                    
+                    BottomQuizNav(
+                        selectedAnswers = selectedAnswers.value.toList(),
+                        userTextAnswer = typedAnswer.value,
+                        timeLeft = timer,
+                        onTriggerScorestreak = { streakState ->
+                            scoreState = streakState
+                            showScoreSnackbar = true
+                        },
+                        powerUpIcons = powerUpIcons,
+                        powerUpColors = powerUpColors,
+                        currentIndex = currentIndex,
+                        totalQuestions = questions.size,
+                        onNextClick = {
+                            if (currentIndex < questions.lastIndex) {
+                                viewModel.nextQuestion()
+                            } else {
+                                onFinishQuiz()
+                            }
+                        },
+                        viewModel = viewModel,
+                        onFinishQuiz = onFinishQuiz,
+                        materialId = materialId,
+                        onPowerUpClicked = { showPowerUpInfoDialog = true }
+                    )
                 }
             }
         ) { innerPadding ->
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center,
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    verticalArrangement = Arrangement.Center
+                // Hint/Instruction Badge
+                Surface(
+                    color = Color(0xFFE3F2FD),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Lightbulb, null, tint = Color(0xFF1976D2), modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (question.type == QuestionType.SHORT_ANSWER) "Isi jawabanmu dengan teliti!" else "Pilih satu atau lebih jawaban yang benar",
+                            fontSize = 11.sp,
+                            fontFamily = interFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1976D2)
+                        )
+                    }
+                }
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
+                // Question Card
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(8.dp, RoundedCornerShape(24.dp)),
+                    color = Color.White,
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
                     ) {
                         question.imageRes?.let {
-                            Column(
-                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0XFFE8F9FE), shape = RoundedCornerShape(8.dp))
-                                        .padding(6.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Info,
-                                            contentDescription = "Informasi",
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "Ketuk gambar untuk melakukan pembesaran",
-                                            fontFamily = interFontFamily,
-                                            fontSize = 10.sp,
-                                            color = Color(0xFF2BA2FF)
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Image(
-                                painter = painterResource(id = it),
-                                contentDescription = null,
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(140.dp)
-                                    .clickable { showZoomDialog = true }
-                            )
-                        }
-                        Text(
-                            text = question.questionText,
-                            modifier = Modifier.padding(16.dp),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    if (showZoomDialog && imageRes != null) {
-                        ZoomableImageDialog(imageRes = imageRes, onDismiss = { showZoomDialog = false })
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = if (question.type == QuestionType.SHORT_ANSWER) "Ayo isi jawabanmu!" else "Ayo pilih jawabanmu!",
-                            fontFamily = interFontFamily,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        if (question.type == QuestionType.SHORT_ANSWER) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF))
+                                    .height(180.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color(0xFFF5F5F5))
+                                    .clickable { showZoomDialog = true },
+                                contentAlignment = Alignment.Center
                             ) {
-                                OutlinedTextField(
-                                    value = typedAnswer.value,
-                                    onValueChange = { typedAnswer.value = it },
-                                    label = { Text("Jawabanmu", fontFamily = interFontFamily) },
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 16.dp, bottom = 18.dp, start = 16.dp, end = 16.dp)
-                                        .background(Color.White, shape = MaterialTheme.shapes.medium),
+                                Image(
+                                    painter = painterResource(id = it),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit
                                 )
-                            }
-                        } else {
-                            question.choices.forEachIndexed { index, choice ->
-                                val isSelected = selectedAnswers.value.contains(index)
-                                val isUnanswered = !isSelected
-
-                                val backgroundBrush = if (isSelected) {
-                                    Brush.linearGradient(
-                                        colors = listOf(
-                                            Color(0xFFF1FAF0),
-                                            Color(0xFFB9F6CA),
-                                            Color(0xFFADEEBE)
-                                        ),
-                                        start = Offset(0f, 0f),
-                                        end = Offset(400f, 400f)
-                                    )
-                                } else {
-                                    Brush.linearGradient(
-                                        colors = listOf(
-                                            Color(0xFFFFFFFF),
-                                            Color(0xFFF5F5F5)
-                                        )
+                                // Zoom hint overlay
+                                Surface(
+                                    modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                                    color = Color.Black.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_info),
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.padding(6.dp).size(14.dp)
                                     )
                                 }
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
+                        }
 
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(60.dp)
-                                        .background(brush = backgroundBrush, shape = MaterialTheme.shapes.medium)
-                                        .border(1.dp, Color.Gray, shape = MaterialTheme.shapes.medium)
-                                        .clickable {
-                                            if (question.type == QuestionType.CHECKBOX) {
-                                                val newSet = selectedAnswers.value.toMutableSet()
-                                                if (isSelected) newSet.remove(index)
-                                                else newSet.add(index)
-                                                selectedAnswers.value = newSet
-                                            } else {
-                                                selectedAnswers.value = mutableSetOf(index)
-                                            }
-                                        }
-                                        .padding(horizontal = 12.dp),
-                                    contentAlignment = Alignment.CenterStart
+                        if (question.questionText.contains("$")) {
+                            MathText(
+                                text = question.questionText,
+                                modifier = Modifier.fillMaxWidth(),
+                                fontSize = 14,
+                            )
+                        } else {
+                            Text(
+                                text = question.questionText,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interFontFamily,
+                                    lineHeight = 18.sp
+                                ),
+                                color = Color(0xFF1A237E),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Answer Options Section
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (question.type == QuestionType.SHORT_ANSWER) {
+                        OutlinedTextField(
+                            value = typedAnswer.value,
+                            onValueChange = { typedAnswer.value = it },
+                            placeholder = { Text("Tulis jawabanmu di sini...", color = Color.Gray) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            textStyle = TextStyle(fontFamily = interFontFamily, fontWeight = FontWeight.Bold),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF1976D2),
+                                unfocusedBorderColor = Color(0xFFE0E0E0),
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                    } else {
+                        question.choices.forEachIndexed { index, choice ->
+                            val isSelected = selectedAnswers.value.contains(index)
+                            
+                            val surfaceColor = if (isSelected) Color(0xFFE3F2FD) else Color.White
+                            val borderColor = if (isSelected) Color(0xFF1976D2) else Color(0xFFEEEEEE)
+                            val textColor = if (isSelected) Color(0xFF1976D2) else Color(0xFF1A237E)
+
+                            Surface(
+                                onClick = {
+                                    if (question.type == QuestionType.CHECKBOX) {
+                                        val newSet = selectedAnswers.value.toMutableSet()
+                                        if (isSelected) newSet.remove(index)
+                                        else newSet.add(index)
+                                        selectedAnswers.value = newSet
+                                    } else {
+                                        selectedAnswers.value = mutableSetOf(index)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                color = surfaceColor,
+                                border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
+                                shadowElevation = if (isSelected) 4.dp else 0.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.fillMaxSize()
-                                    ) {
-                                        if (question.type == QuestionType.CHECKBOX) {
-                                            Checkbox(
-                                                checked = isSelected,
-                                                onCheckedChange = {
-                                                    val newSet = selectedAnswers.value.toMutableSet()
-                                                    if (isSelected) newSet.remove(index)
-                                                    else newSet.add(index)
-                                                    selectedAnswers.value = newSet
-                                                },
-                                            )
-                                        } else {
-                                            RadioButton(
-                                                selected = isSelected,
-                                                onClick = {
-                                                    selectedAnswers.value = mutableSetOf(index)
-                                                },
-                                                colors = RadioButtonDefaults.colors(
-                                                    selectedColor = Color.Black,
-                                                    unselectedColor = Color.Gray,
-                                                    disabledSelectedColor = Color.LightGray
-                                                )
-                                            )
-                                        }
+                                    if (question.type == QuestionType.CHECKBOX) {
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = null, // Handled by Surface onClick
+                                            colors = CheckboxDefaults.colors(checkedColor = Color(0xFF1976D2))
+                                        )
+                                    } else {
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = null, // Handled by Surface onClick
+                                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF1976D2))
+                                        )
+                                    }
 
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
 
+                                    if (choice.contains("$")) {
+                                        MathText(
+                                            text = choice,
+                                            fontSize = 13,
+                                            color = textColor,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    } else {
                                         Text(
                                             text = choice,
-                                            style = TextStyle(
-                                                fontSize = 13.sp,
-                                                lineHeight = 15.sp
-                                            ),
+                                            fontSize = 14.sp,
                                             fontFamily = interFontFamily,
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                            color = textColor
                                         )
                                     }
                                 }
@@ -472,6 +461,12 @@ fun OnlineQuizMaster(
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            if (showZoomDialog && imageRes != null) {
+                ZoomableImageDialog(imageRes = imageRes, onDismiss = { showZoomDialog = false })
             }
         }
     }

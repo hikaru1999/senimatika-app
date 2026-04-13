@@ -2,6 +2,7 @@ package com.LambdaProject.MathArt.ui.Pages.Material
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,203 +12,235 @@ import androidx.compose.ui.unit.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
-import com.LambdaProject.MathArt.Data.SessionRepository.markSessionCompleted
+import com.LambdaProject.MathArt.data.repository.SessionRepository.markSessionCompleted
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit
-) {
+fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
     val userAnswers = viewModel.userAnswers
-    val correctAnswers = viewModel.correctAnswers
     var showDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (userId != null) {
-            viewModel.loadQuizResults(userId, "transformasi_geometri") {
-            }
+            viewModel.loadQuizResults(userId, "transformasi_geometri") {}
         }
     }
 
     Column(
         modifier = Modifier
-            .padding(16.dp)
+            .fillMaxSize()
+            .background(Color(0xFFF8F9FE))
             .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = Color(0xff5E9DFF),
-                    shape = RoundedCornerShape(10.dp)
-                ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 2.dp
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xffFFFFFF)
-            ),
+        // Achievement Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White,
+            shadowElevation = 8.dp
         ) {
             Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_task_completed),
-                    contentDescription = "Task Completed",
-                    modifier = Modifier.size(80.dp)
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color(0xFFFFF9C4), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_task_completed),
+                        contentDescription = "Completed",
+                        modifier = Modifier.size(70.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                Text(
+                    text = "Luar Biasa!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Kamu telah menyelesaikan materi ini",
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontFamily = interFontFamily,
-                    fontSize = 14.sp
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(thickness = 2.dp)
-                Spacer(modifier = Modifier.height(12.dp))
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 Text(
                     text = "Ringkasan Belajar",
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
                     fontFamily = interFontFamily,
-                    fontSize = 24.sp
+                    color = Color(0xFF1A237E)
                 )
-            }
-            Column(
-                modifier = Modifier
-                    .padding(start = 24.dp, end = 24.dp, bottom = 12.dp)
-                    .fillMaxWidth(),
-            ) {
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 val sections = listOf(
-                    "Materi: Pengantar",
-                    "Materi: Translasi",
-                    "Materi: Refleksi",
-                    "Materi: Rotasi",
-                    "Materi: Dilatasi",
-                    "Kuis Transformasi Geometri"
+                    "Materi: Pengantar", "Materi: Translasi", "Materi: Refleksi",
+                    "Materi: Rotasi", "Materi: Dilatasi", "Kuis Transformasi"
                 )
-                sections.forEachIndexed { index, section ->
+                
+                sections.forEach { section ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        modifier = Modifier.padding(vertical = 6.dp)
                     ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFE8F5E9),
+                            modifier = Modifier.size(20.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF2E7D32),
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = section,
                             fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color(0xFF455A64)
                         )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = Color.Green
-                        )
-                    }
-
-                    if (index != sections.lastIndex) {
-                        Spacer(modifier = Modifier.height(5.dp))
-                        HorizontalDivider(thickness = 1.dp)
-                        Spacer(modifier = Modifier.height(5.dp))
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(thickness = 2.dp)
+            }
+        }
+
+        // Quiz Detail Card
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White,
+            shadowElevation = 4.dp
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    "Detail Jawaban",
-                    fontWeight = FontWeight.Bold,
+                    "Detail Jawaban Kuis",
+                    fontWeight = FontWeight.Black,
+                    fontFamily = interFontFamily,
                     fontSize = 18.sp,
-                    modifier = Modifier.padding(top = 12.dp)
+                    color = Color(0xFF1A237E)
                 )
+                
                 if (userAnswers.isEmpty()) {
                     Text(
                         text = "Belum ada kuis yang dikerjakan",
                         color = Color.Gray,
                         fontStyle = FontStyle.Italic,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 16.dp)
                     )
                 } else {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 12.dp, )
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        userAnswers.forEachIndexed { index, answer ->
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Soal Batik ${index + 1}", fontWeight = FontWeight.Bold)
-                            Text(
-                                "Jawaban Kamu: ${answer.selectedAnswers.joinToString()}", color = Color.Gray, fontFamily = interFontFamily
+                    Spacer(modifier = Modifier.height(16.dp))
+                    userAnswers.forEachIndexed { index, answer ->
+                        Surface(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = Color(0xFFF8F9FE),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
+                                Text(
+                                    "Soal Batik ${index + 1}",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF1A237E)
                                 )
-                            Text(
-                                "Jawaban Benar: ${answer.correctAnswers.joinToString()}", color = Color(0xFF388E3C), fontFamily = interFontFamily
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Kamu: ${answer.selectedAnswers.joinToString()}",
+                                    color = Color.Gray,
+                                    fontSize = 12.sp,
+                                    fontFamily = interFontFamily
                                 )
-                            /* Text(
-                                text = if (answer.isCorrect) "Benar" else "Salah",
-                                color = if (answer.isCorrect) Color(0xFF388E3C) else Color(0xFFF44336),
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = interFontFamily
-                            ) */
+                                Text(
+                                    "Kunci: ${answer.correctAnswers.joinToString()}",
+                                    color = Color(0xFF2E7D32),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interFontFamily
+                                )
+                            }
                         }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            }
-        Spacer(modifier = Modifier.height(16.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Button(
-                onClick = { showDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(5.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-            ) {
-                Text("Kembali ke Dashboard", color = Color.White, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
-            if (showDialog) {
-                AlertDialog(
-                    onDismissRequest = { showDialog = false },
-                    title = { Text(text = "Reset Progress", fontFamily = interFontFamily, fontWeight = FontWeight.Bold) },
-                    text = {
-                        Text(text = "Apakah kamu yakin ingin kembali ke dashboard? Progress materi akan di-reset.", fontFamily = interFontFamily, textAlign = TextAlign.Justify)
-                    },
-                    containerColor = Color.White,
-                    shape = RoundedCornerShape(12.dp),
-                    confirmButton = {
-                        TextButton(onClick = {
-                            showDialog = false
-                            if (userId != null) {
-                                viewModel.resetQuiz()
-                                resetAccessiblePage(userId)
-                                markSessionCompleted(userId = userId, materialId = "transformasi_geometri")
-                            }
-                            onBackToDashboard()
-                        }) {
-                            Text("Ya", fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDialog = false }) {
-                            Text("Batal", fontFamily = interFontFamily, color = Color.Gray, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                )
-            }
         }
+
+        // Final Action
+        Button(
+            onClick = { showDialog = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .shadow(8.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+        ) {
+            Text(
+                "Selesai & Keluar",
+                color = Color.White,
+                fontFamily = interFontFamily,
+                fontWeight = FontWeight.Black,
+                fontSize = 16.sp
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Konfirmasi", fontWeight = FontWeight.Black, fontFamily = interFontFamily) },
+            text = { Text("Progress materi akan di-reset agar kamu bisa belajar kembali nanti. Yakin ingin keluar?", fontFamily = interFontFamily) },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    if (userId != null) {
+                        viewModel.resetQuiz()
+                        resetAccessiblePage(userId)
+                        markSessionCompleted(userId = userId, materialId = "transformasi_geometri")
+                    }
+                    onBackToDashboard()
+                }) {
+                    Text("Ya, Keluar", fontWeight = FontWeight.Black, color = Color(0xFFC62828))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Batal", fontWeight = FontWeight.Bold, color = Color.Gray)
+                }
+            }
+        )
     }
 }

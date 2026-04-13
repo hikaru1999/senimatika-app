@@ -1,7 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Profile
 
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -31,11 +30,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -44,7 +41,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -62,18 +58,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.LambdaProject.MathArt.Data.stepOfTranslate
 import com.LambdaProject.MathArt.ViewModels.ValidatorViewModel
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.Decision
-import com.LambdaProject.MathArt.model.KuesionerResult
-import com.LambdaProject.MathArt.model.ValidatorQuestion
-import com.LambdaProject.MathArt.model.ValidatorRole
+import com.LambdaProject.MathArt.data.model.Decision
+import com.LambdaProject.MathArt.data.model.ValidatorQuestion
+import com.LambdaProject.MathArt.data.model.ValidatorRole
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt

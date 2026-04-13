@@ -2,11 +2,17 @@ package com.LambdaProject.MathArt.ui.Pages
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -65,8 +71,27 @@ fun ForgotPasswordScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .consumeWindowInsets(WindowInsets.ime)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF3490DE), Color(0xFF1A237E))
+                )
+            )
     ) {
+        // Decorative circles for background
+        Box(
+            modifier = Modifier
+                .size(300.dp)
+                .offset(x = (-100).dp, y = (-100).dp)
+                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .size(200.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = 50.dp, y = 100.dp)
+                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+        )
+
         TopSnackbar(
             visible = showErrorBanner,
             message = errorMessage,
@@ -81,137 +106,160 @@ fun ForgotPasswordScreen(navController: NavController) {
         )
 
         Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .background(Color(0xFF3490DE))
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .background(Color(0xFFF5F5F5))
-            )
-        }
-
-        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Image(
+                painter = painterResource(id = R.drawable.ic_forgot),
+                contentDescription = null,
+                modifier = Modifier.height(180.dp).wrapContentWidth(),
+                contentScale = ContentScale.Fit
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Lupa Password?",
+                fontSize = 32.sp,
+                fontFamily = interFontFamily,
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "Jangan khawatir! Masukkan email atau username kamu untuk mendapatkan instruksi reset password.",
+                fontSize = 14.sp,
+                fontFamily = interFontFamily,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.ime)
+                    .shadow(elevation = 24.dp, shape = RoundedCornerShape(32.dp)),
+                color = Color.White,
+                shape = RoundedCornerShape(32.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_forgot),
-                    contentDescription = null,
-                    modifier = Modifier.height(135.dp).wrapContentWidth(),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Cukup isikan email/username yang kamu daftar!",
-                    fontSize = 24.sp,
-                    fontFamily = interFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                Column(
+                    modifier = Modifier.padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        OutlinedTextField(
-                            value = identifier,
-                            onValueChange = {
-                                if (!it.text.contains(" ") && !it.text.contains("\n")) {
-                                    identifier = it
-                                }
-                            },
-                            label = {
+                    OutlinedTextField(
+                        value = identifier,
+                        onValueChange = {
+                            if (!it.text.contains(" ") && !it.text.contains("\n")) {
+                                identifier = it
+                            }
+                        },
+                        label = {
+                            Text(
+                                text = "Email atau Username",
+                                fontFamily = interFontFamily,
+                                fontSize = 14.sp
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = null,
+                                tint = Color(0xFF1976D2),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        isError = isSubmitted && identifier.text.isBlank(),
+                        supportingText = {
+                            if (isSubmitted && identifier.text.isBlank()) {
                                 Text(
-                                    text = "Email atau Username",
+                                    text = "Field tidak boleh kosong",
                                     fontFamily = interFontFamily,
-                                    fontSize = 14.sp
-                                )
-                            },
-                            isError = isSubmitted && identifier.text.isBlank(),
-                            supportingText = {
-                                if (isSubmitted && identifier.text.isBlank()) {
-                                    Text(
-                                        text = "Field tidak boleh kosong",
-                                        fontFamily = interFontFamily,
-                                        color = Color.Red,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Done
-                            ),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-
-                        Button(
-                            onClick = {
-                                isSubmitted = true
-                                if (identifier.text.isBlank()) return@Button
-
-                                forgotPasswordViewModel.sendResetPassword(identifier.text)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = identifier.text.isNotBlank() && state !is ForgotPasswordViewModel.ForgotPasswordState.Loading
-                        ) {
-                            if (state is ForgotPasswordViewModel.ForgotPasswordState.Loading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Text(
-                                    text = "Kirim Link Reset",
-                                    fontFamily = interFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = Color.White
+                                    color = Color.Red,
+                                    fontSize = 11.sp
                                 )
                             }
+                        },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF1976D2),
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color(0xFFF8F9FE),
+                            unfocusedContainerColor = Color(0xFFF8F9FE)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            isSubmitted = true
+                            if (identifier.text.isBlank()) return@Button
+
+                            forgotPasswordViewModel.sendResetPassword(identifier.text)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 6.dp,
+                            pressedElevation = 12.dp,
+                            disabledElevation = 0.dp
+                        ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1976D2),
+                            /* disabledContainerColor = Color(0xFFE0E0E0),*/
+                            disabledContentColor = Color.Gray
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = identifier.text.isNotBlank() && state !is ForgotPasswordViewModel.ForgotPasswordState.Loading
+                    ) {
+                        if (state is ForgotPasswordViewModel.ForgotPasswordState.Loading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 3.dp
+                            )
+                        } else {
+                            Text(
+                                text = "Reset Password",
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 16.sp,
+                                letterSpacing = 1.sp
+                            )
                         }
-                        Text(
-                            "Kembali ke Login",
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF1E88E5),
-                            modifier = Modifier.clickable {
+                    }
+                    
+                    Text(
+                        text = "Kembali ke Login",
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 14.sp,
+                        color = Color(0xFF1976D2),
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .clickable {
                                 navController.navigate("login") {
                                     popUpTo(0) { inclusive = true }
                                     launchSingleTop = true
                                 }
                             }
-                        )
-                    }
+                    )
                 }
             }
         }

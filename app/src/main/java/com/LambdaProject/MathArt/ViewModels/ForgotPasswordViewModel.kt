@@ -1,6 +1,6 @@
 package com.LambdaProject.MathArt.ViewModels
 
-import com.LambdaProject.MathArt.Data.AuthRepo
+import com.LambdaProject.MathArt.data.repository.AuthRepository
 import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -9,7 +9,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ForgotPasswordViewModel @Inject constructor(
-    private val authRepo: AuthRepo
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     sealed class ForgotPasswordState {

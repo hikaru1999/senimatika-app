@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -29,8 +28,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.OnlineQuizDesc
-import com.LambdaProject.MathArt.model.OnlineUser
+import com.LambdaProject.MathArt.data.model.OnlineQuizDesc
+import com.LambdaProject.MathArt.data.model.OnlineUser
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,24 +74,22 @@ fun OnlineQuizLobby(
     selectedMaterial?.let { material ->
         Scaffold(
             topBar = {
-                TopAppBar(
+                CenterAlignedTopAppBar(
                     title = {
                         Text(
                             material.title,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interFontFamily
+                            fontWeight = FontWeight.Black,
+                            fontFamily = interFontFamily,
+                            color = Color(0xFF1A237E)
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack()}) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color(0xFF1A237E))
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFFf7f7f7),
-                        titleContentColor = Color.Black,
-                        navigationIconContentColor = Color.Black,
-                        actionIconContentColor = Color.Black
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.White
                     )
                 )
             }
@@ -101,19 +98,20 @@ fun OnlineQuizLobby(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .background(Color(0xFFF7F7F7))
+                    .background(Color(0xFFF8F9FE))
             ) {
                 TabRow(
                     selectedTabIndex = pagerState.currentPage,
-                    containerColor = Color(0xFFF7F7F7),
+                    containerColor = Color.White,
                     indicator = { tabPositions ->
                         SecondaryIndicator(
                             Modifier
                                 .tabIndicatorOffset(tabPositions[pagerState.currentPage])
                                 .height(3.dp),
-                            color = Color(0xFF5294FF)
+                            color = Color(0xFF1976D2)
                         )
-                    }
+                    },
+                    divider = {}
                 ) {
                     tabLabels.forEachIndexed { index, title ->
                         Tab(
@@ -124,7 +122,12 @@ fun OnlineQuizLobby(
                                 }
                             },
                             text = {
-                                Text(title, fontWeight = FontWeight.Bold, fontFamily = interFontFamily, color = Color.Black)
+                                Text(
+                                    title, 
+                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Black else FontWeight.Bold, 
+                                    fontFamily = interFontFamily, 
+                                    color = if (pagerState.currentPage == index) Color(0xFF1976D2) else Color.Gray
+                                )
                             }
                         )
                     }
@@ -152,7 +155,7 @@ fun OnlineQuizLobby(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Tidak ada kuis")
+            CircularProgressIndicator(color = Color(0xFF1976D2))
         }
     }
 }
@@ -168,145 +171,111 @@ private fun DeskripsiContent(
     val viewModel: OnlineQuizViewModel = hiltViewModel()
     var isLoading by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-    ) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 100.dp)
         ) {
+            // Hero Image Section with shadow
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .background(Color.White)
+                    .padding(20.dp)
+            ) {
+                if (material.imageRes != 0) {
+                    Image(
+                        painter = painterResource(id = material.imageRes),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .shadow(12.dp, RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = 16.dp, end = 16.dp)
-                    .padding(bottom = 72.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
             ) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Image(
-                    painter = painterResource(id = material.imageRes),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp)),
-                    contentScale = ContentScale.Fit
+                Text(
+                    text = "Detail Kuis",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 24.sp,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E)
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
 
-                Text("Deskripsi", fontWeight = FontWeight.Bold, fontSize = 28.sp, fontFamily = interFontFamily)
-
-                Spacer(Modifier.height(16.dp))
-
+                // Modern Stats Row
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .border(1.dp, Color(0xFFC9C9C9), RoundedCornerShape(5.dp))
-                            .background(Color.White)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Image(painter = painterResource(id = R.drawable.ic_assignment), contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("${material.numberQuestion} Soal", fontSize = 12.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .border(1.dp, Color(0xFFC9C9C9), RoundedCornerShape(8.dp))
-                            .background(Color.White)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Image(painter = painterResource(id = R.drawable.ic_stopwatch), contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("${material.durationMinutes} Menit", fontSize = 12.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .border(1.dp, Color(0xFFC9C9C9), RoundedCornerShape(8.dp))
-                            .background(Color.White)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Image(painter = painterResource(id = R.drawable.ic_coin), contentDescription = null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("+${material.coints} Coin", fontSize = 12.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
-                        }
-                    }
+                    QuizStatItem(
+                        icon = R.drawable.ic_assessment,
+                        label = "Soal",
+                        value = "${material.questions.size}",
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuizStatItem(
+                        icon = R.drawable.ic_stopwatch,
+                        label = "Menit",
+                        value = "${material.questions.sumOf { it.timer } / 60}",
+                        modifier = Modifier.weight(1f)
+                    )
+                    QuizStatItem(
+                        icon = R.drawable.ic_coin,
+                        label = "Coin",
+                        value = "${material.rewardCoin}",
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Text(
+                    text = "Tentang Kuis",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
                 Text(
                     text = material.description,
                     fontSize = 14.sp,
                     color = Color.DarkGray,
                     fontFamily = interFontFamily,
+                    lineHeight = 22.sp,
                     textAlign = TextAlign.Justify
                 )
+                
                 Spacer(modifier = Modifier.height(24.dp))
             }
-
-            /* Text("Pengguna Online", fontWeight = FontWeight.Bold, fontSize = 18.sp, fontFamily = interFontFamily)
-            Text("Tantang pengguna menyelesaiakan kuis (duel 1v1)", fontWeight = FontWeight.Medium, fontSize = 12.sp, fontFamily = interFontFamily)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (userOnlineList.isEmpty()) {
-                Text("Tidak ada user yang online", fontSize = 12.sp, color = Color.Gray, fontFamily = interFontFamily, fontStyle = FontStyle.Italic, textAlign = TextAlign.Center)
-            } else {
-                LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
-                    items(userOnlineList) { user ->
-                        OnlineUserCard(
-                            username = user.username,
-                            onUserClick = {
-                                onUserSelected(user.uid)
-                            }
-                        )
-                    }
-                }
-            } */
         }
 
-        Box(
+        // Action Bar at Bottom
+        Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .shadow(elevation = 8.dp)
-                .background(Color.White)
+                .fillMaxWidth(),
+            shadowElevation = 16.dp,
+            color = Color.White
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(12.dp),
+                    .padding(20.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Button(
@@ -314,60 +283,59 @@ private fun DeskripsiContent(
                         isLoading = true
                         viewModel.selectMaterial(material)
                         CoroutineScope(Dispatchers.Main).launch {
-                            delay(2500)
+                            delay(2000)
                             navController.navigate("StartQuiz/${material.id}/${userId}")
                             isLoading = false
                         }
                     },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E60DD)),
-                    modifier = Modifier.weight(1f)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                    modifier = Modifier
+                        .weight(1.5f)
+                        .height(56.dp)
+                        .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF1976D2))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .height(24.dp)
-                            .widthIn(min = 120.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 4.dp
-                            )
-                        } else {
-                            Text(
-                                text = "Mulai Kuis",
-                                fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                    } else {
+                        Text("MULAI KUIS", fontWeight = FontWeight.Black, fontFamily = interFontFamily, letterSpacing = 1.sp)
                     }
                 }
 
                 OutlinedButton(
-                    onClick = {  },
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, Color(0xFF0E60DD)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF0E60DD)),
-                    enabled = false,
-                    modifier = Modifier.weight(1f)
+                    onClick = { },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
+                    enabled = false
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Informasi",
-                            modifier = Modifier.size(20.dp),
-                            tint = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Duel 1v1", fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
-                    }
+                    Icon(Icons.Default.Lock, null, modifier = Modifier.size(18.dp), tint = Color.LightGray)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("DUEL", fontWeight = FontWeight.Bold, fontFamily = interFontFamily, color = Color.LightGray)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun QuizStatItem(icon: Int, label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = Color.White,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(painter = painterResource(id = icon), contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(value, fontSize = 14.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Black, color = Color(0xFF1A237E))
+            Text(label, fontSize = 10.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color.Gray)
         }
     }
 }
@@ -401,13 +369,14 @@ private fun LeaderboardTab(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    "Leaderboard",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
+                    "Top Rank",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
                     fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E),
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
@@ -464,91 +433,76 @@ private fun LeaderboardTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.5f)
-                .background(Color.Transparent)
                 .align(Alignment.BottomCenter),
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color(0xFF53A8F1),
-            tonalElevation = 8.dp,
-            shadowElevation = 8.dp
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            color = Color(0xFF1976D2),
+            shadowElevation = 16.dp
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp)
             ) {
+                Text(
+                    text = "Peringkat 50 Besar",
+                    fontWeight = FontWeight.Black,
+                    fontFamily = interFontFamily,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 16.dp)
+                )
+
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
                 ) {
-                    Text(
-                        text = "Peringkat 50 Besar",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = interFontFamily
-                        ),
-                        color = Color.White,
-                        modifier = Modifier
-                            .padding(start = 24.dp, bottom = 12.dp, end = 24.dp, top = 12.dp)
-                            .align(Alignment.CenterHorizontally)
-                    )
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(scrollState)
-                            .fillMaxHeight()
-                    ) {
-                        if (others.isNotEmpty()) {
-                            others.forEachIndexed { index, user ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 6.dp, horizontal = 5.dp)
-                                        .padding(start = 24.dp, end = 24.dp)
-                                        .background(Color.White, RoundedCornerShape(8.dp))
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 6.dp, horizontal = 10.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = "${index + 4}",
-                                                color = Color.Gray,
-                                                fontWeight = FontWeight.Bold,
-                                                fontFamily = interFontFamily,
-                                                modifier = Modifier.padding(end = 24.dp)
-                                            )
-                                            Text(
-                                                text = user.username,
-                                                fontWeight = FontWeight.Black,
-                                                fontFamily = interFontFamily,
-                                            )
-                                        }
-                                        Text(
-                                            text = "${user.points} pts",
-                                            fontWeight = FontWeight.Medium,
-                                            fontFamily = interFontFamily
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        } else {
-                            Box(
+                    if (others.isNotEmpty()) {
+                        others.forEachIndexed { index, user ->
+                            Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp),
-                                contentAlignment = Alignment.Center
+                                    .padding(vertical = 6.dp),
+                                color = Color.White.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text(
-                                    "Belum ada peserta lainnya",
-                                    fontStyle = FontStyle.Italic,
-                                    fontFamily = interFontFamily
-                                )
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "${index + 4}",
+                                            color = Color.White.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.Black,
+                                            fontFamily = interFontFamily,
+                                            modifier = Modifier.width(32.dp)
+                                        )
+                                        Text(
+                                            text = user.username,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = interFontFamily,
+                                        )
+                                    }
+                                    Text(
+                                        text = "${user.points} pts",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = interFontFamily
+                                    )
+                                }
                             }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(150.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Belum ada peserta lainnya",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontStyle = FontStyle.Italic,
+                                fontFamily = interFontFamily
+                            )
                         }
                     }
                 }
@@ -572,16 +526,14 @@ private fun LeaderBox(
     LaunchedEffect(maxHeightDp, heightFraction) {
         heightAnim.animateTo(
             targetValue = (maxHeightDp * heightFraction).value,
-            animationSpec = tween(durationMillis = 2000, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing)
         )
     }
 
-    val animatedHeight = heightAnim.value.dp
-
     val (gradientColors) = when (medalType) {
-        MedalType.GOLD -> listOf(Color(0xFFFFD700), Color(0xFFFFE135), Color(0xFFFFA500)) to Color(0xFFFFD700)
-        MedalType.SILVER -> listOf(Color(0xFFD3D3D3), Color(0xFFE0E0E0), Color(0xFFB0C4DE)) to Color(0xFFC0C0C0)
-        MedalType.BRONZE -> listOf(Color(0xFFCD7F32), Color(0xFFE6B280), Color(0xFF8B4513)) to Color(0xFFCD7F32)
+        MedalType.GOLD -> listOf(Color(0xFFFFD700), Color(0xFFFFA500)) to Color(0xFFFFD700)
+        MedalType.SILVER -> listOf(Color(0xFFD3D3D3), Color(0xFFB0C4DE)) to Color(0xFFC0C0C0)
+        MedalType.BRONZE -> listOf(Color(0xFFCD7F32), Color(0xFF8B4513)) to Color(0xFFCD7F32)
     }
 
     Column(
@@ -589,68 +541,52 @@ private fun LeaderBox(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Bottom
     ) {
-        /* Icon(
-            imageVector = Icons.Default.EmojiEvents,
-            contentDescription = "Medal Icon",
-            tint = medalColor
-        )
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color.Gray)
-        ) */
-
         Image(
             painter = painterResource(id = R.drawable.ic_profile),
-            contentDescription = "Foto Profil",
+            contentDescription = null,
             modifier = Modifier
-                .size(48.dp)
+                .size(if (medalType == MedalType.GOLD) 56.dp else 48.dp)
                 .clip(CircleShape)
+                .border(2.dp, medalColor, CircleShape)
         )
+        
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = username,
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = 11.sp,
             fontFamily = interFontFamily,
-            fontWeight = FontWeight.Black
+            fontWeight = FontWeight.Black,
+            color = Color(0xFF1A237E),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Box(
             modifier = Modifier
-                .height(animatedHeight)
-                .clip(RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
-                .background(brush = Brush.linearGradient(gradientColors)),
+                .height(heightAnim.value.dp)
+                .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                .background(brush = Brush.verticalGradient(gradientColors)),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier
-                    .padding(top = 12.dp, start = 12.dp, end = 12.dp),
+                modifier = Modifier.padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(Color.White)
-                        .padding(5.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    color = Color.White.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_star),
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        AnimatedPts(value = points.toString())
-                    }
+                    Text(
+                        text = "${points} pts",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = interFontFamily,
+                        color = Color(0xFF1A237E)
+                    )
                 }
             }
         }
@@ -659,26 +595,4 @@ private fun LeaderBox(
 
 enum class MedalType {
     GOLD, SILVER, BRONZE
-}
-
-@Composable
-private fun AnimatedPts(value: String) {
-    val targetValue = value.toIntOrNull() ?: 0
-    val animatedValue = remember { Animatable(0f) }
-
-    LaunchedEffect(targetValue) {
-        animatedValue.animateTo(
-            targetValue = targetValue.toFloat(),
-            animationSpec = tween(durationMillis = 2500, easing = LinearOutSlowInEasing)
-        )
-    }
-
-    Text(
-        text = "${animatedValue.value.toInt()} pts",
-        style = MaterialTheme.typography.bodyMedium.copy(
-            fontWeight = FontWeight.Bold
-        ),
-        fontFamily = interFontFamily,
-        fontSize = 10.sp
-    )
 }

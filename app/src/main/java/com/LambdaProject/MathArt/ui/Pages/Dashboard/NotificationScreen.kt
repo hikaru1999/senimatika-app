@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.LambdaProject.MathArt.ViewModels.NotificationViewModel
-import com.LambdaProject.MathArt.model.NotificationType
+import com.LambdaProject.MathArt.data.model.NotificationType
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.PvPChallengeCard
 
 import java.util.Locale

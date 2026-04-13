@@ -1,6 +1,5 @@
 package com.LambdaProject.MathArt.ui.Pages.Multiplayer
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -19,10 +18,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.ScorestreakState
+import com.LambdaProject.MathArt.data.model.ScorestreakState
 import kotlinx.coroutines.*
 
 @Composable

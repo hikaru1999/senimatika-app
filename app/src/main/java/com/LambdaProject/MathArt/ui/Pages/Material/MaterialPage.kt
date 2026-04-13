@@ -1,17 +1,19 @@
 package com.LambdaProject.MathArt.ui.Pages.Material
 
 import android.util.Log
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.pager.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
@@ -22,7 +24,6 @@ import kotlinx.coroutines.launch
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
-import com.LambdaProject.MathArt.BottomNavigationMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,12 +34,14 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
     val coroutineScope = rememberCoroutineScope()
     val quizViewModel = remember { QuizViewModel() }
     val maxAccessiblePage = remember { mutableIntStateOf(0) }
-    val materialId = "transformasi_geometri"
-    val userId = FirebaseAuth.getInstance().currentUser?.uid
 
-    LaunchedEffect(true) {
-        if (userId != null) {
-            Firebase.firestore.collection("userProgress").document(userId)
+    // Menggunakan parameter yang dilewatkan atau fallback ke auth
+    val currentUserId = userId.ifBlank { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
+    val currentMaterialId = materialId.ifBlank { "transformasi_geometri" }
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId.isNotEmpty()) {
+            Firebase.firestore.collection("userProgress").document(currentUserId)
                 .get()
                 .addOnSuccessListener { document ->
                     val maxPage = document.getLong("maxPage")?.toInt() ?: 0
@@ -47,27 +50,27 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
         }
     }
 
-    LaunchedEffect(pagerState.currentPage) {
-        if (userId != null && pagerState.currentPage > maxAccessiblePage.intValue) {
-            updateAccessiblePage(userId, pagerState.currentPage)
-            maxAccessiblePage.intValue = pagerState.currentPage
-        }
-    }
-
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Transformasi Geometri", fontWeight = FontWeight.Bold, fontFamily = interFontFamily) },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Transformasi Geometri",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = interFontFamily,
+                            letterSpacing = (-0.5).sp
+                        )
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack()}) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color.White,
-                    titleContentColor = Color.Black,
-                    navigationIconContentColor = Color.Black,
-                    actionIconContentColor = Color.Black
+                    titleContentColor = Color(0xFF1A237E)
                 )
             )
         }
@@ -76,26 +79,43 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFf7f7f7))
+                .background(Color(0xFFF8F9FE)) // Warna latar belakang yang sangat lembut
         ) {
+            // Tab Row Modern & Minimalist
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 16.dp,
                 containerColor = Color.White,
+                divider = {}, // Menghilangkan garis bawah default
                 indicator = { tabPositions ->
-                    SecondaryIndicator(
+                    Box(
                         Modifier
                             .tabIndicatorOffset(tabPositions[pagerState.currentPage])
-                            .height(3.dp),
-                        color = Color(0xFF5294FF)
+                            .fillMaxSize()
+                            .padding(horizontal = 4.dp, vertical = 8.dp)
+                            .background(
+                                color = Color(0xFF5294FF).copy(alpha = 0.1f), // Highlight halus di belakang teks
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .border(
+                                width = 1.5.dp,
+                                color = Color(0xFF5294FF),
+                                shape = RoundedCornerShape(12.dp)
+                            )
                     )
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 tabs.forEachIndexed { index, title ->
+                    val isSelected = pagerState.currentPage == index
                     val isLocked = index > maxAccessiblePage.intValue
+                    val contentColor by animateColorAsState(
+                        targetValue = if (isSelected) Color(0xFF1976D2) else if (isLocked) Color.LightGray else Color.Gray,
+                        label = "tabColor"
+                    )
 
                     Tab(
-                        selected = pagerState.currentPage == index,
+                        selected = isSelected,
                         onClick = {
                             if (!isLocked) {
                                 coroutineScope.launch {
@@ -103,113 +123,103 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                                 }
                             }
                         },
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(title, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color.Black)
-                                if (isLocked) {
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = "Locked",
-                                        modifier = Modifier.size(16.dp),
-                                        tint = Color.Gray
-                                    )
-                                }
+                        enabled = !isLocked,
+                        modifier = Modifier.height(56.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontFamily = interFontFamily,
+                                    fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                    fontSize = 13.sp
+                                ),
+                                color = contentColor
+                            )
+                            if (isLocked) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Terkunci",
+                                    modifier = Modifier.size(12.dp),
+                                    tint = Color.LightGray
+                                )
                             }
-                        },
-                        enabled = !isLocked
-                    )
+                        }
+                    }
                 }
             }
 
-            HorizontalPager(
-                state = pagerState,
-                userScrollEnabled = false
-            ) { page ->
-                fun goToNextPage(nextPage: Int) {
-                    if (userId != null && nextPage > maxAccessiblePage.intValue) {
-                        updateAccessiblePage(userId, nextPage)
-                        maxAccessiblePage.intValue = nextPage
+            // Konten Materi
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 8.dp)
+                    .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                    .background(Color.White)
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    userScrollEnabled = false,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    fun goToNextPage(nextPage: Int) {
+                        if (currentUserId.isNotEmpty() && nextPage > maxAccessiblePage.intValue) {
+                            updateAccessiblePage(currentUserId, nextPage)
+                            maxAccessiblePage.intValue = nextPage
+                        }
+                        coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
                     }
-                    coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
-                }
-                when (page) {
-                    0 -> MateriPengantar(
-                        currentPage = pagerState.currentPage,
-                        myPage = 0,
-                        onNext = {
-                            goToNextPage(1)
-                        }
-                    )
-                    1 -> MateriTranslasi(
-                        currentPage = pagerState.currentPage,
-                        myPage = 1,
-                        onNext = {
-                            goToNextPage(2)
-                        }
-                    )
-                    2 -> MateriRefleksi(
-                        currentPage = pagerState.currentPage,
-                        myPage = 2,
-                        onNext = {
-                            goToNextPage(3)
-                        }
-                    )
-                    3 -> MateriRotasi(
-                        currentPage = pagerState.currentPage,
-                        myPage = 3,
-                        onNext = {
-                            goToNextPage(4)
-                        }
-                    )
-                    4 -> MateriDilatasi(
-                        currentPage = pagerState.currentPage,
-                        myPage = 4,
-                        onNext = {
-                            goToNextPage(5)
-                        },
-                        onQuizNavigate = {
-                            goToNextPage(5)
-                        }
-                    )
 
-                    5 -> {
-                        val isQuizReady by quizViewModel.isQuizReady
+                    when (page) {
+                        0 -> MateriPengantar(currentPage = pagerState.currentPage, myPage = 0, onNext = { goToNextPage(1) })
+                        1 -> MateriTranslasi(currentPage = pagerState.currentPage, myPage = 1, onNext = { goToNextPage(2) })
+                        2 -> MateriRefleksi(currentPage = pagerState.currentPage, myPage = 2, onNext = { goToNextPage(3) })
+                        3 -> MateriRotasi(currentPage = pagerState.currentPage, myPage = 3, onNext = { goToNextPage(4) })
+                        4 -> MateriDilatasi(
+                            currentPage = pagerState.currentPage,
+                            myPage = 4,
+                            onNext = { goToNextPage(5) },
+                            onQuizNavigate = { goToNextPage(5) }
+                        )
+                        5 -> {
+                            val isQuizReady by quizViewModel.isQuizReady
+                            LaunchedEffect(page) {
+                                if (currentUserId.isNotEmpty()) {
+                                    quizViewModel.prepareQuiz(currentUserId, currentMaterialId)
+                                }
+                            }
 
-                        LaunchedEffect(page) {
-                            quizViewModel.prepareQuiz(requireNotNull(userId), materialId)
-                        }
-
-                        if (isQuizReady) {
-                            QuizScreen(
-                                currentPage = pagerState.currentPage,
-                                myPage = 5,
-                                viewModel = quizViewModel,
-                                onQuizFinished = {
-                                    quizViewModel.resetQuizReadyState()
-                                    goToNextPage(6)
-                                },
-                                userId = requireNotNull(userId),
-                                materialId = materialId
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
+                            if (isQuizReady) {
+                                QuizScreen(
+                                    currentPage = pagerState.currentPage,
+                                    myPage = 5,
+                                    viewModel = quizViewModel,
+                                    onQuizFinished = {
+                                        quizViewModel.resetQuizReadyState()
+                                        goToNextPage(6)
+                                    },
+                                    userId = currentUserId,
+                                    materialId = currentMaterialId
+                                )
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(strokeWidth = 3.dp, color = Color(0xFF5294FF))
+                                }
                             }
                         }
-                    }
-                    6 -> SummaryScreen(
-                        viewModel = quizViewModel,
-                        onBackToDashboard = {
-                            navController.navigate("dashboard/{userName}") {
-                                popUpTo(0) { inclusive = true }
-                                launchSingleTop = true
+                        6 -> SummaryScreen(
+                            viewModel = quizViewModel,
+                            onBackToDashboard = {
+                                navController.navigate("dashboard/{userName}") { // Asumsi route dashboard
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

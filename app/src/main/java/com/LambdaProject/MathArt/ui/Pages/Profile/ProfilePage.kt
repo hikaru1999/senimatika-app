@@ -50,7 +50,7 @@ fun ProfileScreen(navController: NavController) {
                 .background(Color(0xFFFFFFFF)),
             verticalArrangement = Arrangement.Top
         ) {
-            ProfileHeader(username, fullName, email, coins)
+            ProfileHeader(fullName, email, coins)
             ProfileBody(
                 navController = navController,
                 studyDuration = studyDuration,
@@ -62,11 +62,4 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}
-
-fun formatDuration(durationInMillis: Long): String {
-    val totalMinutes = durationInMillis / 1000 / 60
-    val hours = totalMinutes / 60
-    val minutes = totalMinutes % 60
-    return "$hours jam $minutes menit"
 }

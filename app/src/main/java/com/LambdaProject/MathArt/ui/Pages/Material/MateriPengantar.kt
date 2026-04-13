@@ -3,10 +3,11 @@ package com.LambdaProject.MathArt.ui.Pages.Material
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -36,105 +37,134 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 16.dp)
-            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Text(
-            text = "Pengantar",
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = interFontFamily,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(16.dp))
+        // Section: Title & Video
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = "Pengantar Etnomatematika",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E),
+                    letterSpacing = (-0.5).sp
+                )
+            )
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-        ) {
-            MyYouTubePlayer(videoId = "1M86rKgqdzo")
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .shadow(8.dp, RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Black
+            ) {
+                MyYouTubePlayer(videoId = "1M86rKgqdzo")
+            }
         }
 
-        Spacer(Modifier.height(16.dp))
+        // Section: Description
         Text(
             text = buildAnnotatedString {
                 withStyle(
                     style = ParagraphStyle(
                         textAlign = TextAlign.Justify,
-                        lineHeight = 24.sp
+                        lineHeight = 26.sp
                     )
                 ) {
                     append("Etnomatematika adalah sebuah ilmu yang mempelajari tentang budaya suatu bangsa dan mengaitkannya dengan Matematika.\n\n")
                     append("Pada kesempatan ini, akan dibahas kaitan salah satu budaya Indonesia yaitu batik yang dihubungkan dengan materi Matematika. ")
-                    append("Batik merupakan salah satu kekayaan budaya Indonesia yang dimiliki oleh seluruh daerah yang tersebar di Indonesia.\n\n")
-                    append("Selain itu, dunia juga mengakui bahwa batik merupakan salah satu unsur budaya bangsa Indonesia. ")
-                    append("Oleh karena itu, kita harus bangga dengan batik yang kita miliki.")
+                    append("Batik merupakan salah satu kekayaan budaya Indonesia yang dimiliki oleh seluruh daerah yang tersebar di Indonesia.")
                 }
             },
             fontFamily = interFontFamily,
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color(0xFF455A64)
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFF8FFF5), shape = RoundedCornerShape(12.dp))
-                .padding(16.dp)
+
+        // Section: Mini Quiz
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFFF0F4FF),
+            border = BorderStroke(1.dp, Color(0xFF5294FF).copy(alpha = 0.2f))
         ) {
-            Column {
-                Text(
-                    text = "Kuis Singkat!",
-                    fontFamily = interFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = Color(0xFF5294FF),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            "KUIS",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 10.sp
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = "Cek Pemahamanmu!",
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color(0xFF1A237E)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Tentukan nama dari motif Batik ini:",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = interFontFamily
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF37474F)
                 )
+                
                 Spacer(modifier = Modifier.height(12.dp))
                 Image(
                     painter = painterResource(id = R.drawable.img_batik_parang),
                     contentDescription = "Motif Batik",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                
+                Spacer(modifier = Modifier.height(20.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     listOf("Kawung", "Parang").forEach { option ->
                         val isSelected = selectedOption == option
-                        OutlinedButton(
+                        val buttonColor = if (isSelected) Color(0xFF5294FF) else Color.White
+                        val contentColor = if (isSelected) Color.White else Color(0xFF1A237E)
+                        
+                        Surface(
                             onClick = {
                                 if (!isAnswered) {
                                     selectedOption = option
                                     isAnswered = true
                                 }
                             },
-                            modifier = Modifier
-                                .weight(1f),
-                            shape = RoundedCornerShape(5.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = if (isSelected) Color(0xFFF4F4F4) else Color(0xFFFFFFFF)
-                            ),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
-                            )
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            color = buttonColor,
+                            border = BorderStroke(1.dp, if (isSelected) Color.Transparent else Color(0xFFCFD8DC)),
+                            shadowElevation = if (isSelected) 4.dp else 0.dp
                         ) {
                             Text(
                                 text = option,
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                textAlign = TextAlign.Center,
                                 fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = if (isAnswered && isSelected && isCorrect) Color.Blue else Color.Black
+                                fontWeight = FontWeight.ExtraBold,
+                                color = contentColor
                             )
                         }
                     }
@@ -142,95 +172,84 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
 
                 if (isAnswered) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = ParagraphStyle(
-                                    textAlign = TextAlign.Justify,
-                                    lineHeight = 22.sp
-                                )
-                            ) {
-                                if (isCorrect) {
-                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("Jawaban kamu benar! Ini adalah motif batik Parang.\n\n")
-                                    }
-                                } else {
-                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("Jawaban kamu belum tepat. Ini adalah motif batik Parang.\n\n")
-                                    }
+                    Surface(
+                        color = if (isCorrect) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append(if (isCorrect) "Jawaban kamu benar! " else "Jawaban kamu belum tepat. ")
                                 }
-                                append("Motif Parang memiliki bentuk seperti ombak yang berulang dan melambangkan semangat pantang menyerah. ")
-                                append("Motif ini sering digunakan oleh kalangan bangsawan Jawa sebagai simbol kekuatan dan keberanian.")
-                            }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontFamily = interFontFamily
-                    )
-                    Spacer(modifier = Modifier.align(Alignment.End))
+                                append("Ini adalah motif batik Parang. Motif Parang memiliki bentuk seperti ombak yang berulang dan melambangkan semangat pantang menyerah.")
+                            },
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = interFontFamily,
+                            color = if (isCorrect) Color(0xFF2E7D32) else Color(0xFFC62828)
+                        )
+                    }
                 }
-
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        HorizontalDivider(thickness = 1.dp)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Transformasi Geometri",
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = interFontFamily,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = buildAnnotatedString {
-                withStyle(
-                    style = ParagraphStyle(
-                        textAlign = TextAlign.Justify,
-                        lineHeight = 24.sp
-                    )
-                ) {
-                    append("Transformasi geometri adalah sebuah ilmu yang mempelajari proses perubahan suatu bidang geometri yang meliputi posisi, besar, dan bentuknya sendiri yang diakibatkan karena translasi, refleksi, rotasi, dilatasi, transformasi bersesuaian, perubahan skala, dan komposisi dua transformasi.\n\n")
-                    append("Transformasi geometri juga dapat dinyatakan sebagai perubahan pada sebuah bidang geometri yang mencamtukan posisi, besar, dan bentuknya sendiri.\n\n")
-                    append("Pada kesempatan pembelajaran ini, transformasi geometri akan dibatasi menjadi translasi, refleksi, rotasi, dan dilatasi.\n\n")
-                    append("Sebelum eksplorasi lebih lanjut, yuk coba renungkan dan jawab pertanyaan yang terdapat pada video ini:")
-                }
-            },
-            fontFamily = interFontFamily,
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-        ) {
-            MyYouTubePlayer(videoId = "akQBAB5cyIk")
+        // Section: Transformasi Geometri Intro
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = "Transformasi Geometri",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = interFontFamily,
+                    color = Color(0xFF1A237E)
+                )
+            )
+            Text(
+                text = "Transformasi geometri adalah proses perubahan posisi, ukuran, atau bentuk suatu bidang. Fokus kita kali ini: Translasi, Refleksi, Rotasi, dan Dilatasi.",
+                fontFamily = interFontFamily,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Justify,
+                lineHeight = 24.sp,
+                color = Color(0xFF455A64)
+            )
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .shadow(8.dp, RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.Black
+            ) {
+                MyYouTubePlayer(videoId = "akQBAB5cyIk")
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Bottom Navigation Button
         Button(
             onClick = {
                 if (userId != null) {
                     updateAccessiblePage(userId, 1)
                 }
-                onNext ()
+                onNext()
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
-            shape = RoundedCornerShape(5.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF0E60DD)
-            )
+                .height(56.dp)
+                .shadow(8.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
         ) {
-            Text(
-                text = "Buka: Translasi",
-                fontFamily = interFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = Color.White
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Buka: Translasi",
+                    fontFamily = interFontFamily,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp
+                )
+                Spacer(Modifier.width(8.dp))
+            }
         }
+        
+        Spacer(Modifier.height(32.dp))
     }
 }

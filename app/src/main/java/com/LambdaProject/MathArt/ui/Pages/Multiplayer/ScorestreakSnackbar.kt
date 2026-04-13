@@ -1,9 +1,12 @@
 package com.LambdaProject.MathArt.ui.Pages.Multiplayer
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,12 +14,11 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.ScorestreakState
-import com.LambdaProject.MathArt.model.ScoreType
+import com.LambdaProject.MathArt.data.model.ScorestreakState
+import com.LambdaProject.MathArt.data.model.ScoreType
 
 @Composable
 fun ScorestreakSnackbar(
@@ -30,65 +32,94 @@ fun ScorestreakSnackbar(
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         if (state != null) {
-            val backgroundColor = when (state.type) {
-                ScoreType.GOOD -> Brush.verticalGradient(
-                    colors = listOf(Color(0xFF66BB6A), Color(0xFF2E7D32)) // light to dark green
-                )
-                ScoreType.COOL -> Brush.verticalGradient(
-                    colors = listOf(Color(0xFF42A5F5), Color(0xFF1565C0)) // light to deep blue
-                )
-                ScoreType.AWESOME -> Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFFD700), Color(0xFFB8860B)) // gold to dark gold
-                )
-                ScoreType.UPS, ScoreType.NOT_FOCUSED -> Brush.verticalGradient(
-                    colors = listOf(Color(0xFFEF5350), Color(0xFFC62828)) // light to dark red
-                )
-                ScoreType.TIME_OUT -> Brush.verticalGradient(
-                    colors = listOf(Color(0xFFEF5350), Color(0xFFC62828))
-                )
+            // Palette warna warm yang disesuaikan dengan tipe jawaban
+            val accentColor = when (state.type) {
+                ScoreType.GOOD -> Color(0xFF8BC34A) // Lime Green (Warmer)
+                ScoreType.COOL -> Color(0xFF00BCD4) // Cyan (Warmer Blue)
+                ScoreType.AWESOME -> Color(0xFFFFB300) // Amber (Warm)
+                ScoreType.UPS, ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> Color(0xFFFF7043) // Deep Orange (Warm Red)
             }
 
-            Box(
+            val containerColor = when (state.type) {
+                ScoreType.GOOD -> Color(0xFFF9FBE7) // Lime 50
+                ScoreType.COOL -> Color(0xFFE0F7FA) // Cyan 50
+                ScoreType.AWESOME -> Color(0xFFFFF8E1) // Amber 50
+                ScoreType.UPS, ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> Color(0xFFFBE9E7) // Deep Orange 50
+            }
+
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(brush = backgroundColor, shape = RoundedCornerShape(8.dp))
-                    .padding(start = 8.dp, end = 8.dp, top = 5.dp, bottom = 5.dp)
+                    .shadow(
+                        elevation = 12.dp, 
+                        shape = CircleShape, 
+                        spotColor = accentColor
+                    ),
+                color = containerColor,
+                shape = CircleShape,
+                border = BorderStroke(1.5.dp, accentColor.copy(alpha = 0.3f))
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(8.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = state.imageRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp)
-                    )
+                    // Icon container with white circle for contrast
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color.White, CircleShape)
+                            .border(1.dp, accentColor.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = state.imageRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = state.title,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 21.sp,
-                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 16.sp,
+                            color = Color(0xFF1A237E),
                             fontFamily = interFontFamily,
+                            letterSpacing = 0.2.sp
                         )
-
-                        Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
                             text = state.subtitle,
-                            color = Color.White,
-                            fontStyle = FontStyle.Italic,
+                            color = Color.DarkGray.copy(alpha = 0.7f),
                             fontWeight = FontWeight.Bold,
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                lineHeight = 14.sp
-                            ),
+                            fontSize = 11.sp,
+                            fontFamily = interFontFamily,
+                            lineHeight = 14.sp
                         )
+                    }
+                    
+                    // Small glowing indicator at the end
+                    Surface(
+                        color = Color.White.copy(alpha = 0.5f),
+                        shape = CircleShape,
+                        modifier = Modifier.padding(end = 12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(accentColor, CircleShape)
+                                    .shadow(6.dp, CircleShape, spotColor = accentColor)
+                            )
+                        }
                     }
                 }
             }

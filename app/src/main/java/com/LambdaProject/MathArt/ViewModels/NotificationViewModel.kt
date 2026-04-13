@@ -2,8 +2,8 @@ package com.LambdaProject.MathArt.ViewModels
 
 import androidx.lifecycle.ViewModel
 import android.util.Log
-import com.LambdaProject.MathArt.model.NotificationItem
-import com.LambdaProject.MathArt.model.getAchievementIcon
+import com.LambdaProject.MathArt.data.model.NotificationItem
+import com.LambdaProject.MathArt.data.model.getAchievementIcon
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
@@ -11,7 +11,7 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import com.LambdaProject.MathArt.R
-import com.LambdaProject.MathArt.model.NotificationType
+import com.LambdaProject.MathArt.data.model.NotificationType
 
 class NotificationViewModel : ViewModel() {
     private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())

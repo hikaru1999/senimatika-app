@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -17,12 +18,11 @@ import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.LambdaProject.MathArt.Data.sampleCategories
-import com.LambdaProject.MathArt.Data.sampleMaterials
+import com.LambdaProject.MathArt.data.DataCategories
+import com.LambdaProject.MathArt.data.DataMaterials
 import com.LambdaProject.MathArt.ViewModels.DashboardViewModel
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.MaterialItem
-import com.google.accompanist.pager.HorizontalPager
+import com.LambdaProject.MathArt.data.model.MaterialItem
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -62,8 +62,8 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                         .fillMaxWidth()
                         .height(220.dp),
                 ) {
-                    val pagerState = rememberPagerState(pageCount = { sampleMaterials.size })
-                    val itemCount = sampleMaterials.size
+                    val pagerState = rememberPagerState(pageCount = { DataMaterials.size })
+                    val itemCount = DataMaterials.size
 
                     HorizontalPager(
                         state = pagerState,
@@ -74,7 +74,7 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.Top
                     ) { page ->
-                        val material = sampleMaterials[page]
+                        val material = DataMaterials[page]
                         val isActive = materialStatusMap[material.id] == true
 
                         Box(modifier = Modifier.padding(end = if (page == itemCount - 1) 0.dp else 20.dp)) {
@@ -105,14 +105,14 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    itemsIndexed(sampleCategories) { index, category ->
+                    itemsIndexed(DataCategories) { index, category ->
                         Row {
                             if (index == 0) {
                                 Spacer(modifier = Modifier.width(16.dp))
                             }
                             CategoryCard(category)
 
-                            if (index == sampleCategories.lastIndex) {
+                            if (index == DataCategories.lastIndex) {
                                 Spacer(modifier = Modifier.width(16.dp))
                             }
                         }
@@ -122,7 +122,7 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
             Spacer(modifier = Modifier.height(16.dp))
             SectionTitle(title = "Sedang Dipelajari")
             val activeSessions = remember(materialStatusMap) {
-                sampleMaterials.filter { materialStatusMap[it.id] == true }
+                DataMaterials.filter { materialStatusMap[it.id] == true }
             }
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -165,6 +165,35 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionTitle(title = "Berburu Harta Karun")
+            Button(
+                onClick = {
+                    navController.navigate("ExplorationLandingPage")
+                },
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFF1976D2)),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+            ) {
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(id = com.LambdaProject.MathArt.R.drawable.ic_play),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    "JELAJAH SENIMATIKA",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    fontFamily = interFontFamily,
+                    letterSpacing = 0.5.sp
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

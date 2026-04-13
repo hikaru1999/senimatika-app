@@ -7,10 +7,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.LambdaProject.MathArt.Data.ChallengeRepo
-import com.LambdaProject.MathArt.Data.KuesionerRepository
-import com.LambdaProject.MathArt.Data.KuesionerRepositoryImpl
-import com.LambdaProject.MathArt.Data.QuizResultRepository
+import com.LambdaProject.MathArt.data.repository.ChallengeRepository
+import com.LambdaProject.MathArt.data.repository.KuesionerRepository
+import com.LambdaProject.MathArt.data.repository.impl.KuesionerRepositoryImpl
+import com.LambdaProject.MathArt.data.repository.QuizResultRepository
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -45,7 +45,7 @@ object AppModule {
     fun provideChallengeRepo(
         firestore: FirebaseFirestore,
         auth: FirebaseAuth
-    ): ChallengeRepo = ChallengeRepo(firestore, auth)
+    ): ChallengeRepository = ChallengeRepository(firestore, auth)
 
     @Provides
     @Singleton

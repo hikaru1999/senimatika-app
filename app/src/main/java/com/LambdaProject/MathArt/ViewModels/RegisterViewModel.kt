@@ -1,11 +1,10 @@
 package com.LambdaProject.MathArt.ViewModels
 
-import android.util.Log
 import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.LambdaProject.MathArt.Data.AuthRepo
+import com.LambdaProject.MathArt.data.repository.AuthRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -13,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val authRepo: AuthRepo
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     var username by mutableStateOf("")

@@ -4,11 +4,18 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -45,8 +52,27 @@ fun LoginScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .consumeWindowInsets(WindowInsets.ime)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF3490DE), Color(0xFF1A237E))
+                )
+            )
     ) {
+        // Decorative circles for background
+        Box(
+            modifier = Modifier
+                .size(300.dp)
+                .offset(x = (-100).dp, y = (-100).dp)
+                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .size(200.dp)
+                .align(Alignment.BottomEnd)
+                .offset(x = 50.dp, y = 100.dp)
+                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+        )
+
         TopSnackbar(
             visible = showErrorBanner,
             message = errorMessage,
@@ -54,198 +80,171 @@ fun LoginScreen(navController: NavController) {
         )
 
         Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .background(Color(0xFF3490DE))
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .background(Color(0xFFF5F5F5))
-            )
-        }
-
-        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Image(
+                painter = painterResource(id = R.drawable.img_logo_white),
+                contentDescription = "Logo App Putih",
+                modifier = Modifier.height(100.dp).wrapContentWidth(),
+                contentScale = ContentScale.Fit
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Selamat Datang!",
+                fontSize = 32.sp,
+                fontFamily = interFontFamily,
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+            
+            Text(
+                text = "Log in untuk melanjutkan belajarmu di MathArt",
+                fontSize = 14.sp,
+                fontFamily = interFontFamily,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.ime)
+                    .shadow(elevation = 24.dp, shape = RoundedCornerShape(32.dp)),
+                color = Color.White,
+                shape = RoundedCornerShape(32.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_logo_white),
-                    contentDescription = "Logo App Putih",
-                    modifier = Modifier.height(125.dp).wrapContentWidth(),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "Log in untuk Belajar!",
-                    fontSize = 35.sp,
-                    fontFamily = interFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 45.sp
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                Column(
+                    modifier = Modifier.padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        OutlinedTextField(
-                            value = identifier,
-                            onValueChange = {
-                                if (!it.text.contains(" ") && !it.text.contains("\n")) {
-                                    identifier = it
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "Username atau Email",
-                                    fontFamily = interFontFamily,
-                                    fontSize = 14.sp
-                                )
-                            },
-                            isError = isSubmitted && identifierError,
-                            supportingText = {
-                                if (isSubmitted && identifierError) {
-                                    Text(
-                                        text = "Username atau Email tidak boleh kosong",
-                                        fontFamily = interFontFamily,
-                                        color = Color.Red,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth(),
+                    // Identifier Field
+                    OutlinedTextField(
+                        value = identifier,
+                        onValueChange = {
+                            if (!it.text.contains(" ") && !it.text.contains("\n")) {
+                                identifier = it
+                            }
+                        },
+                        label = { Text("Username atau Email", fontFamily = interFontFamily, fontSize = 14.sp) },
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF1976D2), modifier = Modifier.size(20.dp)) },
+                        isError = isSubmitted && identifierError,
+                        supportingText = {
+                            if (isSubmitted && identifierError) {
+                                Text("Wajib diisi", color = Color.Red, fontSize = 11.sp, fontFamily = interFontFamily)
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF1976D2),
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color(0xFFF8F9FE),
+                            unfocusedContainerColor = Color(0xFFF8F9FE)
                         )
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            isError = isSubmitted && passwordError,
-                            supportingText = {
-                                if (isSubmitted && passwordError) {
-                                    Text(
-                                        text = "Password tidak boleh kosong",
-                                        fontFamily = interFontFamily,
-                                        color = Color.Red,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "Password",
-                                    fontFamily = interFontFamily,
-                                    fontSize = 14.sp
-                                )
-                            },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                val image =
-                                    if (passwordVisible) painterResource(id = R.drawable.ic_eye_open)
-                                    else painterResource(id = R.drawable.ic_eye_close)
+                    )
 
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        painter = image,
-                                        contentDescription = "Toggle Password Visibility",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Done
-                            ),
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Password Field
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password", fontFamily = interFontFamily, fontSize = 14.sp) },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = Color(0xFF1976D2), modifier = Modifier.size(20.dp)) },
+                        isError = isSubmitted && passwordError,
+                        supportingText = {
+                            if (isSubmitted && passwordError) {
+                                Text("Wajib diisi", color = Color.Red, fontSize = 11.sp, fontFamily = interFontFamily)
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    painter = if (passwordVisible) painterResource(R.drawable.ic_eye_open) else painterResource(R.drawable.ic_eye_close),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF1976D2),
+                            unfocusedBorderColor = Color(0xFFE0E0E0),
+                            focusedContainerColor = Color(0xFFF8F9FE),
+                            unfocusedContainerColor = Color(0xFFF8F9FE)
                         )
+                    )
+
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                         Text(
                             text = "Lupa Password?",
-                            color = Color(0xFF1E88E5),
+                            color = Color(0xFF1976D2),
                             fontFamily = interFontFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            modifier = Modifier
-                                .align(Alignment.Start)
-                                .clickable {
-                                navController.navigate("ForgotPassword")
-                            }
+                            fontSize = 13.sp,
+                            modifier = Modifier.clickable { navController.navigate("ForgotPassword") }
                         )
+                    }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                        Button(
-                            onClick = {
-                                isSubmitted = true
-                                identifierError = identifier.text.isEmpty()
-                                passwordError = password.text.isEmpty()
+                    Button(
+                        onClick = {
+                            isSubmitted = true
+                            identifierError = identifier.text.isEmpty()
+                            passwordError = password.text.isEmpty()
 
-                                if (identifierError || passwordError) {
-                                    return@Button
-                                }
-
+                            if (!identifierError && !passwordError) {
                                 loginViewModel.login(identifier.text, password.text)
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E88E5)),
-                            shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = loginState !is LoginResult.Loading
-                        ) {
-                            if (loginState is LoginResult.Loading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Text(text = "Login", fontFamily = interFontFamily, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
                             }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF1976D2)),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = loginState !is LoginResult.Loading
+                    ) {
+                        if (loginState is LoginResult.Loading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                        } else {
+                            Text("LOGIN", fontFamily = interFontFamily, fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 1.sp)
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row {
-                            Text(
-                                text = "Belum punya akun? ",
-                                fontFamily = interFontFamily,
-                                color = Color.DarkGray,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "Daftar",
-                                color = Color(0xFF1E88E5),
-                                fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                modifier = Modifier.clickable {
-                                    navController.navigate("register")
-                                }
-                            )
-                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Belum punya akun? ", fontFamily = interFontFamily, color = Color.Gray, fontSize = 14.sp)
+                        Text(
+                            text = "Daftar Sekarang",
+                            color = Color(0xFF1976D2),
+                            fontFamily = interFontFamily,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { navController.navigate("register") }
+                        )
                     }
                 }
             }

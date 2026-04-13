@@ -1,7 +1,7 @@
 package com.LambdaProject.MathArt.ui.Pages.Dashboard
 
-import com.LambdaProject.MathArt.Data.*
-import com.LambdaProject.MathArt.model.MaterialItem
+import com.LambdaProject.MathArt.data.*
+import com.LambdaProject.MathArt.data.model.MaterialItem
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
@@ -37,7 +36,7 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
             if (userDoc.exists())
             {
                 viewModel.loadUserProfile(currentUserId)
-                viewModel.checkActiveSessions(currentUserId, sampleMaterials)
+                viewModel.checkActiveSessions(currentUserId, DataMaterials)
             } else {
                 FirebaseAuth.getInstance().signOut()
                 navController.navigate("login") {
@@ -55,14 +54,12 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
         bottomBar = { BottomNavigationMenu(navController) },
         containerColor = Color(0xFFf7f7f7)
     ) { paddingValues ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-            .consumeWindowInsets(paddingValues))
-        {
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top
             ) {
@@ -76,6 +73,8 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
                     }
                 )
             }
+            
+            // RangkumanCard positioned at absolute bottom to cover gaps caused by rounded BottomNav
             AnimatedVisibility(
                 visible = showRangkumanCard,
                 enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(400)),
@@ -83,18 +82,15 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 selectedMaterial?.let { material ->
-                    if (showRangkumanCard /* && selectedMaterial != null */)
-                    {
-                        RangkumanCard(
-                            material = selectedMaterial!!,
-                            userId = currentUserId,
-                            onClose = { showRangkumanCard = false },
-                            onSesiDisimpan = {
-                                showRangkumanCard = false
-                                navController.navigate("material_screen/${userId}/${material.id}")
-                            }
-                        )
-                    }
+                    RangkumanCard(
+                        material = material,
+                        userId = currentUserId,
+                        onClose = { showRangkumanCard = false },
+                        onSesiDisimpan = {
+                            showRangkumanCard = false
+                            navController.navigate("material_screen/${userId}/${material.id}")
+                        }
+                    )
                 }
             }
         }

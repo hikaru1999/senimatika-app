@@ -1,6 +1,5 @@
 package com.LambdaProject.MathArt.ui.Pages.Multiplayer
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -14,8 +13,10 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
@@ -23,28 +24,25 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.OnlineQuizDesc
-import com.LambdaProject.MathArt.ui.Pages.Profile.formatDuration
+import com.LambdaProject.MathArt.data.model.OnlineQuizDesc
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.cos
-import kotlin.math.sin
 
 @Composable
 fun OnlineQuizResult(
@@ -68,245 +66,237 @@ fun OnlineQuizResult(
     }
 
     BackHandler(enabled = true) {
-
+        // Intercept back button to prevent going back to kuis
     }
 
     quizResult?.let { result ->
         val totalQuestions = result.answers.size
-        val answeredQuestions = result.answers.count { it.selectedAnswers.isNotEmpty() ||!it.userTextAnswer.isNullOrBlank() }
+        val answeredQuestions = result.answers.count { it.selectedAnswers.isNotEmpty() || !it.userTextAnswer.isNullOrBlank() }
         val correctAnswers = result.answers.count { it.isCorrect }
         val totalTimeSeconds = result.answers.sumOf { it.timeTaken }
         val basePoints = result.totalBasePoints
         val bonusPoints = result.totalTimeBonus + result.totalStreakBonus
         val totalPoints = result.totalPoints
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 16.dp, start = 24.dp, end = 24.dp)
-                .verticalScroll(
-                    rememberScrollState()
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(modifier = Modifier.height(18.dp))
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Kuis Selesai",
-                tint = Color(0xFFFFD700),
+        Scaffold(
+            containerColor = Color(0xFFF8F9FE)
+        ) { padding ->
+            Column(
                 modifier = Modifier
-                    .size(80.dp)
-                    .shadow(8.dp, CircleShape)
-                    .background(Color(0xFFF9F5FF), CircleShape)
-            )
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Celebration Header
+                Box(contentAlignment = Alignment.Center) {
+                    Surface(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .shadow(24.dp, CircleShape, spotColor = Color(0xFFFFD700)),
+                        color = Color.White,
+                        shape = CircleShape
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(64.dp)
+                            )
+                        }
+                    }
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Kuis Selesai!",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                fontFamily = interFontFamily
-            )
+                Text(
+                    text = "Kuis Selesai!",
+                    fontFamily = interFontFamily,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 28.sp,
+                    color = Color(0xFF1A237E)
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Luar biasa! Kamu telah menyelesaikan tantangan ini.",
+                    fontFamily = interFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
-            StatsCard(
-                title = "Statistik Kuis",
-                group1 = listOf(
-                    "Soal Terjawab" to "$answeredQuestions / $totalQuestions",
-                    "Jawaban Benar" to "$correctAnswers",
-                    "Durasi" to formatDuration(totalTimeSeconds)
-                ),
-                group2 = listOf(
-                    "Base Points" to "$basePoints",
-                    "Bonus Points" to "$bonusPoints",
-                    "Total Points" to "$totalPoints"
-                ),
-            )
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (rewardStatus.isNotEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(125.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFFFFF)
+                // Stats Section
+                StatsCard(
+                    title = "Statistik Performa",
+                    group1 = listOf(
+                        "Soal Terjawab" to "$answeredQuestions / $totalQuestions",
+                        "Jawaban Benar" to "$correctAnswers",
+                        "Total Durasi" to formatDuration(totalTimeSeconds)
                     ),
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.CenterStart
+                    group2 = listOf(
+                        "Poin Dasar" to "$basePoints",
+                        "Bonus (Waktu & Streak)" to "$bonusPoints",
+                        "Skor Akhir" to "$totalPoints"
+                    ),
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // First Time Reward Section
+                if (rewardStatus.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(12.dp, RoundedCornerShape(24.dp)),
+                        color = Color.White,
+                        shape = RoundedCornerShape(24.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFFD54F).copy(alpha = 0.3f))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .padding(8.dp)
+                            modifier = Modifier.padding(16.dp)
                         ) {
                             SpinningSunBehindCoin(
                                 coinResId = R.drawable.ic_poin,
-                                modifier = Modifier,
+                                modifier = Modifier.size(80.dp),
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Hadiah Koin",
+                                    text = "Hadiah Pertama Kali!",
                                     fontFamily = interFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF1A237E)
                                 )
                                 AnimatedCoin(value = rewardCoins.toString())
                                 Text(
-                                    text = "Karena kamu telah meneyelesaikan kuis untuk pertama kalinya",
+                                    text = "Selamat! Kamu mendapatkan koin tambahan.",
                                     fontFamily = interFontFamily,
                                     fontSize = 11.sp,
-                                    fontStyle = FontStyle.Italic,
-                                    color = Color.DarkGray,
-                                    lineHeight = 15.sp
+                                    color = Color.Gray,
+                                    lineHeight = 16.sp
                                 )
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Button(
-                    onClick = {
-                        isLoading = true
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(1000)
-                            onClickLeaderboard()
-                            isLoading = false
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90E2))
-                ) {
-                    Box(
+                // Action Buttons
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(800)
+                                onClickLeaderboard()
+                                isLoading = false
+                            }
+                        },
                         modifier = Modifier
-                            .height(24.dp)
-                            .widthIn(min = 120.dp),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
                     ) {
                         if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 4.dp
-                            )
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                         } else {
-                            Text(
-                                "Leaderboard",
-                                color = Color.White,
-                                fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.AutoMirrored.Filled.List, null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("LIHAT LEADERBOARD", fontWeight = FontWeight.Black, fontFamily = interFontFamily, letterSpacing = 0.5.sp)
+                            }
                         }
                     }
-                }
 
-                OutlinedButton(
-                    onClick = {
-                        isLoadingLobby = true
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(1000)
-                            onClickHome()
-                            isLoadingLobby = false
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color.Gray)
-                ) {
-                    Box(
+                    OutlinedButton(
+                        onClick = {
+                            isLoadingLobby = true
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(800)
+                                onClickHome()
+                                isLoadingLobby = false
+                            }
+                        },
                         modifier = Modifier
-                            .height(24.dp)
-                            .widthIn(min = 120.dp),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.5.dp, Color(0xFFEEEEEE))
                     ) {
                         if (isLoadingLobby) {
-                            CircularProgressIndicator(
-                                color = Color.DarkGray,
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 4.dp
-                            )
+                            CircularProgressIndicator(color = Color(0xFF1976D2), modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                         } else {
-                            Text(
-                                "Quiz Lobby",
-                                fontFamily = interFontFamily,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Home, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("KEMBALI KE LOBBY", color = Color.Gray, fontWeight = FontWeight.Black, fontFamily = interFontFamily, letterSpacing = 0.5.sp)
+                            }
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(24.dp))
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
-    } ?: Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
+    } ?: run {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Color(0xFF1976D2))
+        }
     }
 }
 
 @Composable
 fun SpinningSunBehindCoin(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     coinResId: Int
 ) {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "coinSpin")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 6000, easing = LinearEasing),
+            animation = tween(durationMillis = 8000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
-        )
+        ), label = "rotation"
     )
 
     Box(
-        modifier = modifier.size(120.dp),
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier
-            .fillMaxSize()
-            .graphicsLayer {
-                rotationZ = rotation
-            }
-        ) {
+        Canvas(modifier = Modifier.fillMaxSize().graphicsLayer { rotationZ = rotation }) {
             val center = Offset(size.width / 2, size.height / 2)
             val radius = size.minDimension / 2.2f
             val petalCount = 12
             val angleStep = 360f / petalCount
 
             repeat(petalCount) { i ->
-                val angle = i * angleStep  // angle dalam DERAJAT, bukan radian!
+                val angle = i * angleStep
                 withTransform({
                     rotate(angle, pivot = center)
                 }) {
                     drawPath(
                         path = Path().apply {
                             moveTo(center.x, center.y)
-                            lineTo(center.x + radius * 0.1f, center.y - radius)
-                            lineTo(center.x - radius * 0.1f, center.y - radius)
+                            lineTo(center.x + radius * 0.12f, center.y - radius)
+                            lineTo(center.x - radius * 0.12f, center.y - radius)
                             close()
                         },
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.Yellow,
-                                Color.Yellow.copy(alpha = 0.2f),
-                                Color.Transparent
+                                Color(0xFFFFD54F),
+                                Color(0xFFFFD54F).copy(alpha = 0.1f)
                             ),
                             startY = center.y - radius,
                             endY = center.y
@@ -315,11 +305,10 @@ fun SpinningSunBehindCoin(
                 }
             }
         }
-        // Gambar koin/logo di tengah
         Image(
             painter = painterResource(coinResId),
             contentDescription = "Koin",
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(36.dp)
         )
     }
 }
@@ -330,20 +319,23 @@ fun StatsCard(
     group1: List<Pair<String, String>>,
     group2: List<Pair<String, String>>,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
+        color = Color.White,
+        shape = RoundedCornerShape(24.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .background(Color.White)
-                .padding(16.dp)
-        ) {
-            Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-            Spacer(modifier = Modifier.height(12.dp))
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(
+                text = title,
+                fontFamily = interFontFamily,
+                fontWeight = FontWeight.Black,
+                fontSize = 16.sp,
+                color = Color(0xFF1A237E)
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 group1.forEach { (label, value) ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -354,46 +346,66 @@ fun StatsCard(
                             val icon = when (label.lowercase()) {
                                 "soal terjawab" -> Icons.Default.Description
                                 "jawaban benar" -> Icons.Default.CheckCircle
-                                "durasi" -> Icons.Default.Timer
+                                "total durasi" -> Icons.Default.Timer
                                 else -> Icons.Default.Info
                             }
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = Color(0xFF92D0FF)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = Color(0xFFE3F2FD),
+                                shape = CircleShape,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = Color(0xFF1976D2)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 label,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontFamily = interFontFamily
+                                fontSize = 13.sp,
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray
                             )
                         }
 
                         Text(
                             value,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                            fontFamily = interFontFamily
+                            fontSize = 14.sp,
+                            fontFamily = interFontFamily,
+                            fontWeight = FontWeight.Black,
+                            color = Color(0xFF1A237E)
                         )
                     }
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 20.dp), thickness = 1.dp, color = Color(0xFFF5F5F5))
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 group2.forEachIndexed { index, (label, value) ->
+                    val isTotal = index == group2.lastIndex
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(label, style = MaterialTheme.typography.bodyMedium, fontFamily = interFontFamily)
+                        Text(
+                            label,
+                            fontSize = if (isTotal) 15.sp else 13.sp,
+                            fontFamily = interFontFamily,
+                            fontWeight = if (isTotal) FontWeight.Black else FontWeight.Bold,
+                            color = if (isTotal) Color(0xFF1A237E) else Color.Gray
+                        )
 
-                        if (index == 1) {
-                            AnimatedPointsWithCounter(value) // Bonus Points menggunakan Animated Counter
+                        if (label.contains("Bonus", ignoreCase = true)) {
+                            AnimatedPointsWithCounter(value)
                         } else {
-                            AnimatedPoints(value) // Base Points dan Total Points
+                            AnimatedPoints(value, isTotal)
                         }
                     }
                 }
@@ -410,55 +422,56 @@ fun AnimatedPointsWithCounter(value: String) {
     LaunchedEffect(targetValue) {
         animatedValue.animateTo(
             targetValue = targetValue.toFloat(),
-            animationSpec = tween(durationMillis = 2500, easing = LinearOutSlowInEasing)
+            animationSpec = tween(durationMillis = 2000, easing = LinearOutSlowInEasing)
         )
     }
 
     Text(
         text = "+${animatedValue.value.toInt()}",
-        style = MaterialTheme.typography.bodyMedium.copy(
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF4CAF50),
-            fontFamily = interFontFamily
-        )
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Black,
+        color = Color(0xFF66BB6A),
+        fontFamily = interFontFamily
     )
 }
 
 @Composable
-fun AnimatedPoints(value: String) {
+fun AnimatedPoints(value: String, isTotal: Boolean = false) {
     val targetValue = value.toIntOrNull() ?: 0
     val animatedValue = remember { Animatable(0f) }
 
     LaunchedEffect(targetValue) {
         animatedValue.animateTo(
             targetValue = targetValue.toFloat(),
-            animationSpec = tween(durationMillis = 2500, easing = LinearOutSlowInEasing)
+            animationSpec = tween(durationMillis = 2000, easing = LinearOutSlowInEasing)
         )
     }
 
     Text(
         text = animatedValue.value.toInt().toString(),
-        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-        fontFamily = interFontFamily
+        fontSize = if (isTotal) 20.sp else 14.sp,
+        fontWeight = FontWeight.Black,
+        fontFamily = interFontFamily,
+        color = if (isTotal) Color(0xFF1976D2) else Color(0xFF1A237E)
     )
 }
 
 @Composable
 fun AnimatedCoin(value: String) {
     val targetValue = value.toIntOrNull() ?: 0
-    val animatedValue = remember { Animatable(0f) } // Menggunakan Animatable untuk nilai float
+    val animatedValue = remember { Animatable(0f) }
 
     LaunchedEffect(targetValue) {
         animatedValue.animateTo(
             targetValue = targetValue.toFloat(),
-            animationSpec = tween(durationMillis = 2500, easing = LinearOutSlowInEasing)
+            animationSpec = tween(durationMillis = 2000, easing = LinearOutSlowInEasing)
         )
     }
 
     Text(
         text = "+ ${animatedValue.value.toInt()} Koin",
-        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black),
-        fontSize = 21.sp,
+        fontWeight = FontWeight.Black,
+        fontSize = 24.sp,
         color = Color(0xFF66BB6A),
         fontFamily = interFontFamily
     )
@@ -469,7 +482,7 @@ private fun formatDuration(seconds: Int): String {
     val remainingSeconds = seconds % 60
     return buildString {
         if (minutes > 0) {
-            append("$minutes menit ")
+            append("$minutes menit")
         }
         append("$remainingSeconds detik")
     }

@@ -1,158 +1,231 @@
 package com.LambdaProject.MathArt.ui.Pages.Dashboard
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import android.annotation.SuppressLint
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import com.LambdaProject.MathArt.Data.*
+import com.LambdaProject.MathArt.data.*
+import com.LambdaProject.MathArt.data.repository.SessionRepository
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.MaterialItem
-import com.LambdaProject.MathArt.model.unlockPemulaAchievement
+import com.LambdaProject.MathArt.data.model.MaterialItem
+import com.LambdaProject.MathArt.data.model.unlockPemulaAchievement
 import com.LambdaProject.MathArt.ui.Pages.Material.updateAccessiblePage
 
+@SuppressLint("FrequentlyChangingValue")
 @Composable
 fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, onSesiDisimpan: () -> Unit) {
     val scrollState = rememberScrollState()
-    val isScrolled = scrollState.value> 10
-    val steps = sampleMaterialStep[material.id] ?: emptyList()
+    val isScrolled = scrollState.value > 10
+    val steps = DataMaterialStep[material.id] ?: emptyList()
     val goals = materialGoals[material.id] ?: emptyList()
     val deskripsi = materialDescriptions[material.id] ?: "Deskripsi tidak tersedia."
 
-    AnimatedContent(
-        targetState = isScrolled,
-        transitionSpec = {
-            fadeIn(tween(200)) togetherWith fadeOut(tween(200))
-        },
-        label = "Card Expansion"
-    ) { scrolled ->
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (scrolled) Modifier.fillMaxHeight()
-                    else Modifier.fillMaxHeight(0.75f)
-                ),
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color.White,
-            tonalElevation = 8.dp,
-            shadowElevation = 8.dp
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Surface (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopStart)
-                        .background(Color.White)
-                        .zIndex(1f),
-                    color = Color.White
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isScrolled) Modifier.fillMaxHeight()
+                else Modifier.fillMaxHeight(0.85f)
+            ),
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        color = Color.White,
+        tonalElevation = 4.dp,
+        shadowElevation = 16.dp
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Sticky Header
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopStart)
+                    .zIndex(2f),
+                color = Color.White,
+                shadowElevation = if (isScrolled) 4.dp else 0.dp
+            ) {
+                Column {
+                    // Pull Handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .size(width = 40.dp, height = 4.dp)
+                            .background(Color.LightGray.copy(alpha = 0.5f), CircleShape)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 12.dp, top = 8.dp, bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End
-                        ){
-                            IconButton(onClick = onClose) {
-                                Icon(Icons.Default.Close, contentDescription = "Tutup")
-                            }
-                        }
                         Text(
                             text = material.title,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            fontFamily = interFontFamily,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 20.sp,
+                            color = Color(0xFF1A237E),
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = onClose,
+                            modifier = Modifier.background(Color(0xFFF5F5F5), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Tutup", tint = Color.Gray)
+                        }
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Spacer(modifier = Modifier.height(100.dp))
+
+                // Section: Deskripsi
+                RangkumanSectionHeader(title = "Deskripsi Materi")
+                Text(
+                    text = deskripsi,
+                    fontFamily = interFontFamily,
+                    fontSize = 15.sp,
+                    lineHeight = 22.sp,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Justify,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                // Section: Tujuan
+                RangkumanSectionHeader(title = "Tujuan Pembelajaran")
+                LearningGoals(goals)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Section: Alur
+                RangkumanSectionHeader(title = "Alur Belajar")
+                TimelineLayout(steps)
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                // Action Button
+                Button(
+                    onClick = {
+                        userId?.let {
+                            unlockPemulaAchievement(userId)
+                            SessionRepository.saveLearningSession(it, material) {
+                                onSesiDisimpan()
+                            }
+                            updateAccessiblePage(userId, 0)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFF1976D2)),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                ) {
+                    Text(
+                        "MULAI BELAJAR SEKARANG",
+                        color = Color.White,
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 16.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
+                
+                // Tambahan Spacer yang cukup besar agar tombol tidak terhalang BottomNav saat discroll ke paling bawah
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+            
+            // Elemen penutup celah (Box putih solid di layer terbawah)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(Color.White)
+                    .align(Alignment.BottomCenter)
+                    .zIndex(-1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun RangkumanSectionHeader(title: String) {
+    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+        Text(
+            text = title,
+            fontFamily = interFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 17.sp,
+            color = Color(0xFF1A237E)
+        )
+        Box(
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .size(width = 32.dp, height = 3.dp)
+                .background(Color(0xFF1976D2), CircleShape)
+        )
+    }
+}
+
+@Composable
+fun TimelineLayout(steps: List<String>) {
+    Column(modifier = Modifier.padding(start = 8.dp)) {
+        steps.forEachIndexed { index, step ->
+            Row(verticalAlignment = Alignment.Top) {
+                Column(
+                    modifier = Modifier.width(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .border(2.dp, Color(0xFF1976D2), CircleShape)
+                            .padding(4.dp)
+                            .background(Color(0xFF1976D2), CircleShape)
+                    )
+
+                    if (index != steps.lastIndex) {
+                        Box(
+                            modifier = Modifier
+                                .width(2.dp)
+                                .height(40.dp)
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(Color(0xFF1976D2), Color(0xFFEEEEEE))
+                                    )
+                                )
                         )
                     }
                 }
-                Column (
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState)
-                        .padding(top = 150.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
-                ) {
-                    Text(
-                        text = "Deskripsi",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                    Text(
-                        text = deskripsi,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Tujuan Pembelajaran",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                    LearningGoals(goals)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Alur Materi",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
-                        steps.forEachIndexed { index, step ->
-                            Row(verticalAlignment = Alignment.Top) {
-                                Column(
-                                    modifier = Modifier
-                                        .width(24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Canvas(modifier = Modifier.size(18.dp)) {
-                                        drawCircle(color = Color(0xFF474747))
-                                    }
-
-                                    if (index != steps.lastIndex) {
-                                        Box(
-                                            modifier = Modifier
-                                                .width(2.dp)
-                                                .height(25.dp)
-                                                .background(Color.Gray)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = step,
-                                    fontSize = 16.sp,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = {
-                            userId?.let {
-                                unlockPemulaAchievement(userId)
-                                SessionRepository.saveLearningSession(it, material) {
-                                    onSesiDisimpan()
-                                }
-                                updateAccessiblePage(userId, 0)
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally),
-                        shape = RoundedCornerShape(5.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5294ff))
-                    ) {
-                        Text("Mulai Belajar", color = Color.White, fontFamily = interFontFamily, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = step,
+                    fontFamily = interFontFamily,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
             }
         }
     }
@@ -161,15 +234,33 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
 @Composable
 fun LearningGoals(goals: List<String>) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         goals.forEach { goal ->
-            Row(
-                verticalAlignment = Alignment.Top,
+            Surface(
+                color = Color(0xFFF8F9FE),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("•", fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
-                Text(text = goal, style = MaterialTheme.typography.bodyMedium)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF66BB6A),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = goal,
+                        fontFamily = interFontFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.DarkGray
+                    )
+                }
             }
         }
     }

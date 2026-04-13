@@ -7,18 +7,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.MaterialItem
+import com.LambdaProject.MathArt.data.model.MaterialItem
+import com.LambdaProject.MathArt.data.kelasMap
 
 @Composable
 fun MaterialCard(material: MaterialItem, isActive: Boolean, onClickLearn: (MaterialItem) -> Unit) {
+    val fullClassLevel = remember(material.classLevel) {
+        val jenjang = kelasMap.entries.find { it.value.contains(material.classLevel) }?.key ?: ""
+        if (jenjang.isNotEmpty()) "${material.classLevel} $jenjang" else "${material.classLevel}"
+    }
+
     Card(
         modifier = Modifier
             .width(300.dp)
@@ -61,7 +69,7 @@ fun MaterialCard(material: MaterialItem, isActive: Boolean, onClickLearn: (Mater
                     tint = Color(0xff6695CD)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
-                Text(text = material.classLevel, fontSize = 14.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
+                Text(text = fullClassLevel, fontSize = 14.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
 
                 Spacer(modifier = Modifier.weight(1f))
                 Button(

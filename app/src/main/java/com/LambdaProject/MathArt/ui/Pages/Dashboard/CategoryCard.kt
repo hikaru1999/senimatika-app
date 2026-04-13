@@ -16,9 +16,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.CategoryItem
+import com.LambdaProject.MathArt.data.model.CategoryItem
 
 /* @Composable
 fun CategoryCard(category: CategoryItem) {

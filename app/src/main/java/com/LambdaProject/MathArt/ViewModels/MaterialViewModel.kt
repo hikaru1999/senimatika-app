@@ -1,8 +1,8 @@
 package com.LambdaProject.MathArt.ViewModels
 
 import androidx.lifecycle.ViewModel
-import com.LambdaProject.MathArt.Data.sampleMaterialTopic
-import com.LambdaProject.MathArt.model.MaterialItem
+import com.LambdaProject.MathArt.data.DataMaterialTopic
+import com.LambdaProject.MathArt.data.model.MaterialItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +19,6 @@ class MaterialViewModel @Inject constructor() : ViewModel() {
 
     fun selectMaterial(material: MaterialItem) {
         _selectedMaterial.value = material
-        _tabs.value = sampleMaterialTopic[material.id] ?: listOf("Pengantar", "Kuis")
+        _tabs.value = DataMaterialTopic[material.id] ?: listOf("Pengantar", "Kuis")
     }
 }

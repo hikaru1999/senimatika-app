@@ -3,8 +3,8 @@ package com.LambdaProject.MathArt.ViewModels
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
-import com.LambdaProject.MathArt.model.UserAnswer
-import com.LambdaProject.MathArt.model.QuizQuestion
+import com.LambdaProject.MathArt.data.model.UserAnswer
+import com.LambdaProject.MathArt.data.model.QuizQuestion
 import com.LambdaProject.MathArt.R
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue

@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.LambdaProject.MathArt.Data.sampleMaterials
-import com.LambdaProject.MathArt.model.MaterialItem
-import com.LambdaProject.MathArt.model.unlockExplorerAchievement
-import com.LambdaProject.MathArt.model.StudyDurationManager
+import com.LambdaProject.MathArt.data.DataMaterials
+import com.LambdaProject.MathArt.data.model.MaterialItem
+import com.LambdaProject.MathArt.data.model.unlockExplorerAchievement
+import com.LambdaProject.MathArt.data.model.StudyDurationManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -72,7 +72,7 @@ class  ProfileViewModel @Inject constructor(
             .addOnSuccessListener { docs ->
                 val materialIds = docs.mapNotNull { it.getString("materialId") }
                 _activeSessions.clear()
-                _activeSessions.addAll(sampleMaterials.filter { it.id in materialIds })
+                _activeSessions.addAll(DataMaterials.filter { it.id in materialIds })
             }
     }
 

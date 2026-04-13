@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.helveticaFont
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.model.NotificationItem
+import com.LambdaProject.MathArt.data.model.NotificationItem
 import kotlinx.coroutines.delay
 
 @Composable
