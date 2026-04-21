@@ -8,7 +8,7 @@ enum class RewardType {
 
 enum class PowerUpType {
     FREEZE_TIMER,
-    DOUBLE_COIN,
+    STREAK_PROTECTION,
     REMOVE_TWO_OPTIONS
 }
 

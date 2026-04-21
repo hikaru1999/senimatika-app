@@ -234,12 +234,22 @@ val DataAchievements = listOf(
 )
 
 val tutorialTexts = listOf(
-    "Selamat datang di Senimatika!",
-    "Di sini kamu bisa belajar matematika melalui budaya.",
-    "Klik pada peta untuk memulai petualangan.",
+    "Selamat datang di Numeria! Tempat penuh tantangan dan menyimpan berbagai harta tersembunyi.",
+    "Tugasmu sangat sederhana: Cari harta karun, ambil isinya, dan bawa isi tersebut ke titik yang ditentukan.",
     "Gunakan kontrol di layar untuk menggerakkan karakter.",
-    "Kumpulkan koin dan buka stasiun untuk mendapatkan reward!",
-    "Hati-hati! Kamu mendekati wilayah kekuasaan Boss. Siapkan dirimu untuk bertarung!"
+    "Terdapat area yang memerlukan 3 digit kode. Dapatkan kode tersebut untuk membuka berbagai harta karun yang tersebar!",
+    "Terlihat mudah ya? Yuk coba gerakan karaktermu.",
+    "Nampaknya jalur di depan diblokir oleh seseorang.",
+    "Di Numeria, terdapat beberapa boss yang harus kamu kalahkan.",
+    "Kamu bisa mengalahkan mereka semua dengan skill Matematikamu! Sesuatu yang belum tentu boss miliki.",
+    "Boss akan mengajakmu duel 1 vs 1 dalam sebuah kuis. Jika kuis aktif, maka kamu WAJIB menyelesaikan kusinya. Kamu tidak bisa mundur!",
+    "Jika kamu berhasil menjawab setiap pertanyaan dengan benar, maka health point lawan berkurang, dan berpeluang besar untuk melanjutkan eksplorasi.",
+    "Kamu juga berpeluang mendapatkan digit pertama kode yang dibutuhkan untuk membuka suatu area.",
+    "Namun jika kamu gagal dalam tantangan ini, maka harta yang sudah kamu temukan akan HILANG dan GAME-OVER.",
+    "Yuk kita kalahkan boss itu agar bisa melanjutkan eksplorasi.",
+    "Selamat! Kamu mendapatkan harta karun pertamamu. Item yang kamu temukan akan masuk ke dalam tas (Inventory). Kamu bisa membukanya melalui tombol tas di pojok kanan atas.",
+    "Kamu telah sampai di Station! Masukkan 3 digit kode yang telah kamu kumpulkan dari mengalahkan boss untuk membuka Station ini. Di dalamnya terdapat tantangan matematika yang memberikan koin melimpah!",
+    "Itu dia titik ekstraksi! Kamu telah menyelesaikan misi utama di wilayah ini. Berdirilah di atas bendera tersebut untuk membawa pulang semua harta yang telah kamu kumpulkan."
 )
 
 val infoSenimatika = listOf(

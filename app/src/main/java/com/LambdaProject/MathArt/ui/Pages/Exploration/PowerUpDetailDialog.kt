@@ -32,12 +32,12 @@ fun PowerUpDetailDialog(pu: PowerUpType, onDismiss: () -> Unit) {
     val title = when(pu) {
         PowerUpType.FREEZE_TIMER -> "Freeze Timer"
         PowerUpType.REMOVE_TWO_OPTIONS -> "Truth Filter"
-        PowerUpType.DOUBLE_COIN -> "Double Point"
+        PowerUpType.STREAK_PROTECTION -> "Battle Shield"
     }
     val description = when(pu) {
-        PowerUpType.FREEZE_TIMER -> "Hentikan waktu kuis selama 10 detik agar kamu bisa berpikir lebih tenang."
+        PowerUpType.FREEZE_TIMER -> "Hentikan waktu kuis selama 5 detik agar kamu bisa berpikir lebih tenang."
         PowerUpType.REMOVE_TWO_OPTIONS -> "Menghilangkan 2 pilihan jawaban yang salah secara otomatis."
-        PowerUpType.DOUBLE_COIN -> "Memberikan skor x2 jika kamu berhasil menjawab soal ini dengan benar."
+        PowerUpType.STREAK_PROTECTION -> "Memberikan proteksi streak jika kamu menjawab soal yang salah."
     }
 
     Dialog(onDismissRequest = onDismiss) {

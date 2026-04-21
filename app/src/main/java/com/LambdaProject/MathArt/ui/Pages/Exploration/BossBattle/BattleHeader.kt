@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,9 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.LambdaProject.MathArt.R
 
 @Composable
 fun BattleHeader(
@@ -22,6 +25,7 @@ fun BattleHeader(
     bossHp: Float,
     bossProgress: Float,
     bossTimeLeftMillis: Long,
+    isChronoFreezeActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier
@@ -84,23 +88,34 @@ fun BattleHeader(
         // Boss Thinking Progress
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             val statusText = when {
+                isChronoFreezeActive -> "Chrono - Freeze! Boss Mendapatkan Sabotase!"
                 bossTimeLeftMillis <= 3000L -> "Boss Menyerang!"
                 bossProgress >= 0.5f -> "Boss bersiap menyerang"
                 else -> "Boss menyiapkan strategi"
             }
             val statusColor = when {
+                isChronoFreezeActive -> Color.Cyan
                 bossTimeLeftMillis <= 3000L -> Color.Red
                 bossProgress >= 0.5f -> Color(0xFFFFA500) // Orange
                 else -> Color.Yellow
             }
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = statusText,
-                    color = statusColor.copy(alpha = 0.8f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isChronoFreezeActive) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_pu_freeze),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp).padding(end = 4.dp)
+                        )
+                    }
+                    Text(
+                        text = statusText,
+                        color = statusColor.copy(alpha = 0.8f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
                 LinearProgressIndicator(
                     progress = { bossProgress },
                     modifier = Modifier

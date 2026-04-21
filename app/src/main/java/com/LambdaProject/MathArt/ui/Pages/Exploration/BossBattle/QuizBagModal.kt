@@ -34,9 +34,9 @@ fun QuizBagModal(
                     inventory.powerUps.distinct().forEach { pu ->
                         val count = inventory.powerUps.count { it == pu }
                         val (title, icon, desc) = when(pu) {
-                            PowerUpType.FREEZE_TIMER -> Triple("Chrono Freeze", R.drawable.ic_pu_freeze, "Reset bar Boss ke 0%")
+                            PowerUpType.FREEZE_TIMER -> Triple("Chrono Freeze", R.drawable.ic_pu_freeze, "Freeze timer 5 detik")
                             PowerUpType.REMOVE_TWO_OPTIONS -> Triple("Truth Filter", R.drawable.ic_pu_magic, "Hapus 2 opsi salah")
-                            PowerUpType.DOUBLE_COIN -> Triple("Double Coins", R.drawable.ic_pu_shield, "Bonus koin (n/a battle)")
+                            PowerUpType.STREAK_PROTECTION -> Triple("Battle Shield", R.drawable.ic_pu_shield, "Proteksi streak")
                         }
                         ListItem(
                             headlineContent = { Text(title) },

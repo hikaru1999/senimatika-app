@@ -93,6 +93,7 @@ fun QuizContent(
                     bossHp = viewModel.bossHp,
                     bossProgress = viewModel.bossThinkingProgress,
                     bossTimeLeftMillis = viewModel.bossTimeLeftMillis,
+                    isChronoFreezeActive = viewModel.isChronoFreezeActive,
                     modifier = bossModifier
                 )
 
@@ -229,6 +230,7 @@ fun ResultBattleItem(index: Int, result: QuestionResult) {
                     Text("CRITICAL!", color = Color.Yellow, fontWeight = FontWeight.Black, fontSize = 10.sp)
                 }
             }
+            @Suppress("DEPRECATION")
             Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White.copy(alpha = 0.1f))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Boss Damage: -${result.playerDamageDealt.toInt()} HP", color = Color.Red, fontSize = 12.sp)
@@ -268,9 +270,9 @@ fun BattleHpSummary(playerHp: Float, bossHp: Float) {
 }
 
 @Composable
-fun ScoreColumn(label: String, score: Int, color: Color) {
+fun ScoreColumn(title: String, score: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(title, color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         Text(score.toString(), color = color, fontSize = 36.sp, fontWeight = FontWeight.Black)
     }
 }

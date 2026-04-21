@@ -11,22 +11,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
 import com.LambdaProject.MathArt.data.PowerUpType
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.ViewModels.ExplorationPhase
 import com.LambdaProject.MathArt.data.ObjectType
 import com.LambdaProject.MathArt.data.TileType
 import com.LambdaProject.MathArt.data.model.TileData
+import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle.BossQuizModal
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -34,21 +41,36 @@ import kotlin.math.abs
 fun ExplorationMapScreen(
     mapId: String = "level_1",
     initialBag: String = "",
-    viewModel: MapViewModel = viewModel(),
+    viewModel: MapViewModel,
     bossViewModel: BossQuizViewModel = viewModel(),
     onBack: () -> Unit
 ) {
-    var showTutorialOverlay by remember { mutableStateOf(false) }
     var tutorialStep by remember { mutableIntStateOf(0) }
     var bossTutorialTriggered by remember { mutableStateOf(false) }
+    var chestTutorialTriggered by remember { mutableStateOf(false) }
+    var stationTutorialTriggered by remember { mutableStateOf(false) }
+    var finishTutorialTriggered by remember { mutableStateOf(false) }
+    
+    var showExitConfirmation by remember { mutableStateOf(false) }
+    var showExtractionAnim by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // ANIMASI FADE IN SAAT MASUK
+    var mapVisible by remember { mutableStateOf(false) }
+    val fadeInAlpha by animateFloatAsState(
+        targetValue = if (mapVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 1500, easing = LinearOutSlowInEasing),
+        label = "fadeIn"
+    )
 
     // Inisialisasi Map dan Bag
     LaunchedEffect(mapId) {
-        viewModel.loadMap(mapId)
-        if (mapId == "tutorial") {
-            showTutorialOverlay = true
-            tutorialStep = 0
+        if (viewModel.currentMapId != mapId || viewModel.fullMapData.isEmpty()) {
+            viewModel.loadMap(mapId, context)
         }
+        // Tunggu sebentar lalu munculkan map
+        delay(100)
+        mapVisible = true
     }
 
     LaunchedEffect(initialBag) {
@@ -60,11 +82,57 @@ fun ExplorationMapScreen(
         }
     }
 
+    // Monitor Finish State untuk Animasi
+    LaunchedEffect(viewModel.isExplorationFinished, viewModel.explorationSummary) {
+        if (viewModel.isExplorationFinished && viewModel.explorationSummary?.isSuccess == true) {
+            showExtractionAnim = true
+            delay(3500)
+            showExtractionAnim = false
+        }
+    }
+
+    // Trigger Proximity Tutorials
+    LaunchedEffect(viewModel.playerX, viewModel.playerY) {
+        if (mapId.contains("tutorial")) {
+            val adjacentOffsets = listOf(0 to 1, 0 to -1, 1 to 0, -1 to 0)
+
+            for ((dx, dy) in adjacentOffsets) {
+                val nx = viewModel.playerX + dx
+                val ny = viewModel.playerY + dy
+
+                if (nx in 0 until viewModel.mapWidth && ny in 0 until viewModel.mapHeight) {
+                    val obj = viewModel.fullMapData[ny][nx].obj
+
+                    if (obj == ObjectType.STATION && !stationTutorialTriggered) {
+                        tutorialStep = 14
+                        viewModel.shouldShowTutorialOverlay = true
+                        stationTutorialTriggered = true
+                    }
+
+                    if (obj == ObjectType.FLAG && !finishTutorialTriggered) {
+                        tutorialStep = 15
+                        viewModel.shouldShowTutorialOverlay = true
+                        finishTutorialTriggered = true
+                    }
+                }
+            }
+        }
+    }
+
+    // 1. First Chest Reward Tutorial
+    LaunchedEffect(viewModel.openedChests.size) {
+        if (mapId.contains("tutorial") && viewModel.openedChests.size == 1 && !chestTutorialTriggered) {
+            tutorialStep = 13
+            viewModel.shouldShowTutorialOverlay = true
+            chestTutorialTriggered = true
+        }
+    }
+
     // Trigger Boss Tutorial Proximity
     LaunchedEffect(viewModel.isNearBoss) {
-        if (mapId == "tutorial" && viewModel.isNearBoss && !bossTutorialTriggered) {
-            tutorialStep = 5 // Index khusus peringatan boss
-            showTutorialOverlay = true
+        if (mapId.contains("tutorial") && viewModel.isNearBoss && !bossTutorialTriggered) {
+            tutorialStep = 5 // Boss Sequence starts at index 5
+            viewModel.shouldShowTutorialOverlay = true
             bossTutorialTriggered = true
         }
     }
@@ -73,12 +141,16 @@ fun ExplorationMapScreen(
     LaunchedEffect(Unit) {
         viewModel.onBossTriggered = { x, y, quizId ->
             bossViewModel.startQuiz(quizId) {
-                viewModel.onBossDefeated()
+                viewModel.onBossDefeated(context)
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(alpha = fadeInAlpha) // Mengaplikasikan Fade In
+    ) {
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -129,17 +201,27 @@ fun ExplorationMapScreen(
                     Box(
                         modifier = Modifier.offset(animatedOffsetX, animatedOffsetY)
                     ) {
-                        val treeTypes = listOf(ObjectType.TREE_SMALL, ObjectType.TREE_MEDIUM, ObjectType.TREE_LARGE)
+                        // Varian pohon untuk menambal area kosong
+                        val treeVariants = listOf("obj_tree_small", "obj_tree_medium", "obj_tree_large")
 
                         for (y in startY..endY) {
                             for (x in startX..endX) {
                                 key(x, y) {
                                     val isInsideMap = x in 0 until viewModel.mapWidth && y in 0 until viewModel.mapHeight
+                                    
                                     val tile = if (isInsideMap) {
-                                        viewModel.fullMapData[y][x]
+                                        val existingTile = viewModel.fullMapData.getOrNull(y)?.getOrNull(x)
+                                        // Jika tile di dalam map ternyata tidak memiliki data ground (kosong)
+                                        if (existingTile == null || existingTile.groundVariant.isEmpty()) {
+                                            val treeIndex = abs(x * 31 + y * 17) % treeVariants.size
+                                            TileData(TileType.GROUND, "tile_ground_1", ObjectType.TREE, treeVariants[treeIndex])
+                                        } else {
+                                            existingTile
+                                        }
                                     } else {
-                                        val treeIndex = abs(x * 31 + y * 17) % treeTypes.size
-                                        TileData(TileType.GROUND, "tile_ground_1", treeTypes[treeIndex])
+                                        // Tambal area di luar batas map dengan ground dan pohon random
+                                        val treeIndex = abs(x * 31 + y * 17) % treeVariants.size
+                                        TileData(TileType.GROUND, "tile_ground_1", ObjectType.TREE_MEDIUM, treeVariants[treeIndex])
                                     }
 
                                     Box(
@@ -189,10 +271,10 @@ fun ExplorationMapScreen(
                     Icon(painterResource(R.drawable.ic_backpack), "Bag", tint = Color.White, modifier = Modifier.size(24.dp))
                 }
 
-                if (mapId == "tutorial") {
+                if (mapId.contains("tutorial")) {
                     Spacer(modifier = Modifier.width(12.dp))
                     IconButton(
-                        onClick = { tutorialStep = 0; showTutorialOverlay = true },
+                        onClick = { tutorialStep = 0; viewModel.shouldShowTutorialOverlay = true },
                         modifier = Modifier.size(48.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape)
                     ) {
                         Icon(Icons.Default.HelpOutline, "Tutorial Info", tint = Color.White, modifier = Modifier.size(24.dp))
@@ -200,7 +282,10 @@ fun ExplorationMapScreen(
                 }
             }
 
-            IconButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(16.dp)) {
+            IconButton(
+                onClick = { showExitConfirmation = true }, 
+                modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
+            ) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
             }
 
@@ -218,12 +303,12 @@ fun ExplorationMapScreen(
                 }
             }
 
-            MovementController(modifier = Modifier.align(Alignment.Center), onMove = { dx, dy -> viewModel.move(dx, dy) })
+            MovementController(modifier = Modifier.align(Alignment.Center), onMove = { dx, dy -> viewModel.move(dx, dy, context) })
         }
 
         // Modals
         if (viewModel.isInventoryOpen) {
-            BagModal(inventory = viewModel.inventory, onClose = { viewModel.toggleInventory() }, onUsePowerUp = null)
+            BagModal(inventory = viewModel.inventory, onClose = { viewModel.toggleInventory() }, onUsePowerUp = { viewModel.usePowerUp(it) })
         }
 
         if (viewModel.isChestOpen && viewModel.currentReward != null) {
@@ -245,7 +330,7 @@ fun ExplorationMapScreen(
                 onUpdateInventory = { viewModel.inventory = it },
                 onFinish = { isWin ->
                     if (isWin) {
-                        viewModel.onBossDefeated() // Mark as defeated in map
+                        viewModel.onBossDefeated(context) // Mark as defeated in map
                     } else {
                         viewModel.failExploration() // Triggers Game Over modal
                     }
@@ -253,19 +338,77 @@ fun ExplorationMapScreen(
             )
         }
 
-        if (viewModel.isExplorationFinished && viewModel.explorationSummary != null) {
-            ExplorationSummaryModal(stats = viewModel.explorationSummary!!, onClose = { viewModel.isExplorationFinished = false; onBack() })
+        if (viewModel.phase == ExplorationPhase.Finished && viewModel.explorationSummary != null) {
+            ExplorationSummaryModal(
+                stats = viewModel.explorationSummary!!,
+                onClose = {
+                    viewModel.clearSession(context)
+                    onBack()
+                }
+            )
         }
 
-        if (showTutorialOverlay) {
+        if (viewModel.phase == ExplorationPhase.Extracting) {
+            ExtractionIntroAnimation()
+        }
+
+        if (viewModel.shouldShowTutorialOverlay) {
             TutorialOverlay(
                 step = tutorialStep,
                 onNext = {
-                    if (tutorialStep < 4) tutorialStep++
-                    else if (tutorialStep == 5) showTutorialOverlay = false
-                    else showTutorialOverlay = false
+                    if (tutorialStep < 4) {
+                        tutorialStep++
+                    } else if (tutorialStep == 4) {
+                        viewModel.shouldShowTutorialOverlay = false
+                    } else if (tutorialStep < 12) {
+                        tutorialStep++
+                    } else if (tutorialStep == 12) {
+                        viewModel.shouldShowTutorialOverlay = false
+                    } else {
+                        viewModel.shouldShowTutorialOverlay = false
+                    }
                 },
-                onSkip = { showTutorialOverlay = false }
+                onSkip = { viewModel.shouldShowTutorialOverlay = false },
+                onOpenBag = { viewModel.toggleInventory() }
+            )
+        }
+
+        if (showExitConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showExitConfirmation = false },
+                icon = { Icon(Icons.Default.Save, null, tint = Color(0xFF1976D2)) },
+                title = {
+                    Text(
+                        "Simpan Progress?",
+                        fontFamily = interFontFamily,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        "Kamu akan kembali ke Lobby. Progress eksplorasi saat ini akan disimpan dan dapat dilanjutkan nanti.",
+                        fontFamily = interFontFamily,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showExitConfirmation = false
+                            onBack()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                    ) {
+                        Text("Simpan & Keluar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showExitConfirmation = false }) {
+                        Text("Batal", color = Color.Gray)
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White
             )
         }
     }

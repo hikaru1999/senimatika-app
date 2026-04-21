@@ -19,22 +19,58 @@ import com.LambdaProject.MathArt.interFontFamily
 fun TutorialOverlay(
     step: Int,
     onNext: () -> Unit,
-    onSkip: () -> Unit
+    onSkip: () -> Unit,
+    onOpenBag: () -> Unit
 ) {
+    // Categories:
+    // 0-4: Intro Tutorial
+    // 5-12: Boss Proximity Sequence
+    // 13: First Reward/Chest Info
+    // 14: Station Proximity
+    // 15: Extraction/Flag Proximity
+
+    val isIntro = step in 0..4
+    val isBossSequence = step in 5..12
+    val isRewardInfo = step == 13
+    val isStationInfo = step == 14
+    val isFlagInfo = step == 15
+
+    val title = when {
+        isIntro -> "TUTORIAL (${step + 1}/5)"
+        isBossSequence -> "PERINGATAN! (${step - 4}/8)"
+        isRewardInfo -> "HARTA KARUN!"
+        isStationInfo -> "STATION DITEMUKAN"
+        isFlagInfo -> "MISI SELESAI?"
+        else -> "INFORMASI"
+    }
+
+    val headerColor = when {
+        isBossSequence -> Color.Red
+        isIntro -> Color(0xFF1976D2)
+        else -> Color(0xFFFFA000) // Orange for special events
+    }
+
     Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable(enabled = false) {},
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.85f))
+            .clickable(enabled = false) {},
         contentAlignment = Alignment.BottomCenter
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp).background(Color.White, RoundedCornerShape(24.dp)).padding(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .background(Color.White, RoundedCornerShape(24.dp))
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    text = if (step == 5) "PERINGATAN BOSS" else "TUTORIAL (${step + 1}/5)",
+                    text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
-                    color = if (step == 5) Color.Red else Color(0xFF1976D2),
+                    color = headerColor,
                     fontFamily = interFontFamily
                 )
                 IconButton(onClick = onSkip, modifier = Modifier.size(24.dp)) {
@@ -50,19 +86,36 @@ fun TutorialOverlay(
                 fontSize = 16.sp,
                 fontFamily = interFontFamily,
                 lineHeight = 24.sp,
-                color = if (step == 5) Color.Black else Color.DarkGray,
-                fontWeight = if (step == 5) FontWeight.Bold else FontWeight.Normal
+                color = if (isBossSequence) Color.Black else Color.DarkGray,
+                fontWeight = if (isBossSequence) FontWeight.Bold else FontWeight.Normal
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onNext,
+                onClick = {
+                    if (step == 13) {
+                        onOpenBag()
+                    }
+                    onNext()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = if (step == 5) Color.Red else Color(0xFF1976D2))
+                colors = ButtonDefaults.buttonColors(containerColor = headerColor)
             ) {
-                Text(if (step < 4) "MENGERTI" else if (step == 5) "SIAP BERTARUNG!" else "MULAI EKSPLORASI", fontWeight = FontWeight.Bold)
+                Text(
+                    text = when {
+                        step < 4 -> "MENGERTI"
+                        step == 4 -> "MULAI EKSPLORASI"
+                        step < 12 -> "MENGERTI"
+                        step == 12 -> "SIAP BERTARUNG!"
+                        step == 13 -> "LIHAT TAS"
+                        step == 14 -> "MAU BUKA"
+                        step == 15 -> "SELESAIKAN MISI"
+                        else -> "MENGERTI"
+                    },
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

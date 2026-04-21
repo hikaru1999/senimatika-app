@@ -16,7 +16,7 @@ import com.LambdaProject.MathArt.R
 fun PowerUpIcon(type: PowerUpType) {
     val iconRes = when (type) {
         PowerUpType.FREEZE_TIMER -> R.drawable.ic_pu_freeze
-        PowerUpType.DOUBLE_COIN -> R.drawable.ic_pu_shield
+        PowerUpType.STREAK_PROTECTION -> R.drawable.ic_pu_shield
         PowerUpType.REMOVE_TWO_OPTIONS -> R.drawable.ic_pu_magic
     }
 

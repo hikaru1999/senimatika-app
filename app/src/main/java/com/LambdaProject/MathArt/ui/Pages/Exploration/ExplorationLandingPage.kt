@@ -3,6 +3,7 @@ package com.LambdaProject.MathArt.ui.Pages.Exploration
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,6 +35,13 @@ data class GameMapInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExplorationLandingScreen(navController: NavController) {
+    val listState = rememberLazyListState()
+    val isScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+        }
+    }
+
     val db = FirebaseFirestore.getInstance()
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     var availableMaps by remember { mutableStateOf<List<GameMapInfo>>(emptyList()) }
@@ -46,37 +54,45 @@ fun ExplorationLandingScreen(navController: NavController) {
             isTutorialCompleted = snapshot.getBoolean("tutorial_completed") ?: false
         }
 
-        // Fetch Maps: Menggunakan doc.id sebagai ID Map
-        db.collection("game_maps").get().addOnSuccessListener { result ->
-            val maps = result.documents.map { doc ->
-                GameMapInfo(
-                    id = doc.id,
-                    name = doc.getString("name") ?: "Unnamed Map",
-                    thumbnailUrl = doc.getString("thumbnailUrl")
-                )
+        // Fetch Maps: Hanya mengambil yang isActive = true
+        db.collection("game_maps")
+            .whereEqualTo("isActive", true)
+            .get()
+            .addOnSuccessListener { result ->
+                val maps = result.documents.map { doc ->
+                    GameMapInfo(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "Unnamed Map",
+                        thumbnailUrl = doc.getString("thumbnailUrl")
+                    )
+                }
+                availableMaps = maps
             }
-            availableMaps = maps
-        }
     }
 
     Scaffold(
+        containerColor = Color(0xFFFFFFFF),
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         "Pilih Wilayah",
                         fontWeight = FontWeight.Black,
-                        fontFamily = interFontFamily
+                        fontFamily = interFontFamily,
+                        color = Color(0xFF1A237E)
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = if (isScrolled) Color.White else Color.Transparent,
+                    scrolledContainerColor = Color.White
+                )
             )
         },
-        containerColor = Color(0xFFF8F9FE)
     ) { padding ->
         Column(
             modifier = Modifier

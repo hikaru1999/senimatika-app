@@ -1,10 +1,8 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Inventory
@@ -15,9 +13,11 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
+import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.data.Inventory
 import com.LambdaProject.MathArt.data.PowerUpType
@@ -29,17 +29,39 @@ import kotlinx.coroutines.launch
 @Composable
 fun ExplorationLobbyScreen(
     mapId: String,
-    navController: NavController
+    navController: NavController,
+    mapViewModel: MapViewModel
 ) {
     val tabLabels = listOf("Deskripsi", "Inventory")
     val tabIcons = listOf(Icons.Default.Info, Icons.Default.Inventory)
     val pagerState = rememberPagerState(pageCount = { tabLabels.size })
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     
     val db = FirebaseFirestore.getInstance()
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     var inventory by remember { mutableStateOf(Inventory()) }
     var isPrepareModalOpen by remember { mutableStateOf(false) }
+
+    // State for Map Info
+    var mapName by remember { mutableStateOf("Memuat...") }
+    var mapDescription by remember { mutableStateOf("Memuat deskripsi wilayah...") }
+    var levelType by remember { mutableStateOf("NORMAL") }
+
+    // Gunakan fungsi isSessionActive dari ViewModel
+    val isSessionActive = mapViewModel.isSessionActive(mapId)
+
+    // SINKRONISASI STATUS SESI DAN DATA MAP
+    LaunchedEffect(mapId) {
+        mapViewModel.syncSessionStatus(mapId) // Trigger sinkronisasi cloud
+        db.collection("game_maps").document(mapId).get().addOnSuccessListener { doc ->
+            if (doc.exists()) {
+                mapName = doc.getString("name") ?: "Wilayah Tanpa Nama"
+                mapDescription = doc.getString("description") ?: "Tidak ada deskripsi tersedia."
+                levelType = doc.getString("levelType") ?: "NORMAL"
+            }
+        }
+    }
 
     LaunchedEffect(userId) {
         if (userId == null) return@LaunchedEffect
@@ -57,22 +79,25 @@ fun ExplorationLobbyScreen(
     }
 
     Scaffold(
+        containerColor = Color(0xFFE7E8EF),
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
-                        "Persiapan Jelajah",
-                        fontWeight = FontWeight.Black,
-                        fontFamily = interFontFamily
+                        "Persiapan Eksplorasi",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interFontFamily,
+                        color = Color(0xFF1A237E)
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             TabRow(
@@ -89,8 +114,13 @@ fun ExplorationLobbyScreen(
                     Tab(
                         selected = pagerState.currentPage == index,
                         onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(label, fontFamily = interFontFamily, fontWeight = FontWeight.Bold) },
-                        icon = { Icon(tabIcons[index], null) }
+                        text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(tabIcons[index], null, modifier = Modifier.size(18.dp), tint = Color(0xFF1A237E))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(label, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFF1A237E))
+                            }
+                        }
                     )
                 }
             }
@@ -102,36 +132,35 @@ fun ExplorationLobbyScreen(
             ) { page ->
                 when (page) {
                     0 -> GameDescriptionTab(
+                        name = mapName,
+                        description = mapDescription,
+                        levelType = levelType,
                         onBack = { navController.popBackStack() },
-                        onStartExploration = { isPrepareModalOpen = true }
+                        onStartExploration = { 
+                            if (isSessionActive) {
+                                if (mapViewModel.fullMapData.isEmpty() || mapViewModel.currentMapId != mapId) {
+                                    mapViewModel.loadMap(mapId, context)
+                                }
+                                navController.navigate("ExplorationLoading/$mapId?bagItems=")
+                            } else {
+                                isPrepareModalOpen = true 
+                            }
+                        },
+                        isResume = isSessionActive
                     )
-                    1 -> InventoryTabContent(inventory)
+                    1 -> InventoryTabContent(inventory, isMallDisabled = isSessionActive)
                 }
             }
         }
 
-        if (isPrepareModalOpen) {
+        if (isPrepareModalOpen && !isSessionActive) {
             PrepareExplorationModal(
                 permanentPowerUps = inventory.powerUps,
                 onCancel = { isPrepareModalOpen = false },
                 onConfirm = { bagItems ->
                     isPrepareModalOpen = false
                     val bagString = bagItems.joinToString(",") { it.name }
-                    
-                    // Transaksi hapus item permanen dari Firestore sebelum dibawa ke map
-                    userId?.let { uid ->
-                        val userRef = db.collection("users").document(uid)
-                        db.runTransaction { transaction ->
-                            val snapshot = transaction.get(userRef)
-                            val currentPUs = (snapshot.get("powerUps") as? List<String>)?.toMutableList() ?: mutableListOf()
-                            bagItems.forEach { item ->
-                                currentPUs.remove(item.name)
-                            }
-                            transaction.update(userRef, "powerUps", currentPUs)
-                        }.addOnSuccessListener {
-                            navController.navigate("map/$mapId/$bagString")
-                        }
-                    }
+                    navController.navigate("ExplorationLoading/$mapId?bagItems=$bagString")
                 }
             )
         }

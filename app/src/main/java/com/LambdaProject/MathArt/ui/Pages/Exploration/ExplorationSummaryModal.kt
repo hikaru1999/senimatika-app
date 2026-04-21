@@ -25,7 +25,7 @@ fun ExplorationSummaryModal(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
+            .background(Color.Black)
             .clickable { if (!stats.isSuccess) onClose() },
         contentAlignment = Alignment.Center
     ) {

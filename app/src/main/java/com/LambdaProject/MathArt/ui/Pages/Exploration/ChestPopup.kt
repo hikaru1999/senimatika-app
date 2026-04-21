@@ -184,13 +184,13 @@ fun PowerUpRewardView(powerUp: PowerUpType?) {
         PowerUpType.FREEZE_TIMER -> Quadruple(
             R.drawable.ic_pu_freeze,
             "Chrono Freeze",
-            "Menghentikan timer kuis selama 10 detik",
+            "Menghentikan timer kuis selama 5 detik",
             Color(0xFF81D4FA)
         )
-        PowerUpType.DOUBLE_COIN -> Quadruple(
+        PowerUpType.STREAK_PROTECTION -> Quadruple(
             R.drawable.ic_pu_shield,
-            "Streak Shield",
-            "Proteksi Streak Jika Menjawab Salah",
+            "Battle Shield",
+            "Proteksi Streak Jika Menjawab Soal Salah",
             Color(0xFF08FF27)
         )
         PowerUpType.REMOVE_TWO_OPTIONS -> Quadruple(

@@ -45,13 +45,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.LambdaProject.MathArt.data.validatorQuestion
 import com.LambdaProject.MathArt.ViewModels.ValidatorViewModel
 import com.LambdaProject.MathArt.data.model.ValidatorRole
-import com.LambdaProject.MathArt.ui.Pages.Exploration.ExplorationLandingScreen
-import com.LambdaProject.MathArt.ui.Pages.Exploration.ExplorationMapScreen
-import com.LambdaProject.MathArt.ui.Pages.Exploration.ExplorationLobbyScreen
+import com.LambdaProject.MathArt.ui.Pages.Exploration.*
 import com.LambdaProject.MathArt.ui.Pages.ForgotPasswordScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.QuestionnaireMasterScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.ValidationSummaryScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.ValidatorRoleScreen
+import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @AndroidEntryPoint
@@ -77,6 +76,7 @@ class MainActivity : ComponentActivity() {
                 val quizViewModel = remember { QuizViewModel() }
                 val viewModel: OnlineQuizViewModel = hiltViewModel()
                 val quizList by viewModel.materials.collectAsState()
+                val mapViewModel: MapViewModel = viewModel()
 
                 LearnApplicationTheme {
                     NavHost(
@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity() {
                             val role = ValidatorRole.valueOf(roleArg?.uppercase() ?: "MATERI")
                             ValidationSummaryScreen(role = role, navController = navController)
                         }
+                        
                         composable("validator_screen") {
                             ValidatorRoleScreen(
                                 navController = navController,
@@ -148,7 +149,31 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("mapId") { type = NavType.StringType })
                         ) { backStackEntry ->
                             val mapId = backStackEntry.arguments?.getString("mapId") ?: ""
-                            ExplorationLobbyScreen(mapId = mapId, navController = navController)
+                            ExplorationLobbyScreen(
+                                mapId = mapId, 
+                                navController = navController,
+                                mapViewModel = mapViewModel
+                            )
+                        }
+
+                        composable(
+                            route = "ExplorationLoading/{mapId}?bagItems={bagItems}",
+                            arguments = listOf(
+                                navArgument("mapId") { type = NavType.StringType },
+                                navArgument("bagItems") { 
+                                    type = NavType.StringType
+                                    defaultValue = ""
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val mapId = backStackEntry.arguments?.getString("mapId") ?: ""
+                            val bagItems = backStackEntry.arguments?.getString("bagItems") ?: ""
+                            ExplorationLoadingScreen(
+                                mapId = mapId,
+                                bagItems = bagItems,
+                                navController = navController,
+                                mapViewModel = mapViewModel
+                            )
                         }
 
                         composable("ProfileForm/{username}/{email}/{password}",
@@ -317,10 +342,13 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(
-                            route = "map/{mapId}/{bagItems}",
+                            route = "map/{mapId}?bagItems={bagItems}",
                             arguments = listOf(
                                 navArgument("mapId") { type = NavType.StringType },
-                                navArgument("bagItems") { type = NavType.StringType }
+                                navArgument("bagItems") { 
+                                    type = NavType.StringType
+                                    defaultValue = ""
+                                }
                             )
                         ) { backStackEntry ->
                             val mapId = backStackEntry.arguments?.getString("mapId") ?: "level_1"
@@ -328,7 +356,8 @@ class MainActivity : ComponentActivity() {
                             ExplorationMapScreen(
                                 mapId = mapId,
                                 initialBag = bagItems,
-                                onBack = { navController.popBackStack() }
+                                viewModel = mapViewModel,
+                                onBack = { navController.popBackStack()}
                             )
                         }
                     }

@@ -21,7 +21,8 @@ data class QuestionResult(
     val isCorrect: Boolean,
     val playerDamageDealt: Float,
     val playerDamageTaken: Float,
-    val wasFast: Boolean
+    val wasFast: Boolean,
+    val streak: Int = 0
 )
 
 class BossQuizViewModel : ViewModel() {
@@ -55,6 +56,11 @@ class BossQuizViewModel : ViewModel() {
 
     val removedOptions = mutableStateListOf<String>()
     var isTimerPaused by mutableStateOf(false)
+    var isChronoFreezeActive by mutableStateOf(false)
+
+    // Streak Logic
+    var currentStreak by mutableIntStateOf(0)
+    var isStreakProtected by mutableStateOf(false)
     
     private var bossThinkingJob: Job? = null
     private var onDefeated: (() -> Unit)? = null
@@ -92,7 +98,6 @@ class BossQuizViewModel : ViewModel() {
                         if (questionsArray != null) {
                             for (item in questionsArray) {
                                 val qId = item["id"] as? String ?: continue
-                                // AMBIL TIMER DARI ARRAY (Sesuai screenshot Firestore Anda)
                                 val qTimer = (item["timer"] as? Number)?.toInt() ?: 0
                                 
                                 val qDoc = db.collection("questions").document(qId).get().await()
@@ -177,17 +182,17 @@ class BossQuizViewModel : ViewModel() {
             currentQuestion = allQuestions[currentQuestionIndex]
             selectedAnswers.clear()
             removedOptions.clear()
+            isTimerPaused = false
+            isChronoFreezeActive = false
             phase = BossBattlePhase.QUIZ
             initializeBossTimer()
             startBossThinking()
         } else {
-            // Battle Selesai -> Tampilkan Summary tanpa auto-invoke onDefeated
             phase = BossBattlePhase.SUMMARY
         }
     }
 
     private fun initializeBossTimer() {
-        // GUNAKAN TIMER DARI FIRESTORE (timer: 30 -> 30000ms)
         val firestoreTimer = currentQuestion?.timer ?: 0
         var duration = if (firestoreTimer > 0) firestoreTimer * 1000L else 12000L
 
@@ -240,16 +245,25 @@ class BossQuizViewModel : ViewModel() {
         var bossDamageTaken = 0f
         
         if (isCorrect) {
+            currentStreak++
             if (playerVeryFast) {
-                bossDamageTaken = 30f 
+                // Base 30 + Streak Bonus
+                bossDamageTaken = 30f + (currentStreak * 2f)
                 isBossStunned = true 
             } else if (!playerLate) {
-                bossDamageTaken = 20f
+                // Base 20 + Streak Bonus
+                bossDamageTaken = 20f + currentStreak.toFloat()
             } else {
                 bossDamageTaken = 20f 
                 playerDamageTaken = (5..10).random().toFloat() 
             }
         } else {
+            if (isStreakProtected) {
+                isStreakProtected = false // Proteksi terpakai
+                // Streak dipertahankan (tidak direset)
+            } else {
+                currentStreak = 0
+            }
             bossDamageTaken = 0f
             playerDamageTaken = 20f 
             isBossHaste = true
@@ -260,6 +274,11 @@ class BossQuizViewModel : ViewModel() {
 
     private fun handleTimeOut() {
         if (phase != BossBattlePhase.QUIZ) return
+        if (isStreakProtected) {
+            isStreakProtected = false
+        } else {
+            currentStreak = 0
+        }
         applyImpact(0f, 20f, false, false)
         isBossHaste = true
     }
@@ -282,7 +301,7 @@ class BossQuizViewModel : ViewModel() {
                 showBossImpact = false
             }
 
-            questionResults.add(QuestionResult(isCorrect, bossDamage, playerDamage, isFast))
+            questionResults.add(QuestionResult(isCorrect, bossDamage, playerDamage, isFast, currentStreak))
             currentQuestionIndex++
             showNextQuestion()
         }
@@ -296,16 +315,23 @@ class BossQuizViewModel : ViewModel() {
 
         when (type) {
             PowerUpType.FREEZE_TIMER -> {
-                elapsedTimeMillis = 0
-                bossThinkingProgress = 0f
-                bossTimeLeftMillis = bossDurationMillis
+                viewModelScope.launch {
+                    isTimerPaused = true
+                    isChronoFreezeActive = true
+                    delay(5000) // Freeze for 5 seconds
+                    isTimerPaused = false
+                    isChronoFreezeActive = false
+                }
             }
             PowerUpType.REMOVE_TWO_OPTIONS -> {
                 val question = currentQuestion ?: return
                 val incorrectOptions = question.options.filter { !question.answerKey.contains(it) }
                 removedOptions.addAll(incorrectOptions.shuffled().take(2))
             }
-            PowerUpType.DOUBLE_COIN -> {}
+            PowerUpType.STREAK_PROTECTION -> {
+                isStreakProtected = true
+            }
+            /* PowerUpType. -> {} */
         }
     }
 
@@ -331,6 +357,10 @@ class BossQuizViewModel : ViewModel() {
         isBossHaste = false
         showPlayerImpact = false
         showBossImpact = false
+        isTimerPaused = false
+        isChronoFreezeActive = false
+        currentStreak = 0
+        isStreakProtected = false
     }
 
     fun closeQuiz() {
