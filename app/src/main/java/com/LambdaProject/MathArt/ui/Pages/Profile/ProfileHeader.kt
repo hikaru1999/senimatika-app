@@ -84,7 +84,7 @@ fun ProfileHeader(fullName: String, email: String, coins: Int) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_coin),
                     contentDescription = "Coins",
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(30.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(

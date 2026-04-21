@@ -29,8 +29,12 @@ import com.LambdaProject.MathArt.interFontFamily
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameDescriptionTab(
+    name: String,
+    description: String,
+    levelType: String,
     onBack: () -> Unit,
-    onStartExploration: () -> Unit
+    onStartExploration: () -> Unit,
+    isResume: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -51,17 +55,6 @@ fun GameDescriptionTab(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Back Button
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = Color(0xFF1A237E))
-            }
-
             Image(
                 painter = painterResource(id = R.drawable.img_logo_blue),
                 contentDescription = null,
@@ -79,7 +72,7 @@ fun GameDescriptionTab(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Petualangan Senimatika",
+                text = name,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = interFontFamily,
@@ -90,16 +83,16 @@ fun GameDescriptionTab(
             Spacer(modifier = Modifier.height(12.dp))
 
             Surface(
-                color = Color(0xFFE8EAF6),
+                color = if (levelType == "TUTORIAL") Color(0xFFFF9800) else Color(0xFFE8EAF6),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Text(
-                    text = "MATH EXPLORATION RPG",
+                    text = if (levelType == "TUTORIAL") "TUTORIAL EKSPLORASI" else "MATH EXPLORATION RPG",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
-                    color = Color(0xFF3F51B5),
+                    color = if (levelType == "TUTORIAL") Color.White else Color(0xFF3F51B5),
                     letterSpacing = 1.sp
                 )
             }
@@ -107,7 +100,7 @@ fun GameDescriptionTab(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Eksplorasi peta luas untuk menemukan harta karun berupa koin dan scroll materi rahasia. Waspadalah terhadap monster boss yang menjaga wilayah tertentu! Gunakan Power-Up untuk membantumu dalam pertarungan.",
+                text = description,
                 textAlign = TextAlign.Center,
                 fontFamily = interFontFamily,
                 lineHeight = 24.sp,
@@ -128,14 +121,14 @@ fun GameDescriptionTab(
                 Icon(Icons.Default.PlayArrow, null)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    "MULAI PETUALANGAN",
+                    if (isResume) "LANJUTKAN PETUALANGAN" else "MULAI PETUALANGAN",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp,
                     fontFamily = interFontFamily,
                     letterSpacing = 0.5.sp
                 )
             }
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }

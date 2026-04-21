@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.util.remove
 import androidx.lifecycle.ViewModel
 import com.LambdaProject.MathArt.data.DataMaterials
 import com.LambdaProject.MathArt.data.model.MaterialItem
@@ -13,6 +14,8 @@ import com.LambdaProject.MathArt.data.model.unlockExplorerAchievement
 import com.LambdaProject.MathArt.data.model.StudyDurationManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Source
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -41,6 +44,8 @@ class  ProfileViewModel @Inject constructor(
     val activeSessions: List<MaterialItem> = _activeSessions
 
     private val _unlockedAchievements = mutableStateListOf<String>()
+
+    private var achievementListener: ListenerRegistration? = null
     val unlockedAchievements: List<String> = _unlockedAchievements
 
     val userId = auth.currentUser?.uid ?: ""
@@ -55,13 +60,23 @@ class  ProfileViewModel @Inject constructor(
 
     private fun loadUserProfile() {
         val uid = userId
-        firestore.collection("users").document(uid).get()
+        if (uid.isEmpty()) return
+
+        firestore.collection("users").document(uid).get(Source.DEFAULT)
+            .addOnSuccessListener { doc ->
+                _username.value = doc.getString("username") ?: "User"
+                _fullName.value = doc.getString("fullname") ?: "User"
+                _email.value = doc.getString("email") ?: "Email Belum Didaftarkan"
+                _coins.intValue = doc.getLong("coins")?.toInt() ?: 0
+            }
+
+        /* firestore.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
                 _username.value = doc.getString("username") ?: "User"
                 _fullName.value = doc.getString("fullname") ?: "User"
                 _email.value = doc.getString("email") ?: "Email Tidak Diketahui"
                 _coins.intValue = doc.getLong("coins")?.toInt() ?: 0
-            }
+            } */
     }
 
     private fun loadActiveSessions() {
@@ -84,7 +99,10 @@ class  ProfileViewModel @Inject constructor(
     }
 
     private fun observeAchievements() {
-        firestore.collection("userAchievements")
+        if (userId.isEmpty()) return
+        achievementListener?.remove()
+
+        achievementListener = firestore.collection("userAchievements")
             .whereEqualTo("userId", userId)
             .addSnapshotListener { snapshots, e ->
                 if (e == null && snapshots != null) {
@@ -94,6 +112,19 @@ class  ProfileViewModel @Inject constructor(
                     )
                 }
             }
+
+
+
+        /* firestore.collection("userAchievements")
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshots, e ->
+                if (e == null && snapshots != null) {
+                    _unlockedAchievements.clear()
+                    _unlockedAchievements.addAll(
+                        snapshots.mapNotNull { it.getString("achievementName") }
+                    )
+                }
+            } */
     }
 
     private fun checkAndResetDuration() {
@@ -112,6 +143,7 @@ class  ProfileViewModel @Inject constructor(
             firestore.collection("users").document(uid)
                 .update("isOnline", false)
                 .addOnSuccessListener {
+                    achievementListener?.remove()
                     auth.signOut()
                     onSuccess()
                 }
@@ -119,5 +151,10 @@ class  ProfileViewModel @Inject constructor(
                     Log.d("ProfileModel", "Ada kesalahan")
                 }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        achievementListener?.remove()
     }
 }

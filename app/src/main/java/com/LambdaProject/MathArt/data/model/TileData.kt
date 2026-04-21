@@ -24,7 +24,7 @@ fun TileData.getInteraction(): InteractionType {
         ObjectType.BOSS -> InteractionType.BOSS
         ObjectType.PORTAL -> InteractionType.PORTAL
         ObjectType.STATION -> InteractionType.STATION
-        ObjectType.FLAG, ObjectType.FINISH -> InteractionType.FINISH
+        ObjectType.FLAG -> InteractionType.FINISH
         else -> InteractionType.NONE
     }
 }

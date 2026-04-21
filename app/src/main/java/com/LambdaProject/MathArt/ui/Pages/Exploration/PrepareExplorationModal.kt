@@ -32,13 +32,19 @@ fun PrepareExplorationModal(
     val selectedItems = remember { mutableStateListOf<PowerUpType>() }
     val groupedPUs = permanentPowerUps.groupBy { it.name }
 
-    Dialog(onDismissRequest = onCancel) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f)),
+        contentAlignment = Alignment.Center
+    ) {
         Surface(
             shape = RoundedCornerShape(32.dp),
             color = Color.White,
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.85f)
                 .fillMaxHeight(0.85f)
+                .padding(top = 48.dp)
         ) {
             Column {
                 // Header with Gradient Background and Close Button
@@ -51,17 +57,10 @@ fun PrepareExplorationModal(
                             )
                         )
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.ShoppingBag,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                "Siapkan Tas",
+                                "Mau bawa apa ya?",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Black,
                                 fontFamily = interFontFamily,
@@ -74,8 +73,8 @@ fun PrepareExplorationModal(
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.8f),
                             fontFamily = interFontFamily,
-                            lineHeight = 18.sp,
-                            modifier = Modifier.padding(end = 32.dp)
+                            lineHeight = 16.sp,
+                            modifier = Modifier.padding(end = 48.dp)
                         )
                     }
 
@@ -94,7 +93,7 @@ fun PrepareExplorationModal(
                     }
                 }
 
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp).weight(1f)) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp).weight(1f)) {
                     if (groupedPUs.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -114,6 +113,12 @@ fun PrepareExplorationModal(
                                     val puType = list.first()
                                     val countInBag = selectedItems.count { it == puType }
                                     val available = list.size - countInBag
+                                    val displayName = when (puType) {
+                                        PowerUpType.FREEZE_TIMER -> "Chrono Freeze"
+                                        PowerUpType.STREAK_PROTECTION -> "Battle Shield"
+                                        PowerUpType.REMOVE_TWO_OPTIONS -> "Truth Filter"
+                                        else -> name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
+                                    }
 
                                     Surface(
                                         color = Color(0xFFF8F9FF),
@@ -130,7 +135,7 @@ fun PrepareExplorationModal(
                                             Spacer(modifier = Modifier.width(16.dp))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
-                                                    name,
+                                                    displayName,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 14.sp,
                                                     color = Color(0xFF1A237E)
@@ -209,7 +214,7 @@ fun PrepareExplorationModal(
                         elevation = ButtonDefaults.buttonElevation(8.dp)
                     ) {
                         Text(
-                            "Mulai",
+                            "MULAI EKSPLORASI",
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 1.sp
                         )
@@ -218,4 +223,10 @@ fun PrepareExplorationModal(
             }
         }
     }
+
+
+
+    /* Dialog(onDismissRequest = onCancel) {
+
+    } */
 }

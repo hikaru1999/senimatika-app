@@ -3,6 +3,7 @@ package com.LambdaProject.MathArt.data.repository
 import com.LambdaProject.MathArt.data.model.Challenge
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -28,10 +29,22 @@ class ChallengeRepository @Inject constructor(
         }
     }
 
-    fun listenForIncomingChallenges(
-        onChallengeReceived: (List<Challenge>) -> Unit
-    ) {
-        val currentUserId = auth.currentUser?.uid ?: return
+    fun listenForIncomingChallenges(onChallengeReceived: (List<Challenge>) -> Unit): ListenerRegistration {
+        val userId = auth.currentUser?.uid ?: ""
+
+        return firestore.collection("challenges")
+            .whereEqualTo("toUserId", userId)
+            .whereEqualTo("status", "pending")
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+
+                val challenges = snapshot?.documents?.mapNotNull {
+                    it.toObject(Challenge::class.java)?.copy(id = it.id)
+                } ?: emptyList()
+
+                onChallengeReceived(challenges)
+            }
+        /* val currentUserId = auth.currentUser?.uid ?: return
         firestore.collection("challenges")
             .whereEqualTo("toUserId", currentUserId)
             .whereEqualTo("status", "pending")
@@ -48,6 +61,6 @@ class ChallengeRepository @Inject constructor(
                     )
                 } ?: emptyList()
                 onChallengeReceived(challenges)
-            }
+            }*/
     }
 }

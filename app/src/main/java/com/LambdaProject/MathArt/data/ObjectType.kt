@@ -18,6 +18,7 @@ enum class ObjectType {
     ROCK_SMALL_1,
     ROCK_SMALL_2,
     TENT,
+    TREE,
     TREE_LARGE,
     TREE_MEDIUM,
     TREE_SMALL,
@@ -42,7 +43,6 @@ fun ObjectType.isBlocking(): Boolean {
     return when (this) {
         ObjectType.BLUE_BANNER,
         ObjectType.RED_BANNER,
-        // ObjectType.FLAG dihilangkan dari sini agar bisa dilewati
         ObjectType.BUSHES_LARGE,
         ObjectType.BUSHES_MEDIUM,
         ObjectType.BUSHES_SMALL,
@@ -51,6 +51,7 @@ fun ObjectType.isBlocking(): Boolean {
         ObjectType.CASTLE_SQUARE,
         ObjectType.HOUSE,
         ObjectType.TENT,
+        ObjectType.TREE,
         ObjectType.TREE_LARGE,
         ObjectType.TREE_MEDIUM,
         ObjectType.TREE_SMALL,

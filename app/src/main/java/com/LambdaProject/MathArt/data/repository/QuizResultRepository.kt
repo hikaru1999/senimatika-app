@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.tasks.await
 
@@ -33,7 +34,7 @@ class QuizResultRepository(
             val snapshot = Firebase.firestore
                 .collection("online_quiz_results")
                 .document("${userId}_$materialId")
-                .get()
+                .get(Source.DEFAULT)
                 .await()
 
             val result = snapshot.toObject(QuizResult::class.java)
@@ -52,16 +53,20 @@ class QuizResultRepository(
     ): Boolean {
         return try {
             val userRef = Firebase.firestore.collection("users").document(userId)
-            val snapshot = userRef.get().await()
+            val snapshot = userRef.get(Source.SERVER).await()
 
             val completed = snapshot.get("completedQuizzes") as? List<*> ?: emptyList<Any>()
             val quiz = quizList.find { it.id == materialId }
             val rewardCoins = quiz?.rewardCoin ?: 0
 
             if (!completed.contains(materialId)) {
-                userRef.update("completedQuizzes", FieldValue.arrayUnion(materialId)).await()
+                userRef.update(
+                    "completedQuizzes", FieldValue.arrayUnion(materialId),
+                    "coins", FieldValue.increment(rewardCoins.toLong())
+                ).await()
+                /* userRef.update("completedQuizzes", FieldValue.arrayUnion(materialId)).await()
                 val currentCoins = snapshot.getLong("coins") ?: 0
-                userRef.update("coins", currentCoins + rewardCoins).await()
+                userRef.update("coins", currentCoins + rewardCoins).await() */
 
                 Log.d("Reward", "Reward diberikan: $rewardCoins koin untuk kuis $materialId")
                 true
@@ -77,22 +82,28 @@ class QuizResultRepository(
 
     suspend fun getUsernamesForUserIds(userIds: List<String>): Map<String, String> {
         return try {
-            val chunks = userIds.chunked(10) // karena Firestore batasi `in` query max 10
+            val chunks = userIds.chunked(30) // karena Firestore batasi `in` query max 10
             val results = mutableMapOf<String, String>()
 
             for (chunk in chunks) {
                 val snapshot = firestore.collection("users")
                     .whereIn(FieldPath.documentId(), chunk)
-                    .get()
+                    .get(Source.DEFAULT)
                     .await()
 
                 for (doc in snapshot.documents) {
+                    doc.getString("username")?.let {
+                        results[doc.id] = it
+                    }
+                }
+
+                /* for (doc in snapshot.documents) {
                     val uid = doc.id
                     val username = doc.getString("username")
                     if (username != null) {
                         results[uid] = username
                     }
-                }
+                } */
             }
 
             results
@@ -103,23 +114,19 @@ class QuizResultRepository(
 
     suspend fun getLeaderBoardForMaterial(materialId: String, limit: Long = 50): Result<List<QuizResult>> {
         return try {
-            Log.d("LeaderboardRepository", "Fetching leaderboard for materialId: $materialId")
             val snapshot = firestore.collection("online_quiz_results")
                 .whereEqualTo("materialId", materialId)
                 .orderBy("totalPoints", Query.Direction.DESCENDING)
                 .limit(limit)
-                .get()
+                .get(Source.DEFAULT)
                 .await()
-
-            Log.d("LeaderboardRepository", "Snapshot retrieved with ${snapshot.size()} documents")
 
             val results = snapshot.toObjects(QuizResult::class.java)
 
-            Log.d("LeaderboardRepository", "Leaderboard results: ${results.size} entries")
 
-            if (results.isNotEmpty()) {
+            /* if (results.isNotEmpty()) {
                 Log.d("LeaderboardRepository", "First result: ${results.first().userId}, Points: ${results.first().totalPoints}")
-            }
+            } */
 
             Result.success(results)
         } catch (e: Exception) {

@@ -7,7 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.SentimentVeryDissatisfied
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -16,17 +16,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.ViewModels.ExplorationStats
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import kotlinx.coroutines.delay
 
 @Composable
 fun ExplorationSummaryModal(
     stats: ExplorationStats,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    audio: ExplorationAudioManager
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    var isProcessing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (stats.isSuccess) {
+            // Suara success sudah dipicu di InteractionType.FINISH
+        } else {
+            // Suara Game Over dimainkan tepat saat modal muncul
+            audio.playSfx("gameover")
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
-            .clickable { if (!stats.isSuccess) onClose() },
+            .background(Color.Black.copy(alpha = 0.9f))
+            .clickable(enabled = !isProcessing) { if (!stats.isSuccess) onClose() },
         contentAlignment = Alignment.Center
     ) {
         Surface(
@@ -63,7 +78,7 @@ fun ExplorationSummaryModal(
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
-                Divider(modifier = Modifier.padding(vertical = 20.dp), color = Color.White.copy(alpha = 0.1f))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 20.dp), color = Color.White.copy(alpha = 0.1f))
 
                 // Stats Rows
                 SummaryStatRow("Boss Dikalahkan", "${stats.bossesDefeated}", Color.Red)
@@ -74,13 +89,30 @@ fun ExplorationSummaryModal(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = onClose,
-                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        if (!isProcessing) {
+                            isProcessing = true
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                onClose()
+                            }, 2500)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    enabled = !isProcessing,
+                    shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (stats.isSuccess) Color(0xFF4CAF50) else Color(0xFFD32F2F)
                     )
                 ) {
-                    Text("LANJUTKAN", fontWeight = FontWeight.Bold)
+                    if (isProcessing) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Text("KEMBALI KE LOBBY", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
                 }
             }
         }

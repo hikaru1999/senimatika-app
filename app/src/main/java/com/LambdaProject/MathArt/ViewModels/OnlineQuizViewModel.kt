@@ -23,6 +23,8 @@ import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.data.model.UserAnswerState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Source
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -93,6 +95,8 @@ class OnlineQuizViewModel @Inject constructor(
     private val _leaderboard = MutableStateFlow<List<LeaderboardEntry>>(emptyList())
     val leaderboard: StateFlow<List<LeaderboardEntry>> = _leaderboard
 
+    private var challengeListener: ListenerRegistration? = null
+
     init {
         loadAllQuizzes()
     }
@@ -100,7 +104,8 @@ class OnlineQuizViewModel @Inject constructor(
     private fun loadAllQuizzes() {
         viewModelScope.launch {
             try {
-                val snapshot = firestore.collection("online_quizzes").get().await()
+                val snapshot = firestore.collection("online_quizzes").get(Source.DEFAULT).await()
+                /* val snapshot = firestore.collection("online_quizzes").get().await() */
                 val quizList = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(OnlineQuizDesc::class.java)?.let { quiz ->
                         // Fallback image for Firestore-loaded quizzes that don't have local resource IDs
@@ -135,14 +140,16 @@ class OnlineQuizViewModel @Inject constructor(
         return FirebaseAuth.getInstance().currentUser?.uid
     }
 
-    fun startListeningForChallenges() {
-        challengeRepo.listenForIncomingChallenges { challenges ->
-            _incomingChallenges.value = challenges
-        }
-    }
-
     fun resetChallengeStatus() {
         _challengeStatus.value = null
+    }
+
+    fun startListeningForChallenges() {
+        // challengeRepo.listenForIncomingChallenges harus mengembalikan ListenerRegistration
+        challengeListener?.remove()
+        challengeListener = challengeRepo.listenForIncomingChallenges { challenges ->
+            _incomingChallenges.value = challenges
+        }
     }
 
     fun selectMaterial(material: OnlineQuizDesc) {
@@ -159,9 +166,7 @@ class OnlineQuizViewModel @Inject constructor(
     fun loadQuizForSelectedMaterial(userId: String, materialId: String) {
         viewModelScope.launch {
             try {
-                Log.d("OnlineQuizViewModel", "Loading quiz for: $materialId")
-                
-                val quizDoc = firestore.collection("online_quizzes").document(materialId).get().await()
+                val quizDoc = firestore.collection("online_quizzes").document(materialId).get(Source.DEFAULT).await()
                 val quizData = quizDoc.toObject(OnlineQuizDesc::class.java) ?: return@launch
                 
                 val questionRefs = quizData.questions
@@ -170,7 +175,42 @@ class OnlineQuizViewModel @Inject constructor(
                     return@launch
                 }
 
-                val fullQuestions = mutableListOf<OnlineQuizQuestion>()
+                val questionIds = questionRefs.map { it.id }
+
+                val questionsSnapshot = firestore.collection("questions")
+                    .whereIn(com.google.firebase.firestore.FieldPath.documentId(), questionIds)
+                    .get(Source.DEFAULT) // Utamakan cache jika user pernah main sebelumnya
+                    .await()
+
+                val questionMap = questionsSnapshot.documents.associateBy { it.id }
+
+                val fullQuestions = questionRefs.mapIndexedNotNull { index, ref ->
+                    val qDoc = questionMap[ref.id] ?: return@mapIndexedNotNull null
+
+                    val choices = qDoc.get("options") as? List<String> ?: emptyList()
+                    val correctAnswers = (qDoc.get("answerKey") as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList()
+                    val qTypeStr = qDoc.getString("questionType") ?: "multiple_choice"
+
+                    val type = when(qTypeStr.lowercase()) {
+                        "checkbox" -> QuestionType.CHECKBOX
+                        "short_answer" -> QuestionType.SHORT_ANSWER
+                        else -> QuestionType.MULTIPLE_CHOICE
+                    }
+
+                    OnlineQuizQuestion(
+                        questionNumber = index + 1,
+                        questionText = qDoc.getString("question") ?: "",
+                        imageUrl = qDoc.getString("imageUrl"),
+                        choices = choices,
+                        correctAnswers = correctAnswers,
+                        correctTextAnswers = if (type == QuestionType.SHORT_ANSWER) qDoc.get("answerKey") as? List<String> ?: emptyList() else emptyList(),
+                        type = type,
+                        durationSeconds = ref.timer,
+                        basePoints = ref.points
+                    )
+                }
+
+                /* val fullQuestions = mutableListOf<OnlineQuizQuestion>()
                 
                 questionRefs.forEachIndexed { index, ref ->
                     val qDoc = firestore.collection("questions").document(ref.id).get().await()
@@ -197,12 +237,10 @@ class OnlineQuizViewModel @Inject constructor(
                             basePoints = ref.points
                         ))
                     }
-                }
+                } */
 
                 _questions.value = fullQuestions
                 _currentQuestionIndex.value = 0
-                Log.d("OnlineQuizViewModel", "Loaded ${fullQuestions.size} questions from Firestore")
-                
             } catch (e: Exception) {
                 Log.e("OnlineQuizViewModel", "Error loading quiz questions: ${e.message}")
             }
@@ -369,7 +407,7 @@ class OnlineQuizViewModel @Inject constructor(
         materialId: String
     ) {
         viewModelScope.launch {
-            Log.d("Leaderboard", "Fetching leaderboard for material: $materialId")
+            _leaderboard.value = emptyList()
             repository.getLeaderBoardForMaterial(materialId)
                 .onSuccess { results ->
                     Log.d("Leaderboard", "Leaderboard fetched successfully: ${results.size} entries")
@@ -378,7 +416,8 @@ class OnlineQuizViewModel @Inject constructor(
                     val usernameMap = repository.getUsernamesForUserIds(userIds)
 
                     val leaderboardEntries = results.map { result ->
-                        val username = usernameMap[result.userId] ?: (result.userId.take(6) + "...")
+                        /* val username = usernameMap[result.userId] ?: (result.userId.take(6) + "...") */
+                        val username = usernameMap[result.userId] ?: "Guest_${result.userId.take(4)}"
 
                         LeaderboardEntry(
                             username = username,
@@ -390,6 +429,12 @@ class OnlineQuizViewModel @Inject constructor(
                 }
                 .onFailure { e -> Log.e("Leaderboard", "Failed to fetch leaderboard: ${e.message}") }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        challengeListener?.remove()
+        challengeListener = null
     }
 
     fun prevQuestion() {

@@ -15,12 +15,15 @@ class LoginViewModel @Inject constructor(
     val loginState = _loginState.asStateFlow()
 
     fun login(identifier: String, password: String) {
+        if (_loginState.value is LoginResult.Loading) return
+
         _loginState.value = LoginResult.Loading
         authRepo.loginUser(identifier, password) { success, errorMessage, username ->
             if (success) {
                 _loginState.value = LoginResult.Success(username ?: "User")
             } else {
-                _loginState.value = LoginResult.Error(errorMessage ?: "Username atau Password Tidak Sesuai")
+                /* _loginState.value = LoginResult.Error(errorMessage ?: "Username atau Password Tidak Sesuai") */
+                _loginState.value = LoginResult.Error(errorMessage ?: "Terjadi kesalahan")
             }
         }
     }

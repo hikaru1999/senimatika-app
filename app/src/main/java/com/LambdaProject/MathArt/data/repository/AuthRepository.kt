@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -28,13 +29,21 @@ class AuthRepository @Inject constructor(
                     if (task.isSuccessful) {
                         val userId = auth.currentUser?.uid
                         if (userId != null) {
-                            db.collection("users").document(userId).get()
+                            firestore.collection("users").document(userId).get(Source.DEFAULT)
+                                .addOnSuccessListener { document ->
+                                    val username = document.getString("username") ?: "User"
+                                    onComplete(true, null, username)
+                                }
+                                .addOnFailureListener { onComplete(false, "Gagal mengambil data pengguna", null) }
+
+
+                            /* db.collection("users").document(userId).get()
                                 .addOnSuccessListener { document ->
                                     val username = document.getString("username") ?: "User"
                                     onComplete(true, null, username)
                                 }
                                 .addOnFailureListener { e ->
-                                    onComplete(false, "Gagal mengambil data pengguna", null) }
+                                    onComplete(false, "Gagal mengambil data pengguna", null) } */
                         } else {
                             onComplete(false, "Kredensial tidak ditemukan", null)
                         }
@@ -49,7 +58,31 @@ class AuthRepository @Inject constructor(
                     }
                 }
         } else {
-            db.collection("users").whereEqualTo("username", identifier).get()
+            firestore.collection("users").whereEqualTo("username", identifier)
+                .limit(1) // Optimasi 3: Selalu limit 1 untuk pencarian unik
+                .get(Source.DEFAULT)
+                .addOnSuccessListener { documents ->
+                    if (!documents.isEmpty) {
+                        val email = documents.documents[0].getString("email") ?: return@addOnSuccessListener
+                        auth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    val userId = auth.currentUser?.uid
+                                    userId?.let { uid ->
+                                        firestore.collection("users").document(uid).get(Source.DEFAULT)
+                                            .addOnSuccessListener { doc ->
+                                                onComplete(true, null, doc.getString("username") ?: "User")
+                                            }
+                                    }
+                                } else {
+                                    onComplete(false, handleAuthError(task.exception, "Username"), null)
+                                }
+                            }
+                    } else {
+                        onComplete(false, "Kredensial tidak ditemukan", null)
+                    }
+                }
+            /* db.collection("users").whereEqualTo("username", identifier).get()
                 .addOnSuccessListener { documents ->
                     if (!documents.isEmpty) {
                         val email = documents.documents[0].getString("email") ?: return@addOnSuccessListener
@@ -81,7 +114,15 @@ class AuthRepository @Inject constructor(
                         onComplete(false, "Kredensial tidak ditemukan", null)
                     }
                 }
-                .addOnFailureListener { e -> onComplete(false, e.message, null) }
+                .addOnFailureListener { e -> onComplete(false, e.message, null) } */
+        }
+    }
+
+    private fun handleAuthError(exception: Exception?, type: String): String {
+        return when (exception) {
+            is FirebaseAuthInvalidUserException -> "$type tidak terdaftar"
+            is FirebaseAuthInvalidCredentialsException -> "Password tidak tepat"
+            else -> exception?.message ?: "Terjadi kesalahan"
         }
     }
 
@@ -147,7 +188,7 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun getUsersOnline(): List<OnlineUser> {
+    /* suspend fun getUsersOnline(): List<OnlineUser> {
         val currentUserUid = auth.currentUser?.uid
 
         return try {
@@ -160,6 +201,26 @@ class AuthRepository @Inject constructor(
                 val uid = doc.id
                 val username = doc.getString("username") ?: return@mapNotNull null
                 if (uid != currentUserUid) OnlineUser(uid = uid, username = username) else null
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    } */
+    suspend fun getUsersOnline(): List<OnlineUser> {
+        val currentUserUid = auth.currentUser?.uid
+        return try {
+            // Optimasi 4: Tambahkan limit agar tidak membebani kuota Read jika user banyak
+            val snapshot = firestore.collection("users")
+                .whereEqualTo("isOnline", true)
+                .limit(50)
+                .get(Source.DEFAULT) // Utamakan cache jika list sering dibuka-tutup
+                .await()
+
+            snapshot.documents.mapNotNull { doc ->
+                val uid = doc.id
+                if (uid != currentUserUid) {
+                    OnlineUser(uid = uid, username = doc.getString("username") ?: "User")
+                } else null
             }
         } catch (e: Exception) {
             emptyList()

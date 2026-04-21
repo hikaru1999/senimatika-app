@@ -6,13 +6,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.repository.AuthRepository
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val authRepo: AuthRepository
+    private val authRepo: AuthRepository,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     var username by mutableStateOf("")
@@ -53,6 +55,36 @@ class RegisterViewModel @Inject constructor(
     }
 
     fun checkUsernameOrEmailExists(
+        username: String,
+        email: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        firestore.collection("users")
+            .whereEqualTo("username", username)
+            .limit(1) // Selalu limit 1 untuk efisiensi
+            .get(Source.DEFAULT)
+            .addOnSuccessListener { usernameResult ->
+                if (!usernameResult.isEmpty) {
+                    onResult(true)
+                } else {
+                    firestore.collection("users")
+                        .whereEqualTo("email", email)
+                        .limit(1)
+                        .get(Source.DEFAULT)
+                        .addOnSuccessListener { emailResult ->
+                            onResult(!emailResult.isEmpty)
+                        }
+                        .addOnFailureListener { onResult(false) }
+                }
+            }
+            .addOnFailureListener {
+                // Jika gagal di cache (misal offline total), anggap saja tidak ada
+                // agar user tetap bisa mencoba submit ke server (server-side validation)
+                onResult(false)
+            }
+    }
+
+    /* fun checkUsernameOrEmailExists(
         username: String,
         email: String,
         onResult: (Boolean) -> Unit
@@ -105,7 +137,7 @@ class RegisterViewModel @Inject constructor(
                 }
             }
             .addOnFailureListener { onResult(true) }
-    }
+    } */
 
     sealed class RegisterState {
         object Idle : RegisterState()

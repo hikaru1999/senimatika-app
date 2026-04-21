@@ -41,24 +41,58 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
+import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
 import kotlinx.coroutines.delay
 
 @Composable
-fun BattleIntroAnimation() {
+fun BattleIntroAnimation(bossType: String) {
     var startAnim by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { startAnim = true }
+
+    val bossName = when (bossType) {
+        "boss_1", "obj_boss_1" -> "Vardos"
+        "boss_2", "obj_boss_2" -> "Grooten"
+        "boss_3", "obj_boss_3" -> "Mortis"
+        "boss_4", "obj_boss_4" -> "Aether"
+        else -> "BOSS"
+    }
 
     val slideLeft by animateDpAsState(if (startAnim) 0.dp else (-300).dp, tween(500))
     val slideRight by animateDpAsState(if (startAnim) 0.dp else 300.dp, tween(500))
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("PLAYER", color = Color.Cyan, fontWeight = FontWeight.Black, fontSize = 32.sp, modifier = Modifier.offset(x = slideLeft))
-            Text(" VS ", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Text("BOSS", color = Color.Red, fontWeight = FontWeight.Black, fontSize = 32.sp, modifier = Modifier.offset(x = slideRight))
+            Text(
+                text = "PLAYER",
+                color = Color(0xFF1976D2), // Biru
+                fontWeight = FontWeight.Black,
+                fontSize = 32.sp,
+                modifier = Modifier.offset(x = slideLeft)
+            )
+
+            Text(
+                text = " VS ",
+                color = Color(0xFF3E2723), // Ink Color
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp
+            )
+
+            Text(
+                text = bossName.uppercase(), // Tampilkan nama Boss
+                color = Color(0xFFA10000), // Merah Marun
+                fontWeight = FontWeight.Black,
+                fontSize = 32.sp,
+                modifier = Modifier.offset(x = slideRight)
+            )
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Text("BATTLE START!", color = Color.Yellow, fontWeight = FontWeight.ExtraBold, fontSize = 40.sp, textAlign = TextAlign.Center)
+        Text(
+            text = "BATTLE START!",
+            color = Color(0xFFE65100), // Oranye Tua
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 40.sp,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -78,9 +112,21 @@ fun CountdownAnimation(value: Int) {
 }
 
 @Composable
-fun QuizSummaryAnimated(viewModel: BossQuizViewModel, onFinish: (Boolean) -> Unit) {
+fun QuizSummaryAnimated(
+    viewModel: BossQuizViewModel,
+    onFinish: (Boolean) -> Unit,
+    audio: ExplorationAudioManager
+) {
     var visibleItems by remember { mutableIntStateOf(0) }
     val results = viewModel.questionResults
+
+    val bossName = when (viewModel.currentBossType) {
+        "boss_1", "obj_boss_1" -> "Vardos"
+        "boss_2", "obj_boss_2" -> "Grooten"
+        "boss_3", "obj_boss_3" -> "Mortis"
+        "boss_4", "obj_boss_4" -> "Aether"
+        else -> "Boss"
+    }
 
     LaunchedEffect(Unit) {
         for (i in 1..results.size + 2) {
@@ -92,11 +138,13 @@ fun QuizSummaryAnimated(viewModel: BossQuizViewModel, onFinish: (Boolean) -> Uni
     Surface(
         modifier = Modifier.fillMaxWidth(0.9f).fillMaxHeight(0.85f),
         shape = RoundedCornerShape(28.dp),
-        color = Color(0xFF1A1A1A),
-        border = BorderStroke(2.dp, Color.White.copy(alpha = 0.2f))
+        color = Color(0xFFF0E7D8),
+        /* color = Color(0xFF1A1A1A),*/
+        border = BorderStroke(3.dp, Color(0xFF5D4037))
+        /* border = BorderStroke(2.dp, Color.White.copy(alpha = 0.2f)) */
     ) {
         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("BATTLE RESULT", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+            Text("SKIRMISH RESULT", color = Color(0xFF3E2723), fontSize = 20.sp, fontWeight = FontWeight.Black)
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -111,7 +159,7 @@ fun QuizSummaryAnimated(viewModel: BossQuizViewModel, onFinish: (Boolean) -> Uni
 
                 if (visibleItems > results.size) {
                     AnimatedVisibility(visible = true, enter = fadeIn() + scaleIn()) {
-                        BattleHpSummary(viewModel.playerHp, viewModel.bossHp)
+                        BattleHpSummary(viewModel.playerHp, viewModel.bossHp, bossName = bossName)
                     }
                 }
             }
@@ -122,11 +170,17 @@ fun QuizSummaryAnimated(viewModel: BossQuizViewModel, onFinish: (Boolean) -> Uni
                     onClick = {
                         onFinish(isWin)
                         viewModel.closeQuiz()
+                        audio.resumeAmbient()
                     },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = if (isWin) Color(0xFF4CAF50) else Color.Gray)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isWin) Color(0xFF3E2723) else Color(0xFFA10000)
+                    ),
                 ) {
-                    Text("SELESAI", fontWeight = FontWeight.Bold)
+                    Text("AKHIRI PERTARUNGAN", fontWeight = FontWeight.Bold)
                 }
             }
         }

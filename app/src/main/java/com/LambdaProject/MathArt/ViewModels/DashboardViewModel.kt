@@ -25,6 +25,10 @@ class DashboardViewModel : ViewModel() {
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
+    private var sessionsListener: ListenerRegistration? = null
+    private var achievementListener: ListenerRegistration? = null
+    private var challengeListener: ListenerRegistration? = null
+
     fun loadUserProfile(userId: String) {
         firestore.collection("users").document(userId).get()
             .addOnSuccessListener { doc ->
@@ -34,7 +38,20 @@ class DashboardViewModel : ViewModel() {
     }
 
     fun checkActiveSessions(userId: String, materials: List<MaterialItem>) {
-        FirebaseFirestore.getInstance()
+        sessionsListener?.remove()
+
+        sessionsListener = firestore.collection("sessions")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("status", "active")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+
+                val activeIds = snapshot.documents.mapNotNull { it.getString("materialId") }
+                _materialStatusMap.value = materials.associate { it.id to (it.id in activeIds) }
+            }
+
+
+        /* FirebaseFirestore.getInstance()
             .collection("sessions")
             .whereEqualTo("userId", userId)
             .whereEqualTo("status", "active")
@@ -46,10 +63,47 @@ class DashboardViewModel : ViewModel() {
                 val activeIds = snapshot.documents.mapNotNull { it.getString("materialId") }
                 val statusMap = materials.associate { it.id to (it.id in activeIds) }
                 _materialStatusMap.value = statusMap
-            }
+            } */
     }
 
     fun listenForNewNotifications(userId: String) {
+        val userDocRef = firestore.collection("users").document(userId)
+
+        userDocRef.get(Source.DEFAULT).addOnSuccessListener { userSnapshot ->
+            val lastSeen = userSnapshot.getTimestamp("lastSeenNotification")?.toDate() ?: Date(0)
+
+            // Achievement Listener dengan Limit 1
+            achievementListener = firestore.collection("userAchievements")
+                .whereEqualTo("userId", userId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener { snapshot, error ->
+                    if (error == null && snapshot != null && !snapshot.isEmpty) {
+                        val newTimestamp = snapshot.documents.first().getLong("timestamp") ?: 0L
+                        if (Date(newTimestamp) > lastSeen) {
+                            _hasNewNotification.value = true
+                        }
+                    }
+                }
+
+            // Challenge Listener dengan Limit 1
+            challengeListener = firestore.collection("challenges")
+                .whereEqualTo("toUserId", userId)
+                .whereEqualTo("status", "pending")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(1)
+                .addSnapshotListener { snapshot, error ->
+                    if (error == null && snapshot != null && !snapshot.isEmpty) {
+                        val latestChallengeTime = snapshot.documents.first().getLong("timestamp") ?: 0L
+                        if (Date(latestChallengeTime) > lastSeen) {
+                            _hasNewNotification.value = true
+                        }
+                    }
+                }
+        }
+    }
+
+    /* fun listenForNewNotifications(userId: String) {
         val userDocRef = Firebase.firestore.collection("users").document(userId)
 
         userDocRef.get().addOnSuccessListener { userSnapshot ->
@@ -87,12 +141,19 @@ class DashboardViewModel : ViewModel() {
                     }
                 }
         }
-    }
+    } */
 
     fun clearNotifications() {
         _hasNewNotification.value = false
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         Firebase.firestore.collection("users").document(userId)
             .update("lastSeenNotification", FieldValue.serverTimestamp())
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        sessionsListener?.remove()
+        achievementListener?.remove()
+        challengeListener?.remove()
     }
 }

@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.Inventory
 import com.LambdaProject.MathArt.data.PowerUpType
 import com.LambdaProject.MathArt.data.model.BossQuestion
+import com.google.firebase.firestore.FieldPath.documentId
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -21,7 +23,8 @@ data class QuestionResult(
     val isCorrect: Boolean,
     val playerDamageDealt: Float,
     val playerDamageTaken: Float,
-    val wasFast: Boolean
+    val wasFast: Boolean,
+    val streak: Int = 0
 )
 
 class BossQuizViewModel : ViewModel() {
@@ -33,6 +36,7 @@ class BossQuizViewModel : ViewModel() {
     var currentQuestionIndex by mutableIntStateOf(0)
     var currentQuestion by mutableStateOf<BossQuestion?>(null)
     val selectedAnswers = mutableStateListOf<String>()
+    val powerUpCooldowns = mutableStateMapOf<PowerUpType, Long>()
     
     var totalQuestions by mutableIntStateOf(0)
     
@@ -42,6 +46,7 @@ class BossQuizViewModel : ViewModel() {
     var bossTimeLeftMillis by mutableLongStateOf(0L)
 
     var bossStatus by mutableStateOf("Boss sedang berpikir...")
+    var currentBossType by mutableStateOf("boss_1")
     val questionResults = mutableStateListOf<QuestionResult>()
     
     private var bossDurationMillis = 15000L
@@ -55,11 +60,17 @@ class BossQuizViewModel : ViewModel() {
 
     val removedOptions = mutableStateListOf<String>()
     var isTimerPaused by mutableStateOf(false)
+    var isChronoFreezeActive by mutableStateOf(false)
+
+    // Streak Logic
+    var currentStreak by mutableIntStateOf(0)
+    var isStreakProtected by mutableStateOf(false)
     
     private var bossThinkingJob: Job? = null
     private var onDefeated: (() -> Unit)? = null
 
-    fun startQuiz(quizId: String, onBossDefeated: () -> Unit) {
+    fun startQuiz(quizId: String, bossType: String, onBossDefeated: () -> Unit) {
+        this.currentBossType = bossType
         onDefeated = onBossDefeated
         isQuizOpen = true
         phase = BossBattlePhase.INTRO
@@ -90,9 +101,38 @@ class BossQuizViewModel : ViewModel() {
                     if (quizDoc.exists()) {
                         val questionsArray = quizDoc.get("questions") as? List<Map<String, Any>>
                         if (questionsArray != null) {
+                            val questionIds = questionsArray.mapNotNull { it["id"] as? String }
+
+                            val questionsSnapshot = db.collection("questions")
+                                .whereIn(documentId(), questionIds)
+                                .get(Source.DEFAULT)
+                                .await()
+
+                            val questionMap = questionsSnapshot.documents.associateBy { it.id }
+
                             for (item in questionsArray) {
                                 val qId = item["id"] as? String ?: continue
-                                // AMBIL TIMER DARI ARRAY (Sesuai screenshot Firestore Anda)
+                                val qDoc = questionMap[qId] ?: continue
+
+                                val options = qDoc.get("options") as? List<String> ?: continue
+                                fetchedQuestions.add(
+                                    BossQuestion(
+                                        id = qDoc.id,
+                                        question = qDoc.getString("question") ?: "",
+                                        options = options,
+                                        answerKey = parseAnswerKey(qDoc.get("answerKey"), options),
+                                        questionType = qDoc.getString("questionType") ?: "multiple_choice",
+                                        timer = (item["timer"] as? Number)?.toInt() ?: 0
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    /* if (quizDoc.exists()) {
+                        val questionsArray = quizDoc.get("questions") as? List<Map<String, Any>>
+                        if (questionsArray != null) {
+                            for (item in questionsArray) {
+                                val qId = item["id"] as? String ?: continue
                                 val qTimer = (item["timer"] as? Number)?.toInt() ?: 0
                                 
                                 val qDoc = db.collection("questions").document(qId).get().await()
@@ -112,7 +152,7 @@ class BossQuizViewModel : ViewModel() {
                                 }
                             }
                         }
-                    }
+                    } */
                 }
 
                 if (fetchedQuestions.isEmpty()) {
@@ -127,6 +167,25 @@ class BossQuizViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("BossQuizViewModel", "Error loading questions", e)
                 loadFallbackQuestions()
+            }
+        }
+    }
+
+    private fun getCooldownDuration(type: PowerUpType): Long {
+        return when (type) {
+            PowerUpType.REMOVE_TWO_OPTIONS -> 45000L // 45 Detik (Bermanfaat)
+            PowerUpType.FREEZE_TIMER -> 60000L       // 60 Detik (Sangat Bermanfaat)
+            PowerUpType.STREAK_PROTECTION -> 90000L   // 90 Detik (Paling Worth It)
+        }
+    }
+
+    private fun reduceAllCooldowns(percent: Float) {
+        val now = System.currentTimeMillis()
+        powerUpCooldowns.forEach { (type, readyTime) ->
+            val remaining = readyTime - now
+            if (remaining > 0) {
+                val reduction = (remaining * percent).toLong()
+                powerUpCooldowns[type] = readyTime - reduction
             }
         }
     }
@@ -177,17 +236,17 @@ class BossQuizViewModel : ViewModel() {
             currentQuestion = allQuestions[currentQuestionIndex]
             selectedAnswers.clear()
             removedOptions.clear()
+            isTimerPaused = false
+            isChronoFreezeActive = false
             phase = BossBattlePhase.QUIZ
             initializeBossTimer()
             startBossThinking()
         } else {
-            // Battle Selesai -> Tampilkan Summary tanpa auto-invoke onDefeated
             phase = BossBattlePhase.SUMMARY
         }
     }
 
     private fun initializeBossTimer() {
-        // GUNAKAN TIMER DARI FIRESTORE (timer: 30 -> 30000ms)
         val firestoreTimer = currentQuestion?.timer ?: 0
         var duration = if (firestoreTimer > 0) firestoreTimer * 1000L else 12000L
 
@@ -240,18 +299,35 @@ class BossQuizViewModel : ViewModel() {
         var bossDamageTaken = 0f
         
         if (isCorrect) {
+            currentStreak++
+
+            if (currentStreak > 0 && currentStreak % 3 == 0) {
+                reduceAllCooldowns(0.25f)
+                Log.d("Battle", "Streak Bonus! Cooldowns reduced by 25%")
+            }
+
             if (playerVeryFast) {
-                bossDamageTaken = 30f 
+                bossDamageTaken = 30f + (currentStreak * 2f)
                 isBossStunned = true 
             } else if (!playerLate) {
-                bossDamageTaken = 20f
+                // Base 20 + Streak Bonus
+                bossDamageTaken = 20f + currentStreak.toFloat()
             } else {
                 bossDamageTaken = 20f 
                 playerDamageTaken = (5..10).random().toFloat() 
             }
+
+            isStreakProtected = false
+
         } else {
+            if (isStreakProtected) {
+                isStreakProtected = false
+                playerDamageTaken = 0f
+            } else {
+                currentStreak = 0
+                playerDamageTaken = 20f
+            }
             bossDamageTaken = 0f
-            playerDamageTaken = 20f 
             isBossHaste = true
         }
 
@@ -260,7 +336,17 @@ class BossQuizViewModel : ViewModel() {
 
     private fun handleTimeOut() {
         if (phase != BossBattlePhase.QUIZ) return
-        applyImpact(0f, 20f, false, false)
+
+        var playerDamageTaken = 20f
+
+        if (isStreakProtected) {
+            isStreakProtected = false
+            playerDamageTaken = 0f
+
+        } else {
+            currentStreak = 0
+        }
+        applyImpact(0f, playerDamageTaken, false, false)
         isBossHaste = true
     }
 
@@ -282,31 +368,52 @@ class BossQuizViewModel : ViewModel() {
                 showBossImpact = false
             }
 
-            questionResults.add(QuestionResult(isCorrect, bossDamage, playerDamage, isFast))
+            questionResults.add(QuestionResult(isCorrect, bossDamage, playerDamage, isFast, currentStreak))
             currentQuestionIndex++
             showNextQuestion()
         }
     }
 
-    fun usePowerUp(type: PowerUpType, inventory: Inventory, onUpdateInventory: (Inventory) -> Unit) {
+    fun usePowerUp(
+        type: PowerUpType,
+        inventory: Inventory,
+        onUpdateInventory: (Inventory) -> Unit
+    ) {
         if (!inventory.powerUps.contains(type)) return
+
+        val now = System.currentTimeMillis()
+        val readyTime = powerUpCooldowns[type] ?: 0L
+        if (now < readyTime) {
+            Log.d("Battle", "Item $type masih dalam cooldown!")
+            return
+        }
+
         val newPowerUps = inventory.powerUps.toMutableList()
         newPowerUps.remove(type)
         onUpdateInventory(inventory.copy(powerUps = newPowerUps))
 
         when (type) {
             PowerUpType.FREEZE_TIMER -> {
-                elapsedTimeMillis = 0
-                bossThinkingProgress = 0f
-                bossTimeLeftMillis = bossDurationMillis
+                viewModelScope.launch {
+                    isTimerPaused = true
+                    isChronoFreezeActive = true
+                    delay(5000)
+                    isTimerPaused = false
+                    isChronoFreezeActive = false
+                }
             }
             PowerUpType.REMOVE_TWO_OPTIONS -> {
                 val question = currentQuestion ?: return
-                val incorrectOptions = question.options.filter { !question.answerKey.contains(it) }
+                val incorrectOptions = question.options.filter {
+                    !question.answerKey.contains(it)
+                }
                 removedOptions.addAll(incorrectOptions.shuffled().take(2))
             }
-            PowerUpType.DOUBLE_COIN -> {}
+            PowerUpType.STREAK_PROTECTION -> {
+                isStreakProtected = true
+            }
         }
+        powerUpCooldowns[type] = now + getCooldownDuration(type)
     }
 
     fun toggleAnswer(answer: String) {
@@ -331,10 +438,19 @@ class BossQuizViewModel : ViewModel() {
         isBossHaste = false
         showPlayerImpact = false
         showBossImpact = false
+        isTimerPaused = false
+        isChronoFreezeActive = false
+        currentStreak = 0
+        isStreakProtected = false
     }
 
     fun closeQuiz() {
         isQuizOpen = false
+        bossThinkingJob?.cancel()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
         bossThinkingJob?.cancel()
     }
 }

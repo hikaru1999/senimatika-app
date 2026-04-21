@@ -2,6 +2,7 @@ package com.LambdaProject.MathArt.ui.Pages.Exploration
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,17 +18,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.data.*
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.components.MathText
 
 @Composable
 fun ChestPopup(
     reward: Reward,
-    onCollect: () -> Unit
+    onCollect: () -> Unit,
+    audio: ExplorationAudioManager
 ) {
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         visible = true
+        when (reward.type) {
+            RewardType.COIN -> audio.playSfx("coin")
+            RewardType.SCROLL -> audio.playSfx("scroll")
+            RewardType.POWER_UP -> audio.playSfx("powerup")
+        }
     }
 
     val alpha by animateFloatAsState(
@@ -51,13 +60,19 @@ fun ChestPopup(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.7f))
-            .alpha(alpha),
+            .clickable(
+                interactionSource = remember { MutableInteractionSource () },
+                indication = null
+            ) {
+
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .graphicsLayer(scaleX = scale, scaleY = scale)
-                .width(if (isScroll) 380.dp else 320.dp),
+                .width(if (isScroll) 380.dp else 320.dp)
+                .clickable(enabled = false) { },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when (reward.type) {
@@ -67,7 +82,7 @@ fun ChestPopup(
                     ActionButton(onCollect)
                 }
                 RewardType.SCROLL -> {
-                    ScrollRewardView(reward.content)
+                    ScrollRewardView(reward.title, reward.content)
                     ActionButton(onCollect)
                 }
                 RewardType.POWER_UP -> {
@@ -127,12 +142,12 @@ fun CoinRewardView(amount: Int) {
 }
 
 @Composable
-fun ScrollRewardView(content: String) {
+fun ScrollRewardView(title: String, content: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(500.dp)
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -144,18 +159,23 @@ fun ScrollRewardView(content: String) {
 
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp, start = 48.dp, end = 48.dp), // Fixed mixed padding parameters
-            horizontalAlignment = Alignment.CenterHorizontally
+                /*fillMaxSize()*/
+                .fillMaxWidth(0.65f)
+                .fillMaxHeight(0.7f)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "PESAN RAHASIA",
+                text = title.ifEmpty { "MATERI BARU" }.uppercase(),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 color = Color(0xFFA10000).copy(alpha = 0.8f),
-                letterSpacing = 2.sp
+                letterSpacing = 1.sp,
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(12.dp))
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             if (content.contains("$")) {
                 MathText(
@@ -167,11 +187,11 @@ fun ScrollRewardView(content: String) {
             } else {
                 Text(
                     text = content,
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = interFontFamily,
                     textAlign = TextAlign.Center,
                     color = Color(0xFF3E2723),
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -184,13 +204,13 @@ fun PowerUpRewardView(powerUp: PowerUpType?) {
         PowerUpType.FREEZE_TIMER -> Quadruple(
             R.drawable.ic_pu_freeze,
             "Chrono Freeze",
-            "Menghentikan timer kuis selama 10 detik",
+            "Menghentikan timer kuis selama 5 detik",
             Color(0xFF81D4FA)
         )
-        PowerUpType.DOUBLE_COIN -> Quadruple(
+        PowerUpType.STREAK_PROTECTION -> Quadruple(
             R.drawable.ic_pu_shield,
-            "Streak Shield",
-            "Proteksi Streak Jika Menjawab Salah",
+            "Battle Shield",
+            "Proteksi Streak Jika Menjawab Soal Salah",
             Color(0xFF08FF27)
         )
         PowerUpType.REMOVE_TWO_OPTIONS -> Quadruple(

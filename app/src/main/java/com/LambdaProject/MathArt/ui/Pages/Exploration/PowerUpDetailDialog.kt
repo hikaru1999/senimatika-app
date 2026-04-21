@@ -15,6 +15,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,23 +29,30 @@ import com.LambdaProject.MathArt.data.PowerUpType
 import com.LambdaProject.MathArt.interFontFamily
 
 @Composable
-fun PowerUpDetailDialog(pu: PowerUpType, onDismiss: () -> Unit) {
+fun PowerUpDetailDialog(
+    pu: PowerUpType,
+    onDismiss: () -> Unit,
+    onUse: () -> Unit,
+    isQuizActive: Boolean
+) {
     val title = when(pu) {
         PowerUpType.FREEZE_TIMER -> "Freeze Timer"
         PowerUpType.REMOVE_TWO_OPTIONS -> "Truth Filter"
-        PowerUpType.DOUBLE_COIN -> "Double Point"
+        PowerUpType.STREAK_PROTECTION -> "Battle Shield"
     }
     val description = when(pu) {
-        PowerUpType.FREEZE_TIMER -> "Hentikan waktu kuis selama 10 detik agar kamu bisa berpikir lebih tenang."
+        PowerUpType.FREEZE_TIMER -> "Hentikan waktu kuis selama 5 detik agar kamu bisa berpikir lebih tenang."
         PowerUpType.REMOVE_TWO_OPTIONS -> "Menghilangkan 2 pilihan jawaban yang salah secara otomatis."
-        PowerUpType.DOUBLE_COIN -> "Memberikan skor x2 jika kamu berhasil menjawab soal ini dengan benar."
+        PowerUpType.STREAK_PROTECTION -> "Memberikan proteksi streak jika kamu menjawab soal yang salah."
     }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = Color.White,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -80,15 +88,50 @@ fun PowerUpDetailDialog(pu: PowerUpType, onDismiss: () -> Unit) {
                     lineHeight = 22.sp
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (isQuizActive) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Button(
+                            onClick = onUse, // Memicu fungsi use yang dikirim dari BagModal
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFD32F2F) // Warna merah aksi
+                            )
+                        ) {
+                            Text(
+                                "GUNAKAN SEKARANG",
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interFontFamily
+                            )
+                        }
 
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
-                ) {
-                    Text("MENGERTI", fontWeight = FontWeight.Bold, fontFamily = interFontFamily)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                "KEMBALI",
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interFontFamily
+                            )
+                        }
+                    }
+                } else {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                    ) {
+                        Text("MENGERTI", fontWeight = FontWeight.Bold, fontFamily = interFontFamily)
+                    }
                 }
             }
         }

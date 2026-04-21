@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -23,12 +24,21 @@ fun MathText(
     fontSize: Int = 14,
     color: Color = Color.Black,
     textAlign: String = "center",
+    fontWeight: FontWeight = FontWeight.Normal,
 ) {
     val density = LocalDensity.current
     var webViewHeight by remember { mutableStateOf(100.dp) }
 
-    val escapedText = text.replace("'", "\\'").replace("\n", "<br>")
+    /* val escapedText = text.replace("'", "\\'").replace("\n", "<br>") */
+    val escapedText = text
+        .replace("&", "&amp;")    .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("'", "&#39;")
+        .replace("\"", "&quot;")
+        .replace("\n", "<br>")
+
     val textColor = String.format("#%06X", 0xFFFFFF and color.toArgb())
+    val cssFontWeight = fontWeight.weight
 
     val baseUrl = "file:///android_asset/"
     val katexJs = "katex/katex.min.js"
@@ -48,6 +58,7 @@ fun MathText(
                     background-color: transparent;
                     color: $textColor;
                     font-size: ${fontSize}px;
+                    font-weight: $cssFontWeight;
                     margin: 0;
                     padding: 0;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -56,6 +67,7 @@ fun MathText(
                     line-height: 1.6;
                 }
                 #math-wrapper {
+                    font-weight: $cssFontWeight;
                     padding: 15px 10px;
                     display: block;
                     word-wrap: break-word;
@@ -67,6 +79,9 @@ fun MathText(
                     margin: 0.8em 0 !important;
                 }
                 .katex {
+                    font-weight: $cssFontWeight !important;
+                    ${if (cssFontWeight >= 700) "text-shadow: 0.2px 0 0 $textColor, -0.1px 0 0 $textColor;" else ""}
+                }.katex {
                     white-space: normal !important;
                 }
             </style>

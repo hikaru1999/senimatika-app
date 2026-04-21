@@ -23,7 +23,7 @@ fun collectReward() {
         )
 
         RewardType.SCROLL -> inventory.copy(
-            scrolls = inventory.scrolls + reward.content
+            scrolls = (inventory.scrolls + reward).distinctBy { it.id }
         )
 
         RewardType.POWER_UP -> inventory.copy(

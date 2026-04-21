@@ -1,38 +1,25 @@
 package com.LambdaProject.MathArt.ui.Pages
 
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,14 +37,24 @@ fun SplashScreen(navController: NavController) {
     val viewModel: SplashViewModel = viewModel(factory = SplashViewModelFactory(context))
     val splashState by viewModel.splashState.collectAsState()
     val scaffoldState = rememberScaffoldState()
-    val infiniteTransition = rememberInfiniteTransition(label = "heartbeat")
+    
+    // Smooth breathing animation for the logo
+    val infiniteTransition = rememberInfiniteTransition(label = "logo_pulse")
     val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.1f,
+        initialValue = 0.98f,
+        targetValue = 1.06f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = LinearOutSlowInEasing),
+            animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        ), label = "heartbeat-scale"
+        ), label = "scale"
+    )
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.75f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = "alpha"
     )
 
     if (splashState is SplashState.NoInternet) {
@@ -74,34 +71,47 @@ fun SplashScreen(navController: NavController) {
 
         Scaffold(
             scaffoldState = scaffoldState,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            backgroundColor = Color(0xFFFAFAFA)
         ) { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(Color.White),
+                    .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(
-                        painter = painterResource(R.drawable.ic_no_internet),
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 48.dp)
+                ) {
+                    Surface(
                         modifier = Modifier.size(100.dp),
-                        contentDescription = "Disconnected"
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White,
+                        shadowElevation = 4.dp
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_no_internet),
+                            modifier = Modifier.padding(24.dp),
+                            contentDescription = "Disconnected"
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        text = "Koneksi Terputus",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = interFontFamily,
+                        color = Color(0xFF1A1A1A)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Tidak ada koneksi internet",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interFontFamily
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Akan diarahkan ke halaman login ...",
+                        text = "Pastikan perangkat Anda terhubung ke internet. Mengarahkan Anda kembali...",
                         fontSize = 14.sp,
                         fontFamily = interFontFamily,
-                        color = Color.Gray
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
                     )
                 }
             }
@@ -133,56 +143,70 @@ fun SplashScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White,
+                        Color(0xFFDCF0FF) // Subtle blue tint for elegance
+                    )
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(id = R.drawable.img_logo_blue),
-                contentDescription = "Logo Aplikasi",
-                modifier = Modifier
-                    .size(170.dp)
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale
-                    )
-            )
-        }
+        // Main Logo with Animation
+        Image(
+            painter = painterResource(id = R.drawable.img_logo_blue),
+            contentDescription = "Logo Aplikasi",
+            modifier = Modifier
+                .size(190.dp)
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    alpha = alpha
+                )
+        )
 
-        Row(
+        // Footer Section
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(bottom = 64.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //Presented By
-            Column(
-                horizontalAlignment = Alignment
-                    .CenterHorizontally
+            Text(
+                text = "Presented By",
+                fontFamily = interFontFamily,
+                fontSize = 12.sp,
+                color = Color(0xFF1A237E),
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Logos inside an Elegant White Card
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 8.dp,
+                modifier = Modifier.wrapContentSize()
             ) {
-                Text(
-                    text = "Brought to you by:",
-                    fontFamily = interFontFamily,
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row (
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 14.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.img_unpar),
-                        contentDescription = "Presenter Logo",
-                        modifier = Modifier.size(50.dp),
-                        contentScale = ContentScale.Crop
+                        contentDescription = "Unpar",
+                        modifier = Modifier.height(42.dp).wrapContentWidth(),
+                        contentScale = ContentScale.Fit
                     )
+                    
                     Image(
                         painter = painterResource(id = R.drawable.img_unpar_stem),
-                        contentDescription = "Presenter Logo",
-                        modifier = Modifier.height(45.dp).wrapContentWidth(),
+                        contentDescription = "Unpar STEM",
+                        modifier = Modifier.height(38.dp).wrapContentWidth(),
                         contentScale = ContentScale.Fit
                     )
                 }
