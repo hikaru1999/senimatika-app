@@ -116,7 +116,7 @@ fun ForgotPasswordScreen(navController: NavController) {
             Image(
                 painter = painterResource(id = R.drawable.ic_forgot),
                 contentDescription = null,
-                modifier = Modifier.height(180.dp).wrapContentWidth(),
+                modifier = Modifier.height(150.dp).wrapContentWidth(),
                 contentScale = ContentScale.Fit
             )
             

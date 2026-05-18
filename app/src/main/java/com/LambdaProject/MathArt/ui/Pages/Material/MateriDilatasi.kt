@@ -155,10 +155,9 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             shape = RoundedCornerShape(16.dp),
             color = Color.Black
         ) {
-            MyYouTubePlayer(videoId = "yaBqwLIK2H8")
+            YouTubePlayer(youtubeUrl = "https://youtu.be/yaBqwLIK2H8")
         }
 
-        // Section: Annotation
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),

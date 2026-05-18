@@ -63,9 +63,33 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                         .height(220.dp),
                 ) {
                     val pagerState = rememberPagerState(pageCount = { DataMaterials.size })
-                    val itemCount = DataMaterials.size
 
                     HorizontalPager(
+                        state = pagerState,
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        pageSpacing = 16.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        val material = DataMaterials[page]
+                        val isActive = materialStatusMap[material.id] == true
+
+                        MaterialCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            material = material,
+                            isActive = isActive,
+                            onClickLearn = {
+                                if (!isActive) {
+                                    onMaterialSelected(material)
+                                } else {
+                                    navController.navigate("material_screen/${userId}/${material.id}")
+                                }
+                            }
+                        )
+
+                    }
+
+                    /* HorizontalPager(
                         state = pagerState,
                         contentPadding = if (itemCount == 1)
                             PaddingValues(start = horizontalPadding, end = horizontalPadding)
@@ -91,7 +115,7 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                             )
                         }
 
-                    }
+                    } */
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -133,33 +157,30 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(175.dp),
+                            .height(190.dp),
                     ) {
                         val pagerState = rememberPagerState(pageCount = { activeSessions.size })
                         val itemCount = activeSessions.size
 
                         HorizontalPager(
                             state = pagerState,
-                            contentPadding = /*if (itemCount == 1)
-                                PaddingValues(start = horizontalPadding, end = horizontalPadding)
-                            else */
-                                PaddingValues(start = 20.dp, end = 48.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            pageSpacing = 16.dp,
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.Top
                         ) { page ->
                             val material = activeSessions[page]
-
-                            Box(modifier = Modifier.padding(end = if (page == itemCount - 1) 0.dp else 20.dp)) {
-                                userId?.let { uid ->
-                                    ActiveMaterialCard(
-                                        userId = uid,
-                                        material = material,
-                                        isActive = true,
-                                        onClickLearn = {
-                                            navController.navigate("material_screen/$uid/${material.id}")
-                                        }
-                                    )
-                                }
+                            userId?.let { uid ->
+                                ActiveMaterialCard(
+                                    // Tambahkan modifier fillMaxWidth agar kartu mengikuti lebar pager
+                                    modifier = Modifier.fillMaxWidth(),
+                                    userId = uid,
+                                    material = material,
+                                    isActive = true,
+                                    onClickLearn = {
+                                        navController.navigate("material_screen/$uid/${material.id}")
+                                    }
+                                )
                             }
                         }
                     }
@@ -167,32 +188,11 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
             }
             Spacer(modifier = Modifier.height(16.dp))
             SectionTitle(title = "Berburu Harta Karun")
-            Button(
+            ExplorationCard(
                 onClick = {
                     navController.navigate("ExplorationLandingPage")
-                },
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFF1976D2)),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
-            ) {
-                Icon(
-                    painter = androidx.compose.ui.res.painterResource(id = com.LambdaProject.MathArt.R.drawable.ic_play),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    "JELAJAH SENIMATIKA",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 16.sp,
-                    fontFamily = interFontFamily,
-                    letterSpacing = 0.5.sp
-                )
-            }
+                }
+            )
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

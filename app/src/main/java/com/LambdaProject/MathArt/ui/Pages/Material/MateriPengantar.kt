@@ -61,7 +61,7 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
                 shape = RoundedCornerShape(16.dp),
                 color = Color.Black
             ) {
-                MyYouTubePlayer(videoId = "1M86rKgqdzo")
+                YouTubePlayer(youtubeUrl = "https://youtu.be/1M86rKgqdzo")
             }
         }
 
@@ -220,7 +220,7 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
                 shape = RoundedCornerShape(16.dp),
                 color = Color.Black
             ) {
-                MyYouTubePlayer(videoId = "akQBAB5cyIk")
+                YouTubePlayer(youtubeUrl = "https://youtu.be/akQBAB5cyIk")
             }
         }
 

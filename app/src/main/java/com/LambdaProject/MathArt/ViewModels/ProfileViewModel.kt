@@ -69,14 +69,6 @@ class  ProfileViewModel @Inject constructor(
                 _email.value = doc.getString("email") ?: "Email Belum Didaftarkan"
                 _coins.intValue = doc.getLong("coins")?.toInt() ?: 0
             }
-
-        /* firestore.collection("users").document(uid).get()
-            .addOnSuccessListener { doc ->
-                _username.value = doc.getString("username") ?: "User"
-                _fullName.value = doc.getString("fullname") ?: "User"
-                _email.value = doc.getString("email") ?: "Email Tidak Diketahui"
-                _coins.intValue = doc.getLong("coins")?.toInt() ?: 0
-            } */
     }
 
     private fun loadActiveSessions() {
@@ -102,29 +94,24 @@ class  ProfileViewModel @Inject constructor(
         if (userId.isEmpty()) return
         achievementListener?.remove()
 
-        achievementListener = firestore.collection("userAchievements")
-            .whereEqualTo("userId", userId)
+        achievementListener = firestore.collection("users")
+            .document(userId)
+            .collection("achievements")
+            .whereEqualTo("isUnlocked", true)
             .addSnapshotListener { snapshots, e ->
-                if (e == null && snapshots != null) {
+                if (e != null) {
+                    Log.e("ProfileViewModel", "Error listening to achievements", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
                     _unlockedAchievements.clear()
                     _unlockedAchievements.addAll(
-                        snapshots.mapNotNull { it.getString("achievementName") }
+                        snapshots.mapNotNull { it.getString("name") }
                     )
+                    Log.d("ProfileViewModel", "Achievements updated: ${_unlockedAchievements.size}")
                 }
             }
-
-
-
-        /* firestore.collection("userAchievements")
-            .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshots, e ->
-                if (e == null && snapshots != null) {
-                    _unlockedAchievements.clear()
-                    _unlockedAchievements.addAll(
-                        snapshots.mapNotNull { it.getString("achievementName") }
-                    )
-                }
-            } */
     }
 
     private fun checkAndResetDuration() {

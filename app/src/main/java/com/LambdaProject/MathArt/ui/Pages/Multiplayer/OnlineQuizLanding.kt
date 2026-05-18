@@ -40,7 +40,7 @@ fun OnlineQuizPage(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Kuis Online",
+                        "Senimatika Quizzess",
                         fontWeight = FontWeight.Black,
                         fontFamily = interFontFamily,
                         color = Color(0xFF1A237E)
@@ -70,9 +70,9 @@ fun OnlineQuizPage(
                     onValueChange = { searchQuery = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                        .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
                     placeholder = { 
-                        Text("Cari materi kuis...", fontFamily = interFontFamily, color = Color.Gray) 
+                        Text("Cari kuis...", fontFamily = interFontFamily, color = Color.Gray)
                     },
                     leadingIcon = { 
                         Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF1976D2)) 
@@ -92,7 +92,7 @@ fun OnlineQuizPage(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            "Materi tidak ditemukan",
+                            "Kuis tidak ditemukan",
                             fontFamily = interFontFamily,
                             fontWeight = FontWeight.Bold,
                             color = Color.Gray
@@ -121,11 +121,11 @@ fun OnlineQuizPage(
                             modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
                         )
                         Text(
-                            text = "Pilih materi dan kumpulkan skor tertinggi",
+                            text = "Pilih kuis dan kumpulkan skor tertinggi",
                             fontFamily = interFontFamily,
                             fontSize = 13.sp,
                             color = Color.Gray,
-                            modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                            modifier = Modifier.padding(start = 4.dp)
                         )
                     }
 

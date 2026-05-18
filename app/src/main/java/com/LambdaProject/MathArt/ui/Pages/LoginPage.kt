@@ -58,7 +58,7 @@ fun LoginScreen(navController: NavController) {
                 )
             )
     ) {
-        // Decorative circles for background
+
         Box(
             modifier = Modifier
                 .size(300.dp)
@@ -106,7 +106,7 @@ fun LoginScreen(navController: NavController) {
             )
             
             Text(
-                text = "Log in untuk melanjutkan belajarmu di MathArt",
+                text = "Log in untuk melanjutkan belajarmu di Senimatika",
                 fontSize = 14.sp,
                 fontFamily = interFontFamily,
                 fontWeight = FontWeight.Medium,
@@ -130,10 +130,12 @@ fun LoginScreen(navController: NavController) {
                     // Identifier Field
                     OutlinedTextField(
                         value = identifier,
-                        onValueChange = {
-                            if (!it.text.contains(" ") && !it.text.contains("\n")) {
+                        onValueChange = { newValue ->
+                            val cleanedText = newValue.text.replace(" ", "").replace("\n", "")
+                            identifier = newValue.copy(text = cleanedText)
+                            /* if (!it.text.contains(" ") && !it.text.contains("\n")) {
                                 identifier = it
-                            }
+                            } */
                         },
                         label = { Text("Username atau Email", fontFamily = interFontFamily, fontSize = 14.sp) },
                         leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF1976D2), modifier = Modifier.size(20.dp)) },
@@ -221,13 +223,21 @@ fun LoginScreen(navController: NavController) {
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF1976D2)),
-                        shape = RoundedCornerShape(16.dp),
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 8.dp,
+                            pressedElevation = 2.dp,
+                            disabledElevation = 0.dp
+                        ),
                         enabled = loginState !is LoginResult.Loading
                     ) {
                         if (loginState is LoginResult.Loading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 3.dp
+                            )
                         } else {
                             Text("LOGIN", fontFamily = interFontFamily, fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 1.sp)
                         }

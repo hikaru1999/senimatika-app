@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.Inventory
 import com.LambdaProject.MathArt.data.PowerUpType
+import com.LambdaProject.MathArt.data.getCooldownDuration
 import com.LambdaProject.MathArt.data.model.BossQuestion
 import com.google.firebase.firestore.FieldPath.documentId
 import com.google.firebase.firestore.FirebaseFirestore
@@ -16,7 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 enum class BossBattlePhase {
-    INTRO, COUNTDOWN, QUIZ, WAITING, SUMMARY
+    INTRO, COUNTDOWN, QUIZ, BATTLE_ANIMATION, SUMMARY
 }
 
 data class QuestionResult(
@@ -34,6 +35,7 @@ class BossQuizViewModel : ViewModel() {
     
     private var allQuestions = mutableListOf<BossQuestion>()
     var currentQuestionIndex by mutableIntStateOf(0)
+    var battleAnimationText by mutableStateOf("")
     var currentQuestion by mutableStateOf<BossQuestion?>(null)
     val selectedAnswers = mutableStateListOf<String>()
     val powerUpCooldowns = mutableStateMapOf<PowerUpType, Long>()
@@ -44,7 +46,6 @@ class BossQuizViewModel : ViewModel() {
     var bossHp by mutableFloatStateOf(100f)
     var bossThinkingProgress by mutableFloatStateOf(0f)
     var bossTimeLeftMillis by mutableLongStateOf(0L)
-
     var bossStatus by mutableStateOf("Boss sedang berpikir...")
     var currentBossType by mutableStateOf("boss_1")
     val questionResults = mutableStateListOf<QuestionResult>()
@@ -53,24 +54,30 @@ class BossQuizViewModel : ViewModel() {
     private var elapsedTimeMillis = 0L
     private var isBossStunned = false
     private var isBossHaste = false
+    private var fastAnswerStreak = 0
     
     var showPlayerImpact by mutableStateOf(false)
     var showBossImpact by mutableStateOf(false)
     var bossShake by mutableStateOf(false)
 
+    var onFastStreakTrigger: (() -> Unit)? = null
+
     val removedOptions = mutableStateListOf<String>()
     var isTimerPaused by mutableStateOf(false)
     var isChronoFreezeActive by mutableStateOf(false)
+    var battleAnimationSubText by mutableStateOf("")
 
     // Streak Logic
     var currentStreak by mutableIntStateOf(0)
     var isStreakProtected by mutableStateOf(false)
+    var onFinalAttackTrigger: (() -> Unit)? = null
     
     private var bossThinkingJob: Job? = null
     private var onDefeated: (() -> Unit)? = null
 
-    fun startQuiz(quizId: String, bossType: String, onBossDefeated: () -> Unit) {
+    fun startQuiz(quizId: String, bossType: String, startHp: Float, onBossDefeated: () -> Unit) {
         this.currentBossType = bossType
+        this.playerHp = startHp
         onDefeated = onBossDefeated
         isQuizOpen = true
         phase = BossBattlePhase.INTRO
@@ -128,31 +135,6 @@ class BossQuizViewModel : ViewModel() {
                             }
                         }
                     }
-                    /* if (quizDoc.exists()) {
-                        val questionsArray = quizDoc.get("questions") as? List<Map<String, Any>>
-                        if (questionsArray != null) {
-                            for (item in questionsArray) {
-                                val qId = item["id"] as? String ?: continue
-                                val qTimer = (item["timer"] as? Number)?.toInt() ?: 0
-                                
-                                val qDoc = db.collection("questions").document(qId).get().await()
-                                if (qDoc.exists()) {
-                                    val options = qDoc.get("options") as? List<String> ?: continue
-                                    val rawAnswerKey = qDoc.get("answerKey")
-                                    fetchedQuestions.add(
-                                        BossQuestion(
-                                            id = qDoc.id,
-                                            question = qDoc.getString("question") ?: "",
-                                            options = options,
-                                            answerKey = parseAnswerKey(rawAnswerKey, options),
-                                            questionType = qDoc.getString("questionType") ?: "multiple_choice",
-                                            timer = qTimer
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    } */
                 }
 
                 if (fetchedQuestions.isEmpty()) {
@@ -168,14 +150,6 @@ class BossQuizViewModel : ViewModel() {
                 Log.e("BossQuizViewModel", "Error loading questions", e)
                 loadFallbackQuestions()
             }
-        }
-    }
-
-    private fun getCooldownDuration(type: PowerUpType): Long {
-        return when (type) {
-            PowerUpType.REMOVE_TWO_OPTIONS -> 45000L // 45 Detik (Bermanfaat)
-            PowerUpType.FREEZE_TIMER -> 60000L       // 60 Detik (Sangat Bermanfaat)
-            PowerUpType.STREAK_PROTECTION -> 90000L   // 90 Detik (Paling Worth It)
         }
     }
 
@@ -224,8 +198,11 @@ class BossQuizViewModel : ViewModel() {
     private fun parseAnswerKey(raw: Any?, options: List<String>): List<String> {
         return when (raw) {
             is List<*> -> raw.mapNotNull {
-                val index = (it as? Number)?.toInt() ?: -1
-                options.getOrNull(index) ?: (it as? String)
+                if (it is Number) {
+                    options.getOrNull(it.toInt()) ?: it.toString()
+                } else {
+                    it.toString()
+                }
             }
             else -> emptyList()
         }
@@ -254,10 +231,12 @@ class BossQuizViewModel : ViewModel() {
             duration += 5000 
             isBossStunned = false
         }
+
         if (isBossHaste) {
-            duration = (duration * 0.7f).toLong()
+            duration = (duration * 0.70f).toLong()
             isBossHaste = false
         }
+
         if (playerHp < 30f) {
             duration = (duration * 1.3f).toLong()
         }
@@ -285,69 +264,144 @@ class BossQuizViewModel : ViewModel() {
         }
     }
 
-    fun submitAnswer() {
+    fun submitAnswer(onFinalAttack: () -> Unit = {}) {
         if (phase != BossBattlePhase.QUIZ) return
         bossThinkingJob?.cancel()
-        
+
         val question = currentQuestion ?: return
-        val isCorrect = selectedAnswers.toSet() == question.answerKey.toSet()
-        
-        val playerVeryFast = bossThinkingProgress < 0.5f
-        val playerLate = bossThinkingProgress >= 1.0f
-
-        var playerDamageTaken = 0f
-        var bossDamageTaken = 0f
-        
-        if (isCorrect) {
-            currentStreak++
-
-            if (currentStreak > 0 && currentStreak % 3 == 0) {
-                reduceAllCooldowns(0.25f)
-                Log.d("Battle", "Streak Bonus! Cooldowns reduced by 25%")
-            }
-
-            if (playerVeryFast) {
-                bossDamageTaken = 30f + (currentStreak * 2f)
-                isBossStunned = true 
-            } else if (!playerLate) {
-                // Base 20 + Streak Bonus
-                bossDamageTaken = 20f + currentStreak.toFloat()
-            } else {
-                bossDamageTaken = 20f 
-                playerDamageTaken = (5..10).random().toFloat() 
-            }
-
-            isStreakProtected = false
-
+        val isCorrect = if (question.questionType == "short_answer") {
+            val userInput = selectedAnswers.firstOrNull()?.trim() ?: ""
+            question.answerKey.any { it.trim().equals(userInput, ignoreCase = true) }
         } else {
-            if (isStreakProtected) {
-                isStreakProtected = false
-                playerDamageTaken = 0f
-            } else {
-                currentStreak = 0
-                playerDamageTaken = 20f
-            }
-            bossDamageTaken = 0f
-            isBossHaste = true
+            selectedAnswers.toSet() == question.answerKey.toSet()
         }
 
-        applyImpact(bossDamageTaken, playerDamageTaken, isCorrect, !playerLate)
+        val playerVeryFast = bossThinkingProgress < 0.5f
+        val bossDmg = if (playerVeryFast) 30f else 20f
+        val playerLate = bossThinkingProgress >= 1.0f
+        val damage = if (playerVeryFast) 30f else 20f
+        val isLastQuestion = currentQuestionIndex == totalQuestions - 1
+
+        if (isCorrect && playerVeryFast) {
+            fastAnswerStreak++
+            if (fastAnswerStreak >= 3) {
+                onFastStreakTrigger?.invoke()
+                fastAnswerStreak = 0
+            }
+        } else {
+            fastAnswerStreak = 0
+        }
+
+        viewModelScope.launch {
+            phase = BossBattlePhase.BATTLE_ANIMATION
+
+            val result = QuestionResult(
+                isCorrect = isCorrect,
+                playerDamageDealt = if (isCorrect) bossDmg else 0f,
+                playerDamageTaken = if (!isCorrect && !isStreakProtected) 20f else 0f,
+                wasFast = playerVeryFast,
+                streak = if (isCorrect) currentStreak + 1 else 0
+            )
+            questionResults.add(result)
+
+            if (isCorrect) {
+                currentStreak++
+                if (currentStreak > 0 && currentStreak % 3 == 0) {
+                    reduceAllCooldowns(0.30f)
+                    Log.d("Battle", "Streak 3! Cooldown berkurang 30%")
+                }
+
+                battleAnimationText = "ATTACKING!"
+                battleAnimationSubText = "Melakukan serangan..."
+                delay(2000)
+
+                if (isLastQuestion) {
+                    onFinalAttackTrigger?.invoke() ?: onFinalAttack()
+                }
+
+                battleAnimationText = "SUKSES!"
+                battleAnimationSubText = "HP Lawan berkurang ${damage.toInt()} HP"
+                bossHp = (bossHp - damage).coerceAtLeast(0f)
+
+                val healAmount = if (playerVeryFast) 10f else 5f
+                playerHp = (playerHp + healAmount).coerceAtMost(100f)
+
+                isStreakProtected = false
+                delay(2000)
+            } else {
+                // Initial Attack Anim (if Fail)
+                battleAnimationText = "ATTACKING!"
+                battleAnimationSubText = "Melakukan serangan..."
+                delay(1000)
+
+                battleAnimationText = "MISSED!"
+                battleAnimationSubText = "Lawan berhasil menangkis serangan!"
+                delay(1000)
+
+                battleAnimationText = "BOSS RETALIATE!"
+                delay(2000)
+
+                if (isStreakProtected) {
+                    battleAnimationSubText = "Boss melancarkan serangan balasan..."
+                    delay(1000)
+
+                    battleAnimationText = "BLOCKED!"
+                    battleAnimationSubText = "BATTLE SHIELD menahan serangan!"
+                    isStreakProtected = false
+                } else {
+                    battleAnimationSubText = "HP-mu berkurang 20 HP"
+                    playerHp = (playerHp - 20f).coerceAtLeast(0f)
+                    currentStreak = 0
+                    isBossHaste = true
+                }
+                delay(2000)
+            }
+            currentQuestionIndex++
+            showNextQuestion()
+        }
     }
 
     private fun handleTimeOut() {
         if (phase != BossBattlePhase.QUIZ) return
+        fastAnswerStreak = 0
+        val isLastQuestion = currentQuestionIndex == totalQuestions - 1
 
-        var playerDamageTaken = 20f
+        viewModelScope.launch {
+            phase = BossBattlePhase.BATTLE_ANIMATION
 
-        if (isStreakProtected) {
-            isStreakProtected = false
-            playerDamageTaken = 0f
+            questionResults.add(QuestionResult(
+                isCorrect = false,
+                playerDamageDealt = 0f,
+                playerDamageTaken = if (!isStreakProtected) 20f else 0f,
+                wasFast = false,
+                streak = 0
+            ))
 
-        } else {
-            currentStreak = 0
+            /* battleAnimationText = "${currentBossType.replace("obj_", "").uppercase()} ATTACKING!!!" */
+            battleAnimationText = "BOSS ATTACKING!!!"
+            battleAnimationSubText = "Waktumu habis! Boss mengambil kesempatan!"
+            delay(1500)
+
+            if (isLastQuestion) {
+                onFinalAttackTrigger?.invoke()
+            }
+
+            if (isStreakProtected) {
+                battleAnimationText = "SHIELD BLOCKED!"
+                battleAnimationSubText = "Perisai berhasil menahan serangan!"
+                delay(2000)
+                isStreakProtected = false
+            } else {
+                playerHp = (playerHp - 20f).coerceAtLeast(0f)
+                currentStreak = 0
+                isBossHaste = true
+                battleAnimationSubText = "HP berkurang 20 akibat serangan kilat!"
+                delay(1500)
+            }
+
+            currentQuestionIndex++
+            showNextQuestion()
         }
-        applyImpact(0f, playerDamageTaken, false, false)
-        isBossHaste = true
     }
 
     private fun applyImpact(bossDamage: Float, playerDamage: Float, isCorrect: Boolean, isFast: Boolean) {
@@ -412,6 +466,24 @@ class BossQuizViewModel : ViewModel() {
             PowerUpType.STREAK_PROTECTION -> {
                 isStreakProtected = true
             }
+            PowerUpType.HEALING_VIAL -> {
+                playerHp = (playerHp + 20f).coerceAtMost(100f)
+            }
+            PowerUpType.LEATHER_STRAPS -> {
+                Log.d("Battle", "Leather Straps digunakan di tengah pertempuran!")
+            }
+            PowerUpType.MAGIC_KEY -> {
+                Log.d("Battle", "Magic Key tidak berpengaruh di sini.")
+            }
+            PowerUpType.BINOCULAR -> {
+                Log.d("Battle", "Gunakan Binokular pada Eksplorasi.")
+            }
+            PowerUpType.LANTERN -> {
+                Log.d("Battle", "Gunakan Lanten pada Eksplorasi.")
+            }
+            PowerUpType.TORCH -> {
+                Log.d("Battle", "Gunakan Torch pada Eksplorasi.")
+            }
         }
         powerUpCooldowns[type] = now + getCooldownDuration(type)
     }
@@ -427,11 +499,12 @@ class BossQuizViewModel : ViewModel() {
     }
 
     private fun resetBattleState() {
-        playerHp = 100f
+        /* playerHp = 10f */
         bossHp = 100f
         currentQuestionIndex = 0
         totalQuestions = 0
         questionResults.clear()
+
         bossThinkingProgress = 0f
         bossTimeLeftMillis = 0L
         isBossStunned = false
@@ -440,8 +513,11 @@ class BossQuizViewModel : ViewModel() {
         showBossImpact = false
         isTimerPaused = false
         isChronoFreezeActive = false
+
         currentStreak = 0
         isStreakProtected = false
+
+        removedOptions.clear()
     }
 
     fun closeQuiz() {

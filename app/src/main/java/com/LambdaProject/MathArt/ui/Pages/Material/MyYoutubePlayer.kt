@@ -30,7 +30,7 @@ fun MyYouTubePlayer(
 
                 override fun onReady(player: YouTubePlayer) {
                     youTubePlayer = player
-                    player.cueVideo(videoId, 0f)
+                    player.loadVideo(videoId, 0f)
                     YouTubePlayerManager.register(player)
 
                     player.addListener(object : AbstractYouTubePlayerListener() {

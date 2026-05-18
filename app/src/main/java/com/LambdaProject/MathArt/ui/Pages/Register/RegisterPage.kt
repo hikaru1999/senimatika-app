@@ -116,7 +116,7 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Bergabunglah dengan komunitas MathArt dan mulai petualangan belajarmu hari ini!",
+                text = "Silakan isi data berikut untuk mengakses konten pembelajaran kami",
                 fontSize = 14.sp,
                 fontFamily = interFontFamily,
                 fontWeight = FontWeight.Medium,
@@ -124,7 +124,7 @@ fun RegisterScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
             Surface(
                 modifier = Modifier
@@ -256,14 +256,22 @@ fun RegisterScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF1976D2)),
+                            .height(56.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
                         shape = RoundedCornerShape(16.dp),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 8.dp,
+                            pressedElevation = 2.dp,
+                            disabledElevation = 0.dp
+                        ),
                         enabled = registerState !is RegisterViewModel.RegisterState.Loading
                     ) {
                         if (registerState is RegisterViewModel.RegisterState.Loading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 3.dp
+                            )
                         } else {
                             Text("DAFTAR SEKARANG", fontFamily = interFontFamily, fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 1.sp)
                         }

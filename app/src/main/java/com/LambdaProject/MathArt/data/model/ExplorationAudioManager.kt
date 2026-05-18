@@ -14,14 +14,12 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 class ExplorationAudioManager(private val context: Context) {
-
     private var soundPool: SoundPool
     private val sounds = mutableMapOf<String, Int>()
     private var bgmPlayer: MediaPlayer? = null
     private var intensePlayer: MediaPlayer? = null
     private var currentAmbientResId: Int? = null
     private var currentVolume = 0.6f
-
     private var fadeJob: Job? = null
 
     init {
@@ -31,13 +29,10 @@ class ExplorationAudioManager(private val context: Context) {
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(5) // Max 5 suara bersamaan
+            .setMaxStreams(5)
             .setAudioAttributes(attrs)
             .build()
 
-        // Load semua SFX ke memory (Pre-load)
-        /* loadSound("click", R.raw.sfx_button_click)
-        loadSound("walk", R.raw.sfx_walk) */
         loadSound("coin", R.raw.sfx_coin)
         loadSound("powerup", R.raw.sfx_powerup)
         loadSound("scroll", R.raw.sfx_scroll)
@@ -49,6 +44,14 @@ class ExplorationAudioManager(private val context: Context) {
         loadSound("sfx_freeze", R.raw.sfx_powerup_used_ice)
         loadSound("sfx_shield", R.raw.sfx_powerup_used_shield)
         loadSound("sfx_magic", R.raw.sfx_powerup_used_magic)
+        loadSound("sfx_healing", R.raw.sfx_powerup_used_health)
+        loadSound("move", R.raw.sfx_move)
+        loadSound("block", R.raw.sfx_block)
+        loadSound("zoom_out", R.raw.sfx_zoom_used)
+        loadSound("unlocked", R.raw.sfx_unlocked)
+        loadSound("wear", R.raw.sfx_wear)
+        loadSound("drink", R.raw.sfx_heal)
+        loadSound("light_on", R.raw.sfx_light_on)
     }
 
     private fun loadSound(key: String, resId: Int) {
@@ -61,7 +64,6 @@ class ExplorationAudioManager(private val context: Context) {
         }
     }
 
-    // Untuk Musik Latar (Looping)
     fun playBGM(resId: Int, isAmbient: Boolean = false) {
         if (isAmbient) currentAmbientResId = resId
         fadeJob?.cancel()
@@ -75,26 +77,6 @@ class ExplorationAudioManager(private val context: Context) {
             start()
         }
     }
-
-    /* fun playIntenseWarning(resId: Int) {
-        if (intensePlayer?.isPlaying == true) return // Jangan putar jika sudah jalan
-
-        intensePlayer = MediaPlayer.create(context, resId).apply {
-            isLooping = true
-            setVolume(0f, 0f) // Mulai dari sunyi
-            start()
-        }
-
-        // Fade in ke volume 0.25f (lebih kecil dari BGM 0.6f)
-        CoroutineScope(Dispatchers.Main).launch {
-            var vol = 0f
-            while (vol < 0.25f) {
-                vol += 0.02f
-                intensePlayer?.setVolume(vol, vol)
-                delay(100)
-            }
-        }
-    } */
 
     fun playIntenseWarning(resId: Int) {
         if (intensePlayer != null) {
@@ -152,28 +134,6 @@ class ExplorationAudioManager(private val context: Context) {
         currentVolume = 0.6f
     }
 
-    /* fun stopBGMWithFade(duration: Long = 2000, onComplete: () -> Unit = {}) {
-        bgmPlayer?.let { player ->
-            if (!player.isPlaying) return
-
-            val maxVolume = 0.6f
-            val steps = 20
-            val interval = duration / steps
-            val deltaVolume = maxVolume / steps
-
-            CoroutineScope(Dispatchers.Main).launch {
-                var currentVol = maxVolume
-                for (i in 0 until steps) {
-                    currentVol -= deltaVolume
-                    if (currentVol < 0) currentVol = 0f
-                    player.setVolume(currentVol, currentVol)
-                    delay(interval)
-                }
-                stopBGM() // Benar-benar release setelah silent
-            }
-        }
-    } */
-
     fun stopBGMWithFade(duration: Long = 2000, onComplete: () -> Unit = {}) {
         val player = bgmPlayer ?: run { onComplete(); return }
         if (!player.isPlaying) {
@@ -186,7 +146,6 @@ class ExplorationAudioManager(private val context: Context) {
         val interval = duration / steps
         val deltaVolume = startVolume / steps
 
-        // Simpan coroutine ke dalam fadeJob
         fadeJob?.cancel() // Batalkan jika ada fade lain
         fadeJob = CoroutineScope(Dispatchers.Main).launch {
             var vol = startVolume
@@ -200,8 +159,7 @@ class ExplorationAudioManager(private val context: Context) {
                 stopBGM()
                 onComplete()
             } catch (e: CancellationException) {
-                // Jika dicancel (karena resumeAmbient dipanggil),
-                // jangan panggil stopBGM()!
+                // Ignore cancellation
             } finally {
                 fadeJob = null
             }

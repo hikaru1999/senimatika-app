@@ -21,7 +21,11 @@ import com.LambdaProject.MathArt.data.model.MaterialItem
 import com.LambdaProject.MathArt.data.kelasMap
 
 @Composable
-fun MaterialCard(material: MaterialItem, isActive: Boolean, onClickLearn: (MaterialItem) -> Unit) {
+fun MaterialCard(
+    modifier: Modifier = Modifier,
+    material: MaterialItem,
+    isActive: Boolean,
+    onClickLearn: (MaterialItem) -> Unit) {
     val fullClassLevel = remember(material.classLevel) {
         val jenjang = kelasMap.entries.find { it.value.contains(material.classLevel) }?.key ?: ""
         if (jenjang.isNotEmpty()) "${material.classLevel} $jenjang" else "${material.classLevel}"
@@ -29,7 +33,7 @@ fun MaterialCard(material: MaterialItem, isActive: Boolean, onClickLearn: (Mater
 
     Card(
         modifier = Modifier
-            .width(300.dp)
+            /* .width(300.dp) */
             .padding(top = 8.dp)
             .border(
                 width = 1.dp,

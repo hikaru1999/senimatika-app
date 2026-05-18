@@ -18,6 +18,12 @@ fun PowerUpIcon(type: PowerUpType) {
         PowerUpType.FREEZE_TIMER -> R.drawable.ic_pu_freeze
         PowerUpType.STREAK_PROTECTION -> R.drawable.ic_pu_shield
         PowerUpType.REMOVE_TWO_OPTIONS -> R.drawable.ic_pu_magic
+        PowerUpType.HEALING_VIAL -> R.drawable.ic_pu_vial
+        PowerUpType.LEATHER_STRAPS -> R.drawable.ic_pu_belt
+        PowerUpType.MAGIC_KEY -> R.drawable.ic_pu_key
+        PowerUpType.BINOCULAR -> R.drawable.ic_pu_binocular
+        PowerUpType.LANTERN -> R.drawable.ic_pu_lantern
+        PowerUpType.TORCH -> R.drawable.ic_pu_torch
     }
 
     Box(

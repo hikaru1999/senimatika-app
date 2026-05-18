@@ -40,19 +40,19 @@ fun StationModal(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f))
-            .clickable(enabled = false) { }, // Prevent clicking through to the map
+            .background(Color.Black.copy(alpha = 0.9f))
+            .clickable(enabled = false) { },
         contentAlignment = Alignment.Center
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = Color.White,
+            color = Color(0xFF212121),
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .padding(vertical = 16.dp)
+                .border(2.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp))
         ) {
             Box {
-                // Close Button in Top Right
                 IconButton(
                     onClick = onClose,
                     modifier = Modifier
@@ -62,7 +62,7 @@ fun StationModal(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Tutup",
-                        tint = Color.Gray
+                        tint = Color(0xFFFFD700)
                     )
                 }
 
@@ -70,14 +70,14 @@ fun StationModal(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Header Icon
                     Box(
                         modifier = Modifier
                             .size(64.dp)
                             .background(
-                                brush = Brush.linearGradient(listOf(Color(0xFF1A237E), Color(0xFF3F51B5))),
+                                brush = Brush.linearGradient(listOf(Color(0xFFD4AF37), Color(0xFF8B4513))),
                                 shape = CircleShape
-                            ),
+                            )
+                            .border(2.dp, Color.White, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Lock, null, tint = Color.White, modifier = Modifier.size(32.dp))
@@ -88,15 +88,15 @@ fun StationModal(
                     Text(
                         "Area Terkunci",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
+                        fontWeight = FontWeight.ExtraBold,
                         fontFamily = interFontFamily,
-                        color = Color(0xFF1A237E)
+                        color = Color.White,
                     )
 
                     Text(
                         "Masukkan 3 digit kode untuk membuka akses. Kode tersebar pada boss-boss di wilayah ini.",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = Color(0xFFBDBDBD),
                         textAlign = TextAlign.Center,
                         fontFamily = interFontFamily,
                         modifier = Modifier.padding(top = 8.dp),
@@ -111,51 +111,53 @@ fun StationModal(
                     ) {
                         sessionCode.forEach { digit ->
                             val isFound = collectedDigits.contains(digit)
-                            Surface(
-                                color = if (isFound) Color(0xFFE8EAF6) else Color(0xFFF5F5F5),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, if (isFound) Color(0xFF1A237E) else Color(0xFFEEEEEE)),
-                                modifier = Modifier.size(48.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(Color(0xFF1A1A1A), RoundedCornerShape(8.dp))
+                                    .border(
+                                        2.dp,
+                                        if (isFound) Color(0xFFFFD700) else Color(0xFF424242),
+                                        RoundedCornerShape(8.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = if (isFound) digit.toString() else "?",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isFound) Color(0xFF1A237E) else Color.LightGray
-                                    )
-                                }
+                                Text(
+                                    text = if (isFound) digit.toString() else "?",
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (isFound) Color(0xFFFFD700) else Color(0xFF616161)
+                                )
                             }
                         }
                     }
 
                     // Input Display
                     Surface(
-                        color = Color(0xFFF8F9FE),
-                        shape = RoundedCornerShape(5.dp),
-                        border = BorderStroke(2.dp, if (isError) Color.Red else Color(0xFFEEEEEE)),
-                        modifier = Modifier.fillMaxWidth(0.5f).height(48.dp)
+                        color = Color.Black,
+                        shape = RoundedCornerShape(4.dp),
+                        border = BorderStroke(2.dp, if (isError) Color.Red else Color(0xFF424242)),
+                        modifier = Modifier.fillMaxWidth(0.6f).height(56.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = inputCode.padEnd(3, '•'),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 8.sp,
-                                color = if (isError) Color.Red else Color(0xFF1A237E)
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 10.sp,
+                                color = if (isError) Color.Red else Color(0xFF00E5FF)
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
-                    
                     // Keypad
                     val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "DEL")
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
                         modifier = Modifier.height(220.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(keys) { key ->
                             KeypadButton(
@@ -191,12 +193,12 @@ fun KeypadButton(label: String, onClick: () -> Unit) {
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),
         color = when (label) {
-            "C" -> Color(0xFFFFEBEE)
-            "DEL" -> Color(0xFFF5F5F5)
-            else -> Color.White
+            "C" -> Color(0xFFB71C1C)
+            "DEL" -> Color(0xFF424242)
+            else -> Color(0xFF333333)
         },
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
-        modifier = Modifier.size(48.dp)
+        border = BorderStroke(1.dp, Color(0xFF616161)),
+        modifier = Modifier.height(48.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (label == "DEL") {
@@ -204,12 +206,9 @@ fun KeypadButton(label: String, onClick: () -> Unit) {
             } else {
                 Text(
                     text = label,
-                    fontSize = 16.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = when (label) {
-                        "C" -> Color.Red
-                        else -> Color(0xFF1A237E)
-                    }
+                    color = Color.White
                 )
             }
         }

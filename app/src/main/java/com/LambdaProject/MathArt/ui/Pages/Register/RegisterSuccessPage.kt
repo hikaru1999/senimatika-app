@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
 fun SuccessPage(navController: NavController, username: String) {
 
     LaunchedEffect(Unit) {
-        delay(4000)
+        delay(5000)
         navController.navigate("dashboard/$username") {
             popUpTo(0) { inclusive = true }
             launchSingleTop = true
@@ -43,14 +43,14 @@ fun SuccessPage(navController: NavController, username: String) {
         Box(
             modifier = Modifier
                 .size(300.dp)
-                .offset(x = (-100).dp, y = (-100).dp)
+                .offset(x = (-120).dp, y = (-80).dp)
                 .background(Color.White.copy(alpha = 0.05f), CircleShape)
         )
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(220.dp)
                 .align(Alignment.BottomEnd)
-                .offset(x = 50.dp, y = 100.dp)
+                .offset(x = 80.dp, y = 120.dp)
                 .background(Color.White.copy(alpha = 0.05f), CircleShape)
         )
 

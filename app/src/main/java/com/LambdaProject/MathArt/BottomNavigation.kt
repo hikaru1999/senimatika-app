@@ -33,14 +33,14 @@ fun BottomNavigationMenu(navController: NavController) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(20.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
-        color = Color.White,
+            .shadow(24.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+        color = Color(0xFF000749),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         NavigationBar(
-            containerColor = Color.White,
+            containerColor = Color.Transparent,
             tonalElevation = 0.dp,
-            modifier = Modifier.height(80.dp),
+            modifier = Modifier.height(90.dp),
             windowInsets = WindowInsets.navigationBars
         ) {
             // Beranda
@@ -63,7 +63,7 @@ fun BottomNavigationMenu(navController: NavController) {
             // Quiz
             CustomNavItem(
                 label = "Quiz",
-                iconRes = R.drawable.ic_play,
+                iconRes = R.drawable.ic_quiz_icon,
                 isSelected = currentRoute == "OnlineQuizPage",
                 onClick = {
                     if (currentRoute != "OnlineQuizPage") {
@@ -113,7 +113,7 @@ fun RowScope.CustomNavItem(
     onClick: () -> Unit
 ) {
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF1A237E) else Color.Gray.copy(alpha = 0.6f),
+        targetValue = if (isSelected) Color.White else Color.White.copy(alpha = 0.5f),
         animationSpec = tween(300),
         label = "color"
     )
@@ -150,7 +150,7 @@ fun RowScope.CustomNavItem(
                 
                 if (isLocked) {
                     Surface(
-                        color = Color.White,
+                        color = Color(0xFFFFD600),
                         shape = CircleShape,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -168,8 +168,8 @@ fun RowScope.CustomNavItem(
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(6.dp))
+
+            Spacer(modifier = Modifier.height(3.dp))
             
             Text(
                 text = label,
@@ -179,15 +179,13 @@ fun RowScope.CustomNavItem(
                 color = contentColor
             )
             
-            Spacer(modifier = Modifier.height(4.dp))
-            
             // Minimalist dot/line indicator
             Box(
                 modifier = Modifier
                     .width(indicatorWidth)
                     .height(3.dp)
                     .clip(CircleShape)
-                    .background(if (isSelected) Color(0xFF1A237E) else Color.Transparent)
+                    .background(if (isSelected) Color(0xFFFFFFFF) else Color.Transparent)
             )
         }
     }

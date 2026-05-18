@@ -30,7 +30,7 @@ fun ProfileHeader(fullName: String, email: String, coins: Int) {
         Box(contentAlignment = Alignment.BottomEnd) {
             Surface(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(80.dp)
                     .shadow(12.dp, CircleShape, spotColor = Color(0xFF1976D2)),
                 color = Color.White,
                 shape = CircleShape,
@@ -70,9 +70,8 @@ fun ProfileHeader(fullName: String, email: String, coins: Int) {
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Koin Status (Flat & Clean)
         Surface(
             color = Color(0xFFE3F2FD).copy(alpha = 0.5f),
             shape = RoundedCornerShape(16.dp)

@@ -23,11 +23,13 @@ import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+    val db = remember { FirebaseFirestore.getInstance() }
     val userAnswers = viewModel.userAnswers
     var showDialog by remember { mutableStateOf(false) }
 
@@ -166,7 +168,9 @@ fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
                             color = Color(0xFFF8F9FE),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
+                            Column(modifier = Modifier
+                                .padding(12.dp)
+                                .fillMaxWidth()) {
                                 Text(
                                     "Soal Batik ${index + 1}",
                                     fontWeight = FontWeight.ExtraBold,
@@ -227,11 +231,34 @@ fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
                 TextButton(onClick = {
                     showDialog = false
                     if (userId != null) {
-                        viewModel.resetQuiz()
-                        resetAccessiblePage(userId)
-                        markSessionCompleted(userId = userId, materialId = "transformasi_geometri")
+                        db.collection("quizResults")
+                            .whereEqualTo("userId", userId)
+                            .whereEqualTo("materialId", "transformasi_geometri")
+                            .get()
+                            .addOnSuccessListener { documents ->
+                                val batch = db.batch()
+                                for (document in documents) {
+                                    batch.delete(document.reference)
+                                }
+                                batch.commit().addOnSuccessListener {
+                                    viewModel.resetQuiz()
+                                    resetAccessiblePage(userId)
+                                    markSessionCompleted(
+                                        userId = userId,
+                                        materialId = "transformasi_geometri"
+                                    )
+                                    onBackToDashboard()
+                                    viewModel.resetQuiz()
+                                    viewModel.resetQuizReadyState()
+                                }
+                            }
+                            .addOnFailureListener {
+                                onBackToDashboard()
+                            }
+
+                    } else {
+                        onBackToDashboard()
                     }
-                    onBackToDashboard()
                 }) {
                     Text("Ya, Keluar", fontWeight = FontWeight.Black, color = Color(0xFFC62828))
                 }

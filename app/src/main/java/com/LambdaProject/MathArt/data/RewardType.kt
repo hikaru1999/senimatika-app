@@ -9,7 +9,13 @@ enum class RewardType {
 enum class PowerUpType {
     FREEZE_TIMER,
     STREAK_PROTECTION,
-    REMOVE_TWO_OPTIONS
+    REMOVE_TWO_OPTIONS,
+    HEALING_VIAL,
+    LEATHER_STRAPS,
+    MAGIC_KEY,
+    BINOCULAR,
+    TORCH,
+    LANTERN
 }
 
 data class Reward(

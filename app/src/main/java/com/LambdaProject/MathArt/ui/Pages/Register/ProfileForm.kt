@@ -134,7 +134,7 @@ fun ProfileForm(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Surface(
                 modifier = Modifier
@@ -268,8 +268,8 @@ fun ProfileForm(
                             .fillMaxWidth()
                             .height(56.dp),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 6.dp,
-                            pressedElevation = 12.dp,
+                            defaultElevation = 8.dp,
+                            pressedElevation = 2.dp,
                             disabledElevation = 0.dp
                         ),
                         colors = ButtonDefaults.buttonColors(

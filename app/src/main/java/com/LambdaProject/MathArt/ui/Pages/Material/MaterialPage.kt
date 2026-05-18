@@ -35,8 +35,8 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
     val quizViewModel = remember { QuizViewModel() }
     val maxAccessiblePage = remember { mutableIntStateOf(0) }
 
-    // Menggunakan parameter yang dilewatkan atau fallback ke auth
-    val currentUserId = userId.ifBlank { FirebaseAuth.getInstance().currentUser?.uid ?: "" }
+    val auth = remember { FirebaseAuth.getInstance() }
+    val currentUserId = remember { auth.currentUser?.uid ?: "" }
     val currentMaterialId = materialId.ifBlank { "transformasi_geometri" }
 
     LaunchedEffect(currentUserId) {
@@ -187,8 +187,8 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                         )
                         5 -> {
                             val isQuizReady by quizViewModel.isQuizReady
-                            LaunchedEffect(page) {
-                                if (currentUserId.isNotEmpty()) {
+                            LaunchedEffect(page, currentUserId) {
+                                if (currentUserId.isNotEmpty() && !isQuizReady) {
                                     quizViewModel.prepareQuiz(currentUserId, currentMaterialId)
                                 }
                             }
@@ -196,13 +196,13 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                             if (isQuizReady) {
                                 QuizScreen(
                                     currentPage = pagerState.currentPage,
+                                    userId = currentUserId,
                                     myPage = 5,
                                     viewModel = quizViewModel,
                                     onQuizFinished = {
                                         quizViewModel.resetQuizReadyState()
                                         goToNextPage(6)
                                     },
-                                    userId = currentUserId,
                                     materialId = currentMaterialId
                                 )
                             } else {

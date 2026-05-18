@@ -21,6 +21,7 @@ import com.LambdaProject.MathArt.data.model.QuizResult
 import com.LambdaProject.MathArt.data.model.ScoreType
 import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.data.model.UserAnswerState
+import com.LambdaProject.MathArt.data.model.unlockGeneralAchievement
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -38,9 +39,7 @@ class OnlineQuizViewModel @Inject constructor(
     private val challengeRepo: ChallengeRepository,
     private val repository: QuizResultRepository
 ): ViewModel() {
-
     private val firestore = FirebaseFirestore.getInstance()
-
     private val _materials = MutableStateFlow<List<OnlineQuizDesc>>(emptyList())
     val materials: StateFlow<List<OnlineQuizDesc>> = _materials
 
@@ -104,11 +103,12 @@ class OnlineQuizViewModel @Inject constructor(
     private fun loadAllQuizzes() {
         viewModelScope.launch {
             try {
-                val snapshot = firestore.collection("online_quizzes").get(Source.DEFAULT).await()
-                /* val snapshot = firestore.collection("online_quizzes").get().await() */
+                val snapshot = firestore.collection("online_quizzes")
+                    .whereEqualTo("active", true)
+                    .get(Source.DEFAULT)
+                    .await()
                 val quizList = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(OnlineQuizDesc::class.java)?.let { quiz ->
-                        // Fallback image for Firestore-loaded quizzes that don't have local resource IDs
                         val fixedQuiz = if (quiz.imageRes == 0) {
                             quiz.copy(imageRes = R.drawable.img_geo)
                         } else {
@@ -124,7 +124,7 @@ class OnlineQuizViewModel @Inject constructor(
         }
     }
 
-    fun sendChallenge(toUserId: String) {
+    /* fun sendChallenge(toUserId: String) {
         val selected = selectedMaterial.value ?: return
 
         viewModelScope.launch {
@@ -136,16 +136,15 @@ class OnlineQuizViewModel @Inject constructor(
         }
     }
 
+    fun resetChallengeStatus() {
+        _challengeStatus.value = null
+    } */
+
     fun getCurrentUserId(): String? {
         return FirebaseAuth.getInstance().currentUser?.uid
     }
 
-    fun resetChallengeStatus() {
-        _challengeStatus.value = null
-    }
-
     fun startListeningForChallenges() {
-        // challengeRepo.listenForIncomingChallenges harus mengembalikan ListenerRegistration
         challengeListener?.remove()
         challengeListener = challengeRepo.listenForIncomingChallenges { challenges ->
             _incomingChallenges.value = challenges
@@ -171,7 +170,6 @@ class OnlineQuizViewModel @Inject constructor(
                 
                 val questionRefs = quizData.questions
                 if (questionRefs.isEmpty()) {
-                    Log.d("OnlineQuizViewModel", "No questions found for kuis: $materialId")
                     return@launch
                 }
 
@@ -179,22 +177,30 @@ class OnlineQuizViewModel @Inject constructor(
 
                 val questionsSnapshot = firestore.collection("questions")
                     .whereIn(com.google.firebase.firestore.FieldPath.documentId(), questionIds)
-                    .get(Source.DEFAULT) // Utamakan cache jika user pernah main sebelumnya
+                    .get(Source.DEFAULT)
                     .await()
 
                 val questionMap = questionsSnapshot.documents.associateBy { it.id }
 
                 val fullQuestions = questionRefs.mapIndexedNotNull { index, ref ->
                     val qDoc = questionMap[ref.id] ?: return@mapIndexedNotNull null
-
                     val choices = qDoc.get("options") as? List<String> ?: emptyList()
-                    val correctAnswers = (qDoc.get("answerKey") as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList()
                     val qTypeStr = qDoc.getString("questionType") ?: "multiple_choice"
 
                     val type = when(qTypeStr.lowercase()) {
-                        "checkbox" -> QuestionType.CHECKBOX
+                        "checkbox","check_boxes" -> QuestionType.CHECKBOX
                         "short_answer" -> QuestionType.SHORT_ANSWER
                         else -> QuestionType.MULTIPLE_CHOICE
+                    }
+
+                    val rawAnswerKey = qDoc.get("answerKey")
+                    val correctAnswers = mutableListOf<Int>()
+                    val correctTextAnswers = mutableListOf<String>()
+
+                    if (type == QuestionType.SHORT_ANSWER) {
+                        (rawAnswerKey as? List<*>)?.forEach { correctTextAnswers.add(it.toString()) }
+                    } else {
+                        (rawAnswerKey as? List<*>)?.forEach { (it as? Number)?.let { num -> correctAnswers.add(it.toInt()) } }
                     }
 
                     OnlineQuizQuestion(
@@ -203,7 +209,7 @@ class OnlineQuizViewModel @Inject constructor(
                         imageUrl = qDoc.getString("imageUrl"),
                         choices = choices,
                         correctAnswers = correctAnswers,
-                        correctTextAnswers = if (type == QuestionType.SHORT_ANSWER) qDoc.get("answerKey") as? List<String> ?: emptyList() else emptyList(),
+                        correctTextAnswers = correctTextAnswers,
                         type = type,
                         durationSeconds = ref.timer,
                         basePoints = ref.points
@@ -345,7 +351,6 @@ class OnlineQuizViewModel @Inject constructor(
     }
 
     fun saveQuizResult(userId: String, materialId: String) {
-        Log.d("PvPQuizModel", "Invoked saveQuizResult() with userId=$userId, materialId=$materialId")
         val totalBasePoints = _userAnswers.sumOf { it.basePointsEarned }
         val totalTimeBonus = _userAnswers.sumOf { it.timeBonusEarned }
         val totalStreakBonus = _userAnswers.sumOf { it.streakBonusEarned }
@@ -367,7 +372,7 @@ class OnlineQuizViewModel @Inject constructor(
         viewModelScope.launch {
             repository.saveQuizResult(result)
                 .onSuccess {
-                    Log.d("PvPQuizModel", "Quiz result saved.")
+                    checkAndUnlockQuizAchievements(userId)
                 }
                 .onFailure {
                     Log.e("PvPQuizModel", "Failed to save quiz result: ${it.message}")
@@ -379,11 +384,9 @@ class OnlineQuizViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getUserQuizResult(userId, materialId)
                 .onSuccess { result ->
-                    Log.d("PvPQuizModel", "Fetched quiz result: $result")
                     _quizResult.value = result
                 }
                 .onFailure { e ->
-                    Log.e("PvPQuizModel", "Failed to fetch quiz result: ${e.message}")
                     _quizResult.value = null
                 }
         }
@@ -431,15 +434,43 @@ class OnlineQuizViewModel @Inject constructor(
         }
     }
 
+    private fun checkAndUnlockQuizAchievements(userId: String) {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("online_quiz_results")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+
+                val quizCount = snapshot.size()
+
+                if (quizCount >= 1) {
+                    unlockGeneralAchievement(userId, "Math Magician")
+                }
+
+                if (quizCount >= 5) {
+                    unlockGeneralAchievement(userId, "Ahli Matematika")
+                }
+
+                if (quizCount >= 10) {
+                    unlockGeneralAchievement(userId, "Jenius Matematika")
+                }
+
+            } catch (e: Exception) {
+                Log.e("Achievement_ERROR", "Gagal menghitung hasil kuis: ${e.message}")
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         challengeListener?.remove()
         challengeListener = null
     }
 
-    fun prevQuestion() {
+    /* fun prevQuestion() {
         if (_currentQuestionIndex.value > 0) {
             _currentQuestionIndex.value -= 1
         }
-    }
+    } */
 }

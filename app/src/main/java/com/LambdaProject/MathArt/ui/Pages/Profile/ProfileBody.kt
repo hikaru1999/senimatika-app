@@ -7,6 +7,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -40,7 +43,6 @@ fun ProfileBody(
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // Study Duration Card (Modern & Eye-Catching)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -68,7 +70,6 @@ fun ProfileBody(
                     .fillMaxWidth()
                     .padding(24.dp)
             ) {
-                // Glassmorphism-style icon container
                 Surface(
                     modifier = Modifier.size(72.dp),
                     color = Color.White.copy(alpha = 0.15f),
@@ -124,7 +125,7 @@ fun ProfileBody(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         SectionHeader(title = "Materi Aktif", count = activeSessions.size)
         Spacer(modifier = Modifier.height(16.dp))
@@ -133,17 +134,17 @@ fun ProfileBody(
             EmptyStateCard("Belum ada materi aktif")
         } else {
             activeSessions.forEach { material ->
-                Box(modifier = Modifier.padding(bottom = 12.dp)) {
+                Box(modifier = Modifier.padding(bottom = 8.dp)) {
                     MaterialTracker(userId, material = material)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         AchievementSection(unlockedAchievements, navController)
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Lainnya",
@@ -256,7 +257,9 @@ fun ProfileActionButton(label: String, iconRes: Int, onClick: () -> Unit) {
             Icon(
                 painter = painterResource(R.drawable.ic_play), // Using ic_play as a chevron-like icon
                 contentDescription = null,
-                modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = 0f },
+                modifier = Modifier
+                    .size(16.dp)
+                    .graphicsLayer { rotationZ = 0f },
                 tint = Color.LightGray
             )
         }
@@ -317,6 +320,13 @@ fun EmptyStateCard(text: String) {
 
 @Composable
 fun AchievementSection(unlockedAchievements: List<String>, navController: NavController) {
+
+    val sortedAchievements by remember(unlockedAchievements) {
+        derivedStateOf {
+            DataAchievements.sortedByDescending { it.name in unlockedAchievements }
+        }
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -345,7 +355,7 @@ fun AchievementSection(unlockedAchievements: List<String>, navController: NavCon
         contentPadding = PaddingValues(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        items(DataAchievements) { achievement ->
+        items(sortedAchievements) { achievement ->
             AchievementCard(
                 achievement = achievement,
                 isUnlocked = achievement.name in unlockedAchievements

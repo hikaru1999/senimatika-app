@@ -217,7 +217,7 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             shape = RoundedCornerShape(16.dp),
             color = Color.Black
         ) {
-            MyYouTubePlayer(videoId = "Cv_zkDAU6UY")
+            YouTubePlayer(youtubeUrl = "https://youtu.be/Cv_zkDAU6UY")
         }
 
         // Section: Annotation

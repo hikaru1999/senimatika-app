@@ -76,7 +76,7 @@ fun QuizTopBar(
             .fillMaxWidth()
             .statusBarsPadding(),
         color = Color.White,
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -85,8 +85,19 @@ fun QuizTopBar(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(
+                onClick = onBackPressed,
+                modifier = Modifier.size(40.dp).background(Color(0xFFF5F5F5), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier.size(20.dp),
+                    tint = Color(0xFF1A237E)
+                )
+            }
             // Minimalist Back Button
-            Surface(
+            /* Surface(
                 onClick = { showDialog = true },
                 color = Color(0xFFF5F5F5),
                 shape = CircleShape,
@@ -100,7 +111,7 @@ fun QuizTopBar(
                         tint = Color(0xFF1A237E)
                     )
                 }
-            }
+            } */
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -137,8 +148,8 @@ fun QuizTopBar(
                 }
 
                 val progress by animateFloatAsState(
-                    targetValue = (currentIndex + 1).toFloat() / totalQuestions,
-                    animationSpec = tween(durationMillis = 500, easing = LinearOutSlowInEasing),
+                    targetValue = (currentIndex + 1).toFloat() / totalQuestions.coerceAtLeast(1),
+                    animationSpec = tween(durationMillis = 400 /* ,easing = LinearOutSlowInEasing */),
                     label = "quizProgress"
                 )
 

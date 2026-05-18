@@ -1,47 +1,29 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.repeatable
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import android.util.Log
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.LambdaProject.MathArt.ViewModels.AchievementViewModel
 import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
+import com.LambdaProject.MathArt.data.DataAchievements
 import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.unlockGeneralAchievement
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 @Composable
@@ -64,7 +46,7 @@ fun BattleIntroAnimation(bossType: String) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "PLAYER",
-                color = Color(0xFF1976D2), // Biru
+                color = Color(0xFF2BD900),
                 fontWeight = FontWeight.Black,
                 fontSize = 32.sp,
                 modifier = Modifier.offset(x = slideLeft)
@@ -72,14 +54,14 @@ fun BattleIntroAnimation(bossType: String) {
 
             Text(
                 text = " VS ",
-                color = Color(0xFF3E2723), // Ink Color
+                color = Color(0xFFFFFFFF),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
             )
 
             Text(
-                text = bossName.uppercase(), // Tampilkan nama Boss
-                color = Color(0xFFA10000), // Merah Marun
+                text = bossName.uppercase(),
+                color = Color(0xFFD30000),
                 fontWeight = FontWeight.Black,
                 fontSize = 32.sp,
                 modifier = Modifier.offset(x = slideRight)
@@ -88,7 +70,7 @@ fun BattleIntroAnimation(bossType: String) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "BATTLE START!",
-            color = Color(0xFFE65100), // Oranye Tua
+            color = Color(0xFFFFFFFF),
             fontWeight = FontWeight.ExtraBold,
             fontSize = 40.sp,
             textAlign = TextAlign.Center
@@ -118,6 +100,7 @@ fun QuizSummaryAnimated(
     audio: ExplorationAudioManager
 ) {
     var visibleItems by remember { mutableIntStateOf(0) }
+
     val results = viewModel.questionResults
 
     val bossName = when (viewModel.currentBossType) {
@@ -136,18 +119,20 @@ fun QuizSummaryAnimated(
     }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(0.9f).fillMaxHeight(0.85f),
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .fillMaxHeight(0.85f),
         shape = RoundedCornerShape(28.dp),
         color = Color(0xFFF0E7D8),
-        /* color = Color(0xFF1A1A1A),*/
         border = BorderStroke(3.dp, Color(0xFF5D4037))
-        /* border = BorderStroke(2.dp, Color.White.copy(alpha = 0.2f)) */
     ) {
         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("SKIRMISH RESULT", color = Color(0xFF3E2723), fontSize = 20.sp, fontWeight = FontWeight.Black)
             Spacer(modifier = Modifier.height(16.dp))
 
-            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Column(modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())) {
                 results.forEachIndexed { index, result ->
                     AnimatedVisibility(
                         visible = visibleItems > index,

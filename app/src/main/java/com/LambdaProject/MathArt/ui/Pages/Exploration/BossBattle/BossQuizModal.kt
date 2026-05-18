@@ -1,21 +1,18 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,23 +23,24 @@ import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
 import com.LambdaProject.MathArt.ViewModels.BossBattlePhase
 import com.LambdaProject.MathArt.ViewModels.QuestionResult
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.ViewModels.MapViewModel
+import com.LambdaProject.MathArt.data.MAX_BAG_WEIGHT
 import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
 import com.LambdaProject.MathArt.ui.Pages.Exploration.BagModal
 import com.LambdaProject.MathArt.ui.components.MathText
-import com.LambdaProject.MathArt.ui.Pages.Exploration.SunRayEffect
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun BossQuizModal(
     viewModel: BossQuizViewModel,
+    viewModelMAP: MapViewModel,
     inventory: Inventory,
     onUpdateInventory: (Inventory) -> Unit,
     onFinish: (Boolean) -> Unit,
     audio: ExplorationAudioManager
 ) {
     var isFinishingByAttack by remember { mutableStateOf(false) }
+
     LaunchedEffect(
         viewModel.bossTimeLeftMillis,
         viewModel.phase,
@@ -54,7 +52,7 @@ fun BossQuizModal(
         if (viewModel.phase == BossBattlePhase.QUIZ &&
             isTimeCritical &&
             !viewModel.isChronoFreezeActive &&
-            !isFinishingByAttack // KUNCI: Jangan play jika sedang menyerang
+            !isFinishingByAttack
         ) {
             audio.playIntenseWarning(R.raw.timer_intense)
         } else {
@@ -63,7 +61,7 @@ fun BossQuizModal(
 
         when (viewModel.phase) {
             BossBattlePhase.INTRO -> {
-                delay(1500)
+                delay(2200)
                 audio.playBGM(R.raw.sfx_quiz_bgm)
             }
             BossBattlePhase.SUMMARY -> {
@@ -80,6 +78,12 @@ fun BossQuizModal(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.onFinalAttackTrigger = {
+            audio.stopBGMWithFade(duration = 2000)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,9 +94,14 @@ fun BossQuizModal(
         when (viewModel.phase) {
             BossBattlePhase.INTRO -> BattleIntroAnimation(bossType = viewModel.currentBossType)
             BossBattlePhase.COUNTDOWN -> CountdownAnimation(viewModel.countdownValue)
-            BossBattlePhase.QUIZ -> QuizContent(viewModel, inventory, onUpdateInventory, audio)
+            BossBattlePhase.QUIZ -> QuizContent(viewModel,  viewModelMAP, maxBagWeight = viewModelMAP.maxBagWeight, inventory, onUpdateInventory, audio)
+            BossBattlePhase.BATTLE_ANIMATION -> {
+                BattleActionOverlay(
+                    text = viewModel.battleAnimationText,
+                    subText = viewModel.battleAnimationSubText
+                )
+            }
             BossBattlePhase.SUMMARY -> QuizSummaryAnimated(viewModel, onFinish, audio)
-            else -> {}
         }
     }
 }
@@ -100,42 +109,32 @@ fun BossQuizModal(
 @Composable
 fun QuizContent(
     viewModel: BossQuizViewModel,
+    viewModelMAP: MapViewModel,
+    maxBagWeight: Float = MAX_BAG_WEIGHT,
     inventory: Inventory,
     onUpdateInventory: (Inventory) -> Unit,
     audio: ExplorationAudioManager
 ) {
     val question = viewModel.currentQuestion ?: return
+    var isMathReady by remember(question.question) { mutableStateOf(false) }
+    var typedAnswer by remember(question) { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
     var isInventoryModalVisible by remember { mutableStateOf(false) }
     var isFinishingByAttack by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
-    // Screen Shake Animation for Boss
-    val infiniteTransition = rememberInfiniteTransition(label = "shake")
-    val shakeOffset by infiniteTransition.animateFloat(
-        initialValue = -5f,
-        targetValue = 5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(50, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shake"
-    )
-    val bossModifier = if (viewModel.bossShake) Modifier.offset(x = shakeOffset.dp) else Modifier
 
     LaunchedEffect(viewModel.bossTimeLeftMillis, viewModel.phase, viewModel.isChronoFreezeActive) {
         val isTimeCritical = viewModel.bossTimeLeftMillis in 1..4000
 
         if (viewModel.phase == BossBattlePhase.QUIZ && isTimeCritical && !viewModel.isChronoFreezeActive) {
-            // Panggil suara intens (misal: sfx_heartbeat atau sfx_clock_ticking)
             audio.playIntenseWarning(R.raw.timer_intense)
         } else {
-            // Berhenti jika soal dijawab, waktu habis, atau Chrono Freeze aktif
             audio.stopIntenseWarning()
         }
     }
 
     LaunchedEffect(viewModel.currentQuestionIndex) {
         audio.stopIntenseWarning()
+        isSubmitting = false
     }
 
     Surface(
@@ -145,16 +144,7 @@ fun QuizContent(
         border = BorderStroke(3.dp, Color(0xFF5D4037))
     ) {
         Box {
-            // Visual Impact: SunRayEffect for Player Correct
-            if (viewModel.showPlayerImpact) {
-                SunRayEffect(modifier = Modifier.align(Alignment.TopStart).size(200.dp), rayColor = Color.Cyan)
-            }
-            if (viewModel.showBossImpact) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Red.copy(alpha = 0.3f)))
-            }
-
             Column {
-                // 5.2 Alur Visual: Layar terbagi dua (Atas: HP Bars)
                 BattleHeader(
                     playerHp = viewModel.playerHp,
                     bossHp = viewModel.bossHp,
@@ -162,18 +152,17 @@ fun QuizContent(
                     bossTimeLeftMillis = viewModel.bossTimeLeftMillis,
                     isChronoFreezeActive = viewModel.isChronoFreezeActive,
                     bossType = viewModel.currentBossType,
-                    modifier = bossModifier
                 )
 
-                Text(
+                /* Text(
                     text = "Question ${viewModel.currentQuestionIndex + 1}/${viewModel.totalQuestions}",
                     color = Color(0xFF3E2723),
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(start = 16.dp),
                     fontSize = 11.sp
-                )
+                ) */
 
-                // 5.2 Alur Visual: Tengah (Soal)
+                // SOAL
                 Column(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
                     Surface(
                         modifier = Modifier
@@ -189,49 +178,173 @@ fun QuizContent(
                                 .padding(16.dp)
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            if (question.question.contains("$")) {
-                                MathText(text = question.question, color = Color(0xFF3E2723), fontSize = 14)
+                            val hasFormatting = question.question.contains("$") ||
+                                    question.question.contains("**") ||
+                                    question.question.contains("_") ||
+                                    question.question.contains("![") ||
+                                    question.question.contains("[") ||
+                                    question.question.contains("* ")
+
+                            if (hasFormatting) {
+                                if (!isMathReady) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = Color(0xFF5D4037).copy(alpha = 0.4f),
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                                MathText(
+                                    text = question.question,
+                                    color = Color(0xFF3E2723),
+                                    fontSize = 14,
+                                    textAlign = "left",
+                                    onRenderComplete = { isMathReady = true }
+                                )
                             } else {
-                                Text(question.question, color = Color(0xFF3E2723), fontSize = 13.sp, textAlign = TextAlign.Center)
+                                Text(
+                                    text = question.question,
+                                    color = Color(0xFF3E2723),
+                                    fontSize = 13.sp,
+                                    textAlign = TextAlign.Left
+                                )
                             }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Options
+                    val isMultiAnswer = question.answerKey.size > 1
+                    if (isMultiAnswer) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Color(0xFF3E2723).copy(alpha = 0.6f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "Pilih semua jawaban yang benar",
+                                color = Color(0xFF3E2723).copy(alpha = 0.7f),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // OPSI
                     Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                        question.options.forEach { option ->
-                            if (!viewModel.removedOptions.contains(option)) {
-                                val isSelected = viewModel.selectedAnswers.contains(option)
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .pointerInteropFilter {
-                                            viewModel.toggleAnswer(option)
-                                            true
-                                        },
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isSelected) Color(0xFFD3C5B9) else Color(0xFFFDF8E1),
-                                    border = BorderStroke(2.dp, if (isSelected) Color(0xFF3D0404) else Color(0xFF3E2723).copy(alpha = 0.2f))
-                                ) {
-                                    Box(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
-                                        if (option.contains("$")) {
-                                            MathText(
-                                                text = option,
-                                                color = if (isSelected) Color(0xFF3E2723) else Color(0xFF3E2723),
-                                                fontSize = 13,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                                )
-                                        } else {
-                                            Text(
-                                                text = option,
-                                                color = if (isSelected) Color(0xFF3E2723) else Color(0xFF3E2723),
-                                                fontSize = 13.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                            )
+                        if (question.questionType == "short_answer") {
+                            OutlinedTextField(
+                                value = typedAnswer,
+                                onValueChange = {
+                                    typedAnswer = it
+                                    viewModel.selectedAnswers.clear()
+                                    if (it.isNotBlank()) {
+                                        viewModel.selectedAnswers.add(it)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                placeholder = { Text("Ketik jawabanmu di sini...", color = Color(0xFF5D4037).copy(alpha = 0.5f)) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFF5D4037),
+                                    unfocusedBorderColor = Color(0xFF5D4037).copy(alpha = 0.3f),
+                                    focusedContainerColor = Color(0xFFFDF8E1),
+                                    unfocusedContainerColor = Color(0xFFFDF8E1)
+                                ),
+                                singleLine = true
+                            )
+                        } else {
+                            question.options.forEach { option ->
+                                if (!viewModel.removedOptions.contains(option)) {
+                                    val isSelected = viewModel.selectedAnswers.contains(option)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    ) {
+                                        Surface(
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = if (isSelected) Color(0xFFD3C5B9) else Color(0xFFFDF8E1),
+                                            border = BorderStroke(2.dp, if (isSelected) Color(0xFF3D0404) else Color(0xFF3E2723).copy(alpha = 0.2f))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                if (isMultiAnswer) {
+                                                    Surface(
+                                                        modifier = Modifier.size(20.dp),
+                                                        shape = RoundedCornerShape(4.dp),
+                                                        color = if (isSelected) Color(0xFF3D0404) else Color.Transparent,
+                                                        border = BorderStroke(1.5.dp, Color(0xFF3E2723).copy(alpha = 0.5f))
+                                                    ) {
+                                                        if (isSelected) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Check,
+                                                                contentDescription = null,
+                                                                tint = Color.White,
+                                                                modifier = Modifier.padding(2.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                }
+
+                                                Box(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                                                    val hasFormatting = option.contains("$") ||
+                                                            option.contains("**") ||
+                                                            option.contains("_") ||
+                                                            option.contains("![") ||
+                                                            option.contains("[") ||
+                                                            option.contains("* ")
+                                                    if (hasFormatting) {
+                                                        if (!isMathReady) {
+                                                            CircularProgressIndicator(
+                                                                modifier = Modifier.size(24.dp),
+                                                                color = Color(0xFF5D4037).copy(alpha = 0.4f),
+                                                                strokeWidth = 2.dp
+                                                            )
+                                                        }
+
+                                                        MathText(
+                                                            text = option,
+                                                            color = /* if (isSelected) Color(0xFF3E2723) else */ Color(0xFF3E2723),
+                                                            fontSize = 13,
+                                                            textAlign = "left",
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            onRenderComplete = { isMathReady = true }
+                                                        )
+                                                    } else {
+                                                        Text(
+                                                            text = option,
+                                                            color = /* if (isSelected) Color(0xFF3E2723) else */ Color(0xFF3E2723),
+                                                            fontSize = 14.sp,
+                                                            textAlign = TextAlign.Left,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .clickable {
+                                                    viewModel.toggleAnswer(option)
+                                                }
+                                        )
                                     }
                                 }
                             }
@@ -239,9 +352,9 @@ fun QuizContent(
                     }
                 }
 
-                // 5.2 Alur Visual: Bawah (Controls)
+                // CONTROL
                 Column(modifier = Modifier.padding(16.dp)) {
-                    androidx.compose.animation.AnimatedVisibility(
+                    AnimatedVisibility(
                         visible = viewModel.isStreakProtected,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
@@ -250,7 +363,7 @@ fun QuizContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 12.dp),
-                            color = Color(0xFFE8F5E9), // Hijau muda transparan
+                            color = Color(0xFFE8F5E9),
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(1.5.dp, Color(0xFF2E7D32).copy(alpha = 0.5f))
                         ) {
@@ -282,7 +395,7 @@ fun QuizContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Tombol Inventory (Backpack)
+                        // Inventory
                         Surface(
                             onClick = { isInventoryModalVisible = true },
                             modifier = Modifier.size(36.dp),
@@ -303,35 +416,29 @@ fun QuizContent(
                         // Tombol Attack
                         Button(
                             onClick = {
-                                val isLastQuestion = viewModel.currentQuestionIndex == viewModel.totalQuestions - 1
+                                if (isSubmitting) return@Button
+                                isSubmitting = true
 
-                                if (isLastQuestion) {
-                                    viewModel.submitAnswer()
-                                    audio.playSfx("attack")
-                                    coroutineScope.launch {
-                                        audio.stopIntenseWarning()
-                                        isFinishingByAttack = true
-                                        audio.stopBGMWithFade(duration = 1000)
+                                audio.stopIntenseWarning()
+                                audio.playSfx("attack")
 
-                                        delay(1750)
+                                viewModel.submitAnswer(
+                                    onFinalAttack = {
+                                        audio.stopBGMWithFade(duration = 1500)
                                     }
-                                } else {
-                                    audio.stopIntenseWarning()
-                                    audio.playSfx("attack")
-                                    viewModel.submitAnswer()
-                                } },
+                                )
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(36.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3E2723) /* Color(0xFFA10000) */, // Merah Marun
+                                containerColor = Color(0xFF3E2723) /* Color(0xFFA10000) */,
                                 contentColor = Color.White
                             ),
-                            enabled = viewModel.selectedAnswers.isNotEmpty() && !isFinishingByAttack,
+                            enabled = viewModel.selectedAnswers.isNotEmpty() && /*!isFinishingByAttack && */ !isSubmitting,
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            if (isFinishingByAttack) {
-                                // Tampilkan loading spinner kecil di dalam tombol
+                            if (/* isFinishingByAttack ||*/ isSubmitting) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     color = Color.White,
@@ -353,7 +460,13 @@ fun QuizContent(
 
     if (isInventoryModalVisible) {
         BagModal(
+            viewModel = viewModelMAP,
             inventory = inventory,
+            playerHp = viewModel.playerHp,
+            maxBagWeight = viewModelMAP.maxBagWeight,
+            isLanternActive = viewModelMAP.isLanternActive,
+            isLeatherStrapsActive = viewModelMAP.isLeatherStrapsActive,
+            isDropping = viewModelMAP.isDropping,
             isQuizActive = true,
             onClose = { isInventoryModalVisible = false },
             onUsePowerUp = { pu: PowerUpType ->
@@ -362,6 +475,12 @@ fun QuizContent(
                     PowerUpType.FREEZE_TIMER -> "sfx_freeze"
                     PowerUpType.STREAK_PROTECTION -> "sfx_shield"
                     PowerUpType.REMOVE_TWO_OPTIONS -> "sfx_magic"
+                    PowerUpType.HEALING_VIAL -> "sfx_healing"
+                    PowerUpType.LEATHER_STRAPS -> ""
+                    PowerUpType.MAGIC_KEY -> ""
+                    PowerUpType.BINOCULAR -> ""
+                    PowerUpType.LANTERN -> ""
+                    PowerUpType.TORCH -> ""
                 }
 
                 audio.playSfx(sfxKey)
@@ -372,7 +491,6 @@ fun QuizContent(
                     onUpdateInventory = onUpdateInventory
                 )
                 isInventoryModalVisible = false
-
             },
             powerUpCooldowns = viewModel.powerUpCooldowns,
         )
@@ -397,7 +515,7 @@ fun ResultBattleItem(index: Int, result: QuestionResult) {
             Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White.copy(alpha = 0.1f))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Damage Dealt: ${result.playerDamageDealt.toInt()} HP", color = Color(0xFF000849), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                Text("Damage Taken: -${result.playerDamageTaken.toInt()} HP", color = Color(0xFF3E2723), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text("Damage Taken: ${result.playerDamageTaken.toInt()} HP", color = Color(0xFF3E2723), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }

@@ -175,7 +175,7 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
                 shape = RoundedCornerShape(16.dp),
                 color = Color.Black
             ) {
-                MyYouTubePlayer(videoId = "baskAXQZxAc")
+                YouTubePlayer(youtubeUrl = "https://youtu.be/baskAXQZxAc")
             }
         }
 

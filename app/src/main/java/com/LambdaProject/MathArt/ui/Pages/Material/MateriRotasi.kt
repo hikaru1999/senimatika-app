@@ -161,7 +161,7 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
                 shape = RoundedCornerShape(16.dp),
                 color = Color.Black
             ) {
-                MyYouTubePlayer(videoId = "iUt_Clfri4w")
+                YouTubePlayer(youtubeUrl = "https://youtu.be/iUt_Clfri4w")
             }
         }
 

@@ -9,7 +9,9 @@ data class TileData(
     val ground: TileType,
     var groundVariant: String = "tile_ground_1",
     val obj: ObjectType = ObjectType.NONE,
-    val objectVariant: String = ""
+    val objectVariant: String = "",
+    val contentId: String? = null,
+    val isCollected: Boolean = false
 )
 
 fun TileData.isWalkable(): Boolean {

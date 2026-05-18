@@ -31,6 +31,8 @@ import com.LambdaProject.MathArt.data.DataAchievements
 import com.LambdaProject.MathArt.ViewModels.AchievementViewModel
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.data.model.AchievementItem
+import androidx.compose.ui.tooling.preview.Preview
+import com.LambdaProject.MathArt.R
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +46,15 @@ fun AchievementPage(navController: NavController) {
     val isScrolled by remember {
         derivedStateOf {
             listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+        }
+    }
+
+    val sortedDataAchievements by remember(unlockedAchievements) {
+        derivedStateOf {
+            DataAchievements.sortedWith(
+                compareByDescending<AchievementItem> { it.name in unlockedAchievements }
+                    .thenBy { DataAchievements.indexOf(it) }
+            )
         }
     }
 
@@ -105,7 +116,7 @@ fun AchievementPage(navController: NavController) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            items(DataAchievements) { achievement ->
+            items(sortedDataAchievements) { achievement ->
                 val isUnlocked = achievement.name in unlockedAchievements
                 AchievementRowItem(achievement, isUnlocked = isUnlocked)
             }

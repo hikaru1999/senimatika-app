@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +27,7 @@ import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.LambdaProject.MathArt.interFontFamily
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun ExplorationLoadingScreen(
@@ -35,8 +38,8 @@ fun ExplorationLoadingScreen(
 ) {
     val context = LocalContext.current
     var isExiting by remember { mutableStateOf(false) }
-    
-    // Animasi Alpha untuk transisi keluar (Fade Out)
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     val alphaAnim by animateFloatAsState(
         targetValue = if (isExiting) 0f else 1f,
         animationSpec = tween(durationMillis = 1000),
@@ -45,41 +48,60 @@ fun ExplorationLoadingScreen(
 
     val tips = listOf(
         "Gunakan Power-Up saat menghadapi Boss yang sulit!",
-        "Kumpulkan Koin untuk berbelanja di Mall.",
-        "Scroll materi rahasia membantumu menjawab kuis dengan lebih mudah.",
+        "Kumpulkan Koin untuk ditukar di Exchange Center.",
+        "Scroll materi membantumu menjawab kuis dengan lebih mudah.",
         "Hati-hati dengan Station! Kamu butuh kode untuk membukanya.",
-        "Eksplorasi wilayah gelap untuk menemukan peti harta karun.",
+        "Punya Lantern? Gunakan pada Night Mode untuk meningkatkan jangkauan cahaya.",
         "Setiap Boss memiliki kesempatan memberikan digit kode Station."
     )
     val randomTip = remember { tips.random() }
-    
-    // Logic Sinkronisasi & Timer Minimal 5 Detik
-    LaunchedEffect(Unit) {
-        // 1. Mulai Sinkronisasi Latar Belakang (isLoading = true)
+
+    /* LaunchedEffect(Unit) {
         mapViewModel.loadMap(mapId, context)
-        
-        // 2. Timer Minimal 5 Detik
+
         delay(5000)
-        
-        // 3. Menunggu sinkronisasi Firestore selesai jika belum
+
         while (mapViewModel.isLoading) {
             delay(500)
         }
-        
-        // 4. Mulai Animasi Keluar
+
         isExiting = true
-        delay(1000) // Tunggu durasi alphaAnim
-        
-        // 5. Navigasi
+        delay(1000)
+
         navController.navigate("map/$mapId?bagItems=$bagItems") {
             popUpTo("ExplorationLoading/$mapId?bagItems=$bagItems") { inclusive = true }
+        }
+    } */
+
+    LaunchedEffect(Unit) {
+        try {
+            mapViewModel.loadMap(mapId, context)
+
+            withTimeoutOrNull(60000) {
+                while (mapViewModel.isLoading) {
+                    delay(500)
+                }
+            }
+            if (mapViewModel.isLoading) {
+                errorMessage = "Gagal memuat peta. Periksa koneksi internet Anda."
+            } else {
+                delay(1000)
+                isExiting = true
+                delay(1000)
+
+                navController.navigate("map/$mapId?bagItems=$bagItems") {
+                    popUpTo("ExplorationLoading/$mapId?bagItems=$bagItems") { inclusive = true }
+                }
+            }
+        } catch (e: Exception) {
+            errorMessage = "Terjadi kesalahan sistem."
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .graphicsLayer(alpha = alphaAnim) // Hubungkan animasi alpha
+            .graphicsLayer(alpha = alphaAnim)
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(Color(0xFF1A237E), Color(0xFF3F51B5))
@@ -114,7 +136,7 @@ fun ExplorationLoadingScreen(
                         .background(Color.White.copy(alpha = 0.1f), CircleShape)
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    painter = painterResource(id = R.drawable.img_logo_white),
                     contentDescription = null,
                     modifier = Modifier.size(100.dp)
                 )
@@ -141,6 +163,19 @@ fun ExplorationLoadingScreen(
                 color = Color(0xFFFBC02D),
                 trackColor = Color.White.copy(alpha = 0.2f)
             )
+
+            if (errorMessage != null) {
+                AlertDialog(
+                    onDismissRequest = { },
+                    title = { Text("Peta Gagal Dimuat") },
+                    text = { Text(errorMessage!!) },
+                    confirmButton = {
+                        Button(onClick = { navController.popBackStack() }) {
+                            Text("Kembali ke Lobby")
+                        }
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(64.dp))
 
@@ -182,9 +217,13 @@ fun ExplorationLoadingScreen(
                 }
             }
         }
-        
+
         Text(
-            text = if (mapViewModel.isLoading) "Sedang menyinkronkan data peta terbaru..." else "Sinkronisasi selesai. Memasuki wilayah...",
+            text = when {
+                errorMessage != null -> "Gagal memuat peta."
+                mapViewModel.isLoading -> "Menghubungkan ke server..."
+                else -> "Data siap. Memulai petualangan..."
+            },
             color = Color.White.copy(alpha = 0.5f),
             fontSize = 10.sp,
             modifier = Modifier

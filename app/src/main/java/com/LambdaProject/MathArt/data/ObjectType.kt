@@ -12,6 +12,8 @@ enum class ObjectType {
     CASTLE_ROUND,
     CASTLE_SQUARE,
     HOUSE,
+    SACK,
+    SACK_INV,
     ROCK_LARGE,
     ROCK_MEDIUM,
     ROCK_MEDIUM_1,
@@ -36,6 +38,7 @@ enum class ObjectType {
     CART,
     BOSS,
     PORTAL,
+    ARTIFACT,
     FINISH
 }
 
@@ -50,6 +53,8 @@ fun ObjectType.isBlocking(): Boolean {
         ObjectType.CASTLE_ROUND,
         ObjectType.CASTLE_SQUARE,
         ObjectType.HOUSE,
+        ObjectType.SACK,
+        ObjectType.SACK_INV,
         ObjectType.TENT,
         ObjectType.TREE,
         ObjectType.TREE_LARGE,

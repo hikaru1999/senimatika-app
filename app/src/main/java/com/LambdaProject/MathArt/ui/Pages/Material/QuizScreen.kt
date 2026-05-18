@@ -35,6 +35,7 @@ fun QuizScreen(
     val selectedAnswer = viewModel.selectedAnswers
     val scrollState = rememberScrollState()
     var isReady by remember { mutableStateOf(false) }
+    val shadowElevation = if (selectedAnswer.isNotEmpty()) 8.dp else 0.dp
 
     LaunchedEffect(currentPage) {
         if (currentPage != myPage) {
@@ -52,13 +53,19 @@ fun QuizScreen(
         scrollState.scrollTo(0)
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.initializeQuiz(userId, materialId) {
+    /* LaunchedEffect(Unit) {
+        // Pastikan userId dan materialId valid
+        if (userId.isNotEmpty() && materialId.isNotEmpty()) {
+            viewModel.initializeQuiz(userId, materialId) {
+                isReady = true
+            }
+        } else {
             isReady = true
         }
-    }
+    } */
+    val isQuizReady by viewModel.isQuizReady
 
-    if (!isReady || totalQuestions == 0) {
+    if (!isQuizReady) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Color(0xFF5294FF), strokeWidth = 3.dp)
         }
@@ -162,9 +169,9 @@ fun QuizScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    .shadow(shadowElevation, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2),disabledContainerColor = Color(0xFFE0E0E0)),
                 enabled = selectedAnswer.isNotEmpty()
             ) {
                 Text(

@@ -127,7 +127,7 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
                 Button(
                     onClick = {
                         userId?.let {
-                            unlockPemulaAchievement(userId)
+                            unlockPemulaAchievement(it)
                             SessionRepository.saveLearningSession(it, material) {
                                 onSesiDisimpan()
                             }

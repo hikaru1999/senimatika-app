@@ -74,7 +74,7 @@ fun OnlineQuizLobby(
     selectedMaterial?.let { material ->
         Scaffold(
             topBar = {
-                CenterAlignedTopAppBar(
+                TopAppBar(
                     title = {
                         Text(
                             material.title,
@@ -202,12 +202,12 @@ private fun DeskripsiContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = 24.dp,vertical = 24.dp)
             ) {
                 Text(
                     text = "Detail Kuis",
                     fontWeight = FontWeight.Black,
-                    fontSize = 24.sp,
+                    fontSize = 20.sp,
                     fontFamily = interFontFamily,
                     color = Color(0xFF1A237E)
                 )
@@ -220,7 +220,7 @@ private fun DeskripsiContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     QuizStatItem(
-                        icon = R.drawable.ic_assessment,
+                        icon = R.drawable.ic_no_question,
                         label = "Soal",
                         value = "${material.questions.size}",
                         modifier = Modifier.weight(1f)
@@ -231,18 +231,39 @@ private fun DeskripsiContent(
                         value = "${material.questions.sumOf { it.timer } / 60}",
                         modifier = Modifier.weight(1f)
                     )
-                    QuizStatItem(
-                        icon = R.drawable.ic_coin,
-                        label = "Coin",
-                        value = "${material.rewardCoin}",
-                        modifier = Modifier.weight(1f)
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        QuizStatItem(
+                            icon = R.drawable.ic_coin,
+                            label = "Coin",
+                            value = "${material.rewardCoin}",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Tag Badge
+                        Surface(
+                            color = Color(0xFFFFD600),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .offset(y = (-12).dp)
+                                /* .shadow(4.dp, RoundedCornerShape(4.dp)) */
+                        ) {
+                            Text(
+                                text = "First Time Reward",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = interFontFamily,
+                                color = Color(0xFF1A237E),
+                                modifier = Modifier.padding(horizontal = 6.dp)
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "Tentang Kuis",
+                    text = "Deskripsi",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     fontFamily = interFontFamily,
@@ -333,7 +354,7 @@ fun QuizStatItem(icon: Int, label: String, value: String, modifier: Modifier = M
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(painter = painterResource(id = icon), contentDescription = null, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(value, fontSize = 14.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Black, color = Color(0xFF1A237E))
             Text(label, fontSize = 10.sp, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color.Gray)
         }

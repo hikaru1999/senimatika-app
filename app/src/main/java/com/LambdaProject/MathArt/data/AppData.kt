@@ -3,6 +3,7 @@ package com.LambdaProject.MathArt.data
 import androidx.compose.ui.graphics.Color
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.data.model.*
+import com.LambdaProject.MathArt.data.mallItems
 
 val transform_geo = mapOf(
     "transformasi_geometri" to listOf(
@@ -220,17 +221,25 @@ val DataCategories = listOf(
 )
 
 val DataAchievements = listOf(
-    AchievementItem("Penjelajah", R.drawable.ic_explorer, "Aktif menggunakan Senimatika selama 5 menit", isUnlocked = false),
+    AchievementItem("Penjelajah", R.drawable.ic_explorer, "Aktif menggunakan Senimatika selama 10 menit", isUnlocked = false),
     AchievementItem("Pemula", R.drawable.img_rocket_pemula, "Ambil 1 materi aktif", isUnlocked = false),
     AchievementItem("Profesional", R.drawable.img_pros, "Selesaikan 1 materi yang sedang aktif dipelajari", isUnlocked = false),
     AchievementItem("Ilmuwan", R.drawable.ic_scientist, "Akan ditambahkan", isUnlocked = false),
-    AchievementItem("Math Magician", R.drawable.ic_magician, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Math Magician", R.drawable.ic_magician, "Selesaikan 1 kuis", isUnlocked = false),
     AchievementItem("Master Aljabar", R.drawable.ic_algebra_master, "Akan ditambahkan", isUnlocked = false),
     AchievementItem("Master Geometri", R.drawable.ic_geometry_master, "Akan ditambahkan", isUnlocked = false),
     AchievementItem("Ahli Ramalan", R.drawable.ic_statistic_master, "Akan ditambahkan", isUnlocked = false),
-    AchievementItem("Ahli Matematika", R.drawable.ic_expert, "Akan ditambahkan", isUnlocked = false),
+    AchievementItem("Ahli Matematika", R.drawable.ic_expert, "Selesaikan 5 kuis", isUnlocked = false),
     AchievementItem("Ahli Kalkulus", R.drawable.ic_calculus_master, "Akan ditambahkan", isUnlocked = false),
-    AchievementItem("Jenius Matematika", R.drawable.ic_genius, "Akan ditambahkan", isUnlocked = false)
+    AchievementItem("Jenius Matematika", R.drawable.ic_genius, "Selesaikan 10 kuis", isUnlocked = false),
+
+    AchievementItem("Apprentice No More", R.drawable.ic_beginner_exploration, "Berhasil menyelesaikan Map Tutorial", isUnlocked = false),
+    AchievementItem("The Fortune Finder", R.drawable.ic_treasure_hunter_1, "Membuka total 10 peti harta karun", isUnlocked = false),
+    AchievementItem("No More Lessons", R.drawable.ic_boss_hunter_1, "Mengalahkan total 3 boss di Numeria", isUnlocked = false),
+    AchievementItem("Indiana Jones’ Grocery List", R.drawable.ic_treasure_hunter_2, "Membuka total 20 peti harta karun", isUnlocked = false),
+    AchievementItem("Who is the Boss Now?", R.drawable.ic_boss_hunter_2, "Mengalahkan total 10 boss di Numeria", isUnlocked = false),
+    AchievementItem("Beyond the Guided Path", R.drawable.ic_master_exploration, "Selesaikan eksplorasi di 3 wilayah berbeda", isUnlocked = false),
+    AchievementItem("Lone Wolf Archivist", R.drawable.ic_wolf, "Selesaikan map tanpa bantuan Power-Up", isUnlocked = false)
 )
 
 val tutorialTexts = listOf(
@@ -309,6 +318,15 @@ val likertScaleLabels = listOf(
     "Netral",
     "Setuju",
     "Sangat Setuju"
+)
+
+val mallItems = listOf(
+    MallItem("Chrono Freeze", PowerUpType.FREEZE_TIMER, 7500, R.drawable.ic_pu_freeze, "Hentikan waktu selama 10 detik"),
+    MallItem("Truth Filter", PowerUpType.REMOVE_TWO_OPTIONS, 8500, R.drawable.ic_pu_magic, "Hapus 2 opsi salah"),
+    MallItem("Battle Shield", PowerUpType.STREAK_PROTECTION, 12000, R.drawable.ic_pu_shield, "Skor x2 untuk soal ini"),
+    MallItem("Binokular", PowerUpType.BINOCULAR, price = 18000, R.drawable.ic_pu_binocular, "Hilangkan kabut selama 5 detik"),
+    MallItem("Torch", PowerUpType.TORCH, price = 18000, R.drawable.ic_pu_torch, "Memperluas area cahaya selama 5 detik"),
+    /* MallItem("Random Scroll", "SCROLL", 500, R.drawable.ic_scroll_open, "Dapatkan materi random") */
 )
 
 val validatorQuestion = listOf(

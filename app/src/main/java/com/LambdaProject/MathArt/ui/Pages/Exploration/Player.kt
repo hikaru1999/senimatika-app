@@ -9,12 +9,25 @@ import androidx.compose.ui.unit.Dp
 import com.LambdaProject.MathArt.R
 
 @Composable
-fun Player(tileSize: Dp, modifier: Modifier = Modifier) {
+fun Player(
+    tileSize: Dp,
+    modifier: Modifier = Modifier,
+    dx: Int = 0,
+    dy: Int = 0
+) {
 
-    val playerSize = tileSize * 0.80f
+    val playerSize = tileSize * 1.5f
+
+    val playerSprite = when {
+        dy < 0 -> R.drawable.player_forward
+        dy > 0 -> R.drawable.player_backward
+        dx > 0 -> R.drawable.player_right
+        dx < 0 -> R.drawable.player_left
+        else -> R.drawable.player_backward
+    }
 
     Image(
-        painter = painterResource(R.drawable.ic_player),
+        painter = painterResource(playerSprite),
         contentDescription = null,
         modifier = modifier
             .size(playerSize)

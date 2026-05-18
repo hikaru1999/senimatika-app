@@ -4,17 +4,18 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.data.*
 import com.LambdaProject.MathArt.R
@@ -25,6 +26,7 @@ import com.LambdaProject.MathArt.ui.components.MathText
 @Composable
 fun ChestPopup(
     reward: Reward,
+    isReplay: Boolean,
     onCollect: () -> Unit,
     audio: ExplorationAudioManager
 ) {
@@ -61,7 +63,7 @@ fun ChestPopup(
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.7f))
             .clickable(
-                interactionSource = remember { MutableInteractionSource () },
+                interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) {
 
@@ -77,7 +79,7 @@ fun ChestPopup(
         ) {
             when (reward.type) {
                 RewardType.COIN -> {
-                    CoinRewardView(reward.amount)
+                    CoinRewardView(if (isReplay) 0 else reward.amount)
                     Spacer(modifier = Modifier.height(24.dp))
                     ActionButton(onCollect)
                 }
@@ -89,6 +91,23 @@ fun ChestPopup(
                     PowerUpRewardView(reward.powerUp)
                     Spacer(modifier = Modifier.height(24.dp))
                     ActionButton(onCollect)
+                }
+            }
+
+            if (isReplay) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    color = Color.Black.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Replay Mode: No Reward Will Be Extracted",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -141,13 +160,41 @@ fun CoinRewardView(amount: Int) {
     }
 }
 
+@Preview(showBackground = true, backgroundColor = 0xFF000000)@Composable
+fun PreviewScrollWithPicture() {
+    val dummyContent = """
+        Test Formatting with Picture. 
+        Nama saya **Ardhika Fajar Ramadhan**. 
+        Saya adalah _developer_ dari senimatika. 
+        
+        ![deskripsi gambar](https://i.ibb.co.com/zW1qFM58/img-batik.png)
+        
+        Apakah picturenya muncul?
+    """.trimIndent()
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        ScrollRewardView(
+            title = "Demo Formatting",
+            content = dummyContent
+        )
+    }
+}
+
 @Composable
 fun ScrollRewardView(title: String, content: String) {
+    var scrollContentReady by remember(content) { mutableStateOf(false) }
+
+    val hasFormatting = content.contains("$") ||
+            content.contains("**") ||
+            content.contains("_") ||
+            content.contains("![") ||
+            content.contains("[") ||
+            content.contains("* ")
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(500.dp)
-            .padding(horizontal = 8.dp),
+            .height(500.dp),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -160,9 +207,12 @@ fun ScrollRewardView(title: String, content: String) {
         Column(
             modifier = Modifier
                 /*fillMaxSize()*/
-                .fillMaxWidth(0.65f)
+                .fillMaxWidth(0.57f)
                 .fillMaxHeight(0.7f)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 5.dp)
+                .verticalScroll(
+                    rememberScrollState()
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -177,12 +227,17 @@ fun ScrollRewardView(title: String, content: String) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (content.contains("$")) {
+            if (hasFormatting) {
+                if (!scrollContentReady) {
+                    CircularProgressIndicator(modifier = Modifier.size(30.dp), color = Color(0xFF3E2723))
+                }
                 MathText(
                     text = content,
                     color = Color(0xFF3E2723),
-                    fontSize = 14,
-                    modifier = Modifier.fillMaxWidth()
+                    fontSize = 12,
+                    textAlign = "left",
+                    modifier = Modifier.fillMaxWidth(),
+                    onRenderComplete = { scrollContentReady = true }
                 )
             } else {
                 Text(
@@ -190,8 +245,9 @@ fun ScrollRewardView(title: String, content: String) {
                     fontFamily = interFontFamily,
                     textAlign = TextAlign.Center,
                     color = Color(0xFF3E2723),
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp
                 )
             }
         }
@@ -210,14 +266,50 @@ fun PowerUpRewardView(powerUp: PowerUpType?) {
         PowerUpType.STREAK_PROTECTION -> Quadruple(
             R.drawable.ic_pu_shield,
             "Battle Shield",
-            "Proteksi Streak Jika Menjawab Soal Salah",
+            "Proteksi Streak dan HP Jika Menjawab Salah",
             Color(0xFF08FF27)
+        )
+        PowerUpType.HEALING_VIAL -> Quadruple(
+            R.drawable.ic_pu_vial,
+            "Healing Vial",
+            "Menambah +20 Health Point",
+            Color(0xFF08FF27)
+        )
+        PowerUpType.BINOCULAR -> Quadruple(
+            R.drawable.ic_pu_binocular,
+            "Binokular",
+            "Memperluas area pandangan selama 5 detik",
+            Color(0xFFFFF176)
+        )
+        PowerUpType.MAGIC_KEY -> Quadruple(
+            R.drawable.ic_pu_key,
+            "Magic Key",
+            "Membuka Area Tanpa Passcode dan Kuis",
+            Color(0xFFEFBF04)
         )
         PowerUpType.REMOVE_TWO_OPTIONS -> Quadruple(
             R.drawable.ic_pu_magic,
             "Truth Filter",
             "Menghapus 2 jawaban salah",
             Color(0xFFCE93D8)
+        )
+        PowerUpType.LEATHER_STRAPS -> Quadruple(
+            R.drawable.ic_pu_belt,
+            "Leather Straps",
+            "Menambah kapasitas ransel",
+            Color(0xFFEFBF04)
+        )
+        PowerUpType.TORCH -> Quadruple(
+            R.drawable.ic_pu_torch,
+            "Torch",
+            "Menerangi area sekitar selama 5 detik",
+            Color(0xFFEFBF04)
+        )
+        PowerUpType.LANTERN -> Quadruple(
+            R.drawable.ic_pu_lantern,
+            "Lantern",
+            "Menerangi area sekitar",
+            Color(0xFFEFBF04)
         )
         null -> Quadruple(R.drawable.ic_assignment, "Unknown", "", Color.White)
     }

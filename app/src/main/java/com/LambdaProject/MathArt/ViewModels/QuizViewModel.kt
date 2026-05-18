@@ -3,6 +3,7 @@ package com.LambdaProject.MathArt.ViewModels
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.model.UserAnswer
 import com.LambdaProject.MathArt.data.model.QuizQuestion
 import com.LambdaProject.MathArt.R
@@ -10,6 +11,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class QuizViewModel : ViewModel() {
     private val _correctAnswers = mutableListOf<List<String>>()
@@ -57,22 +60,31 @@ class QuizViewModel : ViewModel() {
         get() = questions.size
 
     fun initializeQuiz(userId: String, materialId: String, onReady: () -> Unit) {
+
+        if (userId.isBlank()) {
+            Log.e("QuizViewModel", "Error: userId is blank!")
+            _isQuizReady.value = true
+            onReady()
+            return
+        }
+
         _userAnswers.clear()
         selectedAnswers = emptyList()
         currentQuestionIndex = 0
 
         getSessionStatus(userId, materialId) { status ->
             if (status == "active") {
+                Log.d("QuizViewModel", "Session is active, starting from question 0")
                 currentQuestionIndex = 0
                 onReady()
             } else {
+                Log.d("QuizViewModel", "Session inactive/completed, loading previous results")
                 loadQuizResults(userId, materialId) {
                     val lastIndex = _userAnswers.size
                     if (lastIndex < questions.size) {
                         currentQuestionIndex = lastIndex
-                    } else {
-                        onReady()
                     }
+                    onReady()
                 }
             }
         }
@@ -190,19 +202,34 @@ class QuizViewModel : ViewModel() {
                             )
                         )
                     }
-                    Log.d("QuizViewModel", "Hasil kuis berhasil dimuat: ${_userAnswers.size} soal")
-                    onLoaded()
                 }
+                onLoaded()
             }
             .addOnFailureListener {
                 Log.e("QuizViewModel", "Gagal memuat hasil kuis: ${it.message}")
+                onLoaded()
             }
     }
 
-    fun prepareQuiz(userId: String, materialId: String) {
-        clearPreviousQuizResults(userId, materialId) {
-            resetQuiz()
-            _isQuizReady.value = true
+    fun prepareQuiz(userId: String, materialId: String, onReady: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isQuizReady.value = false
+            delay(300)
+        }
+
+
+        getSessionStatus(userId, materialId) { status ->
+            if (status == "active") {
+                currentQuestionIndex = 0
+                _isQuizReady.value = true
+            } else {
+                loadQuizResults(userId, materialId) {
+
+                    val lastIndex = _userAnswers.size
+                    currentQuestionIndex = if (lastIndex < questions.size) lastIndex else 0
+                    _isQuizReady.value = true
+                }
+            }
         }
     }
 
@@ -227,6 +254,9 @@ class QuizViewModel : ViewModel() {
                 val document = result.documents.firstOrNull()
                 val status = document?.getString("status") ?: "inactive"
                 onComplete(status)
+            }
+            .addOnFailureListener {
+                onComplete("inactive")
             }
     }
 
