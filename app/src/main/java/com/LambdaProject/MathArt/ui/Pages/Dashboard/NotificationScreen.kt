@@ -1,19 +1,8 @@
 package com.LambdaProject.MathArt.ui.Pages.Dashboard
 
-import android.util.Log
 import com.LambdaProject.MathArt.helveticaFont
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-
-/* import androidx.compose.foundation.background
-import androidx.compose.material.DismissDirection
-import androidx.compose.material.DismissValue
-import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.rememberDismissState
-import okhttp3.internal.wait */
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,9 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.LambdaProject.MathArt.ViewModels.NotificationViewModel
 import com.LambdaProject.MathArt.data.model.NotificationItem
-import com.LambdaProject.MathArt.data.model.NotificationType
 import com.LambdaProject.MathArt.interFontFamily
-import com.LambdaProject.MathArt.ui.Pages.Multiplayer.PvPChallengeCard
 
 import java.util.Locale
 import java.text.SimpleDateFormat
@@ -95,177 +82,6 @@ fun NotificationScreen(navController: NavController) {
                 }
             }
         }
-        /* when {
-            isLoading -> {
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            notifications.isEmpty() -> {
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Tidak ada notifikasi",
-                        fontFamily = helveticaFont,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            else -> {
-                LazyColumn(contentPadding = padding) {
-                    items(notifications) { notification ->
-                        if (notification.type == NotificationType.PVP_CHALLENGE) {
-                            PvPChallengeCard(
-                                notification = notification,
-                                onAccept = {
-                                    // TODO: jalankan logika menerima tantangan
-                                    Log.d("Notif", "Tantangan diterima: ${notification.challengeId}")
-                                },
-                                onDecline = {
-                                    // TODO: update challenge jadi "declined" atau hilangkan notifikasi
-                                    Log.d("Notif", "Tantangan ditolak / timeout")
-                                }
-                            )
-                        } else {
-                            /* var dismissed by remember { mutableStateOf(false) }
-                            val dismissState = rememberDismissState()
-
-                            if (!dismissed) {
-                                if (dismissState.isDismissed(DismissDirection.EndToStart)) {
-                                    LaunchedEffect(Unit) {
-                                        dismissed = true
-                                        viewModel.deleteNotification(notification)
-                                    }
-                                }
-
-                                SwipeToDismiss(
-                                    state = dismissState,
-                                    directions = setOf(DismissDirection.EndToStart),
-                                    background = {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(horizontal = 20.dp),
-                                            contentAlignment = Alignment.CenterEnd
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Hapus",
-                                                tint = Color.White
-                                            )
-                                        }
-                                    },
-                                    dismissContent = {
-                                        Card(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(8.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFf7f7f7))
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(
-                                                        text = notification.message,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontFamily = helveticaFont,
-                                                        fontSize = 12.sp
-                                                    )
-                                                    Spacer(modifier = Modifier.height(4.dp))
-                                                    Text(
-                                                        text = notification.title,
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontFamily = helveticaFont,
-                                                        fontSize = 21.sp,
-                                                        color = Color(0xff78DF4F)
-                                                    )
-                                                    Spacer(modifier = Modifier.height(4.dp))
-                                                    Text(
-                                                        text = SimpleDateFormat(
-                                                            "dd MMM yyyy, HH:mm",
-                                                            Locale.getDefault()
-                                                        ).format(Date(notification.timestamp)),
-                                                        style = MaterialTheme.typography.labelSmall
-                                                    )
-                                                }
-
-                                                Image(
-                                                    painter = painterResource(id = notification.iconResId),
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(60.dp)
-                                                        .padding(start = 12.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                )
-                            } */
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFf7f7f7))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = notification.message,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = helveticaFont,
-                                            fontSize = 12.sp
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = notification.title,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = helveticaFont,
-                                            fontSize = 21.sp,
-                                            color = Color(0xff78DF4F)
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = SimpleDateFormat(
-                                                "dd MMM yyyy, HH:mm", Locale.getDefault()
-                                            ).format(Date(notification.timestamp)),
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
-
-                                    Image(
-                                        painter = painterResource(id = notification.iconResId),
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(60.dp)
-                                            .padding(start = 12.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } */
     }
 }
 

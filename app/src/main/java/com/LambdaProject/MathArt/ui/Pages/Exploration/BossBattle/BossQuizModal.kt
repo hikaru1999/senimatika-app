@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +31,7 @@ import com.LambdaProject.MathArt.data.MAX_BAG_WEIGHT
 import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
 import com.LambdaProject.MathArt.ui.Pages.Exploration.BagModal
 import com.LambdaProject.MathArt.ui.components.MathText
+import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
 import kotlinx.coroutines.delay
 
 @Composable
@@ -121,6 +125,11 @@ fun QuizContent(
     var isSubmitting by remember { mutableStateOf(false) }
     var isInventoryModalVisible by remember { mutableStateOf(false) }
     var isFinishingByAttack by remember { mutableStateOf(false) }
+    var zoomImageUrl by remember { mutableStateOf<String?>(null) }
+
+    BackHandler(enabled = zoomImageUrl != null) {
+        zoomImageUrl = null
+    }
 
     LaunchedEffect(viewModel.bossTimeLeftMillis, viewModel.phase, viewModel.isChronoFreezeActive) {
         val isTimeCritical = viewModel.bossTimeLeftMillis in 1..4000
@@ -138,7 +147,9 @@ fun QuizContent(
     }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.95f),
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .fillMaxHeight(0.95f),
         shape = RoundedCornerShape(24.dp),
         color = Color(0xFFF0E7D8),
         border = BorderStroke(3.dp, Color(0xFF5D4037))
@@ -154,16 +165,10 @@ fun QuizContent(
                     bossType = viewModel.currentBossType,
                 )
 
-                /* Text(
-                    text = "Question ${viewModel.currentQuestionIndex + 1}/${viewModel.totalQuestions}",
-                    color = Color(0xFF3E2723),
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(start = 16.dp),
-                    fontSize = 11.sp
-                ) */
-
                 // SOAL
-                Column(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
+                Column(modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .weight(1f)) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -198,7 +203,8 @@ fun QuizContent(
                                     color = Color(0xFF3E2723),
                                     fontSize = 14,
                                     textAlign = "left",
-                                    onRenderComplete = { isMathReady = true }
+                                    onRenderComplete = { isMathReady = true },
+                                    onImageClick = { url -> zoomImageUrl = url }
                                 )
                             } else {
                                 Text(
@@ -236,7 +242,9 @@ fun QuizContent(
                     }
 
                     // OPSI
-                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                    Column(modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())) {
                         if (question.questionType == "short_answer") {
                             OutlinedTextField(
                                 value = typedAnswer,
@@ -455,6 +463,10 @@ fun QuizContent(
                     }
                 }
             }
+            ZoomableImageOverlay(
+                imageUrl = zoomImageUrl,
+                onDismiss = { zoomImageUrl = null }
+            )
         }
     }
 
@@ -500,7 +512,9 @@ fun QuizContent(
 @Composable
 fun ResultBattleItem(index: Int, result: QuestionResult) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE5DCC3)),
         border = BorderStroke(2.dp, if (result.isCorrect) Color(0xFF5D4037) else Color.Red.copy(alpha = 0.3f))
     ) {
@@ -538,7 +552,9 @@ fun BattleHpSummary(playerHp: Float, bossHp: Float, bossName: String) {
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(statusText, color = statusColor, fontSize = 28.sp, fontWeight = FontWeight.Black)

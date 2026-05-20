@@ -44,7 +44,7 @@ class KuesionerRepositoryImpl @Inject constructor(
     override suspend fun cacheSession(userId: String, role: ValidatorRole, session: ValidatorSession) {
         val key = stringPreferencesKey("session_${userId}_${role.name.uppercase()}")
         val json = Json.Default.encodeToString(session)
-        Log.d("CacheWrite", "✅ Menyimpan session ke key = $key. Total jawaban: ${session.responses.size}")
+        Log.d("CacheWrite", "Menyimpan session ke key = $key. Total jawaban: ${session.responses.size}")
         dataStore.edit { prefs ->
             prefs[key] = json
         }
@@ -70,10 +70,10 @@ class KuesionerRepositoryImpl @Inject constructor(
                 .document(userId)
                 .get()
                 .await()
-            Log.d("FirestoreCheck", "📄 Data snapshot = ${snapshot.data}")
+            Log.d("FirestoreCheck", "Data snapshot = ${snapshot.data}")
             snapshot.toObject(KuesionerResult::class.java)
         } catch (e: Exception) {
-            Log.e("Repo", "❌ Gagal mengambil hasil: ${e.message}")
+            Log.e("Repo", "Gagal mengambil hasil: ${e.message}")
             null
         }
     }

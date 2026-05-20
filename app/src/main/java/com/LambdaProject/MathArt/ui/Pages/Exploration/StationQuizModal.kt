@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -33,6 +34,7 @@ import androidx.compose.ui.window.Dialog
 import com.LambdaProject.MathArt.data.Question
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.components.MathText
+import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
 import kotlinx.coroutines.delay
 
 @Composable
@@ -49,7 +51,6 @@ fun StationQuizModal(
 
     var typedAnswer by remember(question) { mutableStateOf("") }
 
-
     val penaltyDisplay = remember { (3..5).random() }
     val scrollState = rememberScrollState()
     val paperBg = Color(0xFFF0E7D8)
@@ -63,6 +64,12 @@ fun StationQuizModal(
     val secondsLeft = (remaining / 1000) % 60
     val minutesLeft = (remaining / 1000) / 60
     val timeFormatted = String.format("%02d:%02d", minutesLeft, secondsLeft)
+
+    var zoomImageUrl by remember { mutableStateOf<String?>(null) }
+
+    BackHandler(enabled = zoomImageUrl != null) {
+        zoomImageUrl = null
+    }
 
     LaunchedEffect(showFailure) {
         if (showFailure) {
@@ -144,7 +151,8 @@ fun StationQuizModal(
                                                     color = darkText,
                                                     textAlign = "left",
                                                     fontSize = 14,
-                                                    onRenderComplete = { isEquationReady = true }
+                                                    onRenderComplete = { isEquationReady = true },
+                                                    onImageClick = { url -> zoomImageUrl = url }
                                                 )
                                             } else {
                                                 Text(
@@ -694,5 +702,9 @@ fun StationQuizModal(
                 }
             } */
         }
+        ZoomableImageOverlay(
+            imageUrl = zoomImageUrl,
+            onDismiss = { zoomImageUrl = null }
+        )
     }
 }

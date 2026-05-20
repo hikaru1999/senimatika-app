@@ -69,7 +69,6 @@ fun ObjectType.isBlocking(): Boolean {
         ObjectType.FENCE_HORIZONTAL,
         ObjectType.FENCE_VERTICAL,
         ObjectType.WELL -> true
-
         else -> false
     }
 }

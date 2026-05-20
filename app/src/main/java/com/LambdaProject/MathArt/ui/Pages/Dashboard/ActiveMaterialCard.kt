@@ -76,21 +76,6 @@ fun ActiveMaterialCard(
                     color = Color(0xFF1A237E),
                     modifier = Modifier.weight(1f)
                 )
-
-                /* if (isActive) {
-                    Surface(
-                        color = Color(0xFFE8F5E9),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(
-                            text = "Sedang Dipelajari",
-                            fontSize = 10.sp,
-                            color = Color(0xFF2E7D32),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                } */
             }
 
             Row(

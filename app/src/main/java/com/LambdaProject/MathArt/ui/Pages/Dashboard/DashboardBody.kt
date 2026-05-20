@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Dashboard
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -36,6 +37,7 @@ fun SectionTitle(title: String) {
     Spacer(modifier = Modifier.height(8.dp))
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun DashboardBody (navController: NavController, viewModel: DashboardViewModel = viewModel(), onMaterialSelected: (MaterialItem) -> Unit) {
     val materialStatusMap by viewModel.materialStatusMap.collectAsState()
@@ -88,34 +90,6 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                         )
 
                     }
-
-                    /* HorizontalPager(
-                        state = pagerState,
-                        contentPadding = if (itemCount == 1)
-                            PaddingValues(start = horizontalPadding, end = horizontalPadding)
-                        else
-                            PaddingValues(start = 20.dp, end = 48.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
-                    ) { page ->
-                        val material = DataMaterials[page]
-                        val isActive = materialStatusMap[material.id] == true
-
-                        Box(modifier = Modifier.padding(end = if (page == itemCount - 1) 0.dp else 20.dp)) {
-                            MaterialCard(
-                                material = material,
-                                isActive = isActive,
-                                onClickLearn = {
-                                    if (!isActive) {
-                                        onMaterialSelected(material)
-                                    } else {
-                                        navController.navigate("material_screen/${userId}/${material.id}")
-                                    }
-                                }
-                            )
-                        }
-
-                    } */
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -172,7 +146,6 @@ fun DashboardBody (navController: NavController, viewModel: DashboardViewModel =
                             val material = activeSessions[page]
                             userId?.let { uid ->
                                 ActiveMaterialCard(
-                                    // Tambahkan modifier fillMaxWidth agar kartu mengikuti lebar pager
                                     modifier = Modifier.fillMaxWidth(),
                                     userId = uid,
                                     material = material,

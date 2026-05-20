@@ -48,27 +48,20 @@ fun ExplorationLobbyScreen(
     val pagerState = rememberPagerState(pageCount = { tabLabels.size })
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-
     val db = FirebaseFirestore.getInstance()
     val userId = FirebaseAuth.getInstance().currentUser?.uid
+    val isSessionActive by mapViewModel.isSessionActiveFlow(mapId).collectAsStateWithLifecycle(initialValue = false)
+
     var inventory by remember { mutableStateOf(Inventory()) }
     var isPrepareModalOpen by remember { mutableStateOf(false) }
-
-    // State for Map Info
     var mapName by remember { mutableStateOf("Memuat...") }
     var mapDescription by remember { mutableStateOf("Memuat deskripsi wilayah...") }
     var levelType by remember { mutableStateOf("NORMAL") }
     var isLoading by remember { mutableStateOf(false)}
-
     var hasFog by remember { mutableStateOf(false) }
     var hasNight by remember { mutableStateOf(false) }
     var hasCombined by remember { mutableStateOf(false) }
     var selectedArtifactForModal by remember { mutableStateOf<MapViewModel.ArtifactData?>(null) }
-
-    // Gunakan fungsi isSessionActive dari ViewModel
-    /* val isSessionActive = mapViewModel.isSessionActive(mapId) */
-
-    val isSessionActive by mapViewModel.isSessionActiveFlow(mapId).collectAsStateWithLifecycle(initialValue = false)
 
     LaunchedEffect(mapId) {
         mapViewModel.syncSessionStatus(mapId)
@@ -92,25 +85,6 @@ fun ExplorationLobbyScreen(
         }
     }
 
-    /* LaunchedEffect(userId) {
-        if (userId != null) {
-            achViewModel.listenForNewAchievements(userId)
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        mapViewModel.syncSessionStatus(mapId)
-
-        // Fetch data map tetap menggunakan mapId sebagai key
-        db.collection("game_maps").document(mapId).get().addOnSuccessListener { doc ->
-            if (doc.exists()) {
-                mapName = doc.getString("name") ?: "Wilayah Tanpa Nama"
-                mapDescription = doc.getString("description") ?: "Tidak ada deskripsi tersedia."
-                levelType = doc.getString("levelType") ?: "NORMAL"
-            }
-        }
-    } */
-
     DisposableEffect(userId) {
         if (userId == null) return@DisposableEffect onDispose {}
 
@@ -129,7 +103,6 @@ fun ExplorationLobbyScreen(
                         fetchScrollDetails(db, scrollIds)
                     } else emptyList()
 
-                    // Update inventory lokal lobby
                     inventory = Inventory(
                         coins = coins,
                         scrolls = detailedScrolls,
@@ -140,55 +113,9 @@ fun ExplorationLobbyScreen(
         }
 
         onDispose {
-            // PENTING: Matikan listener saat pindah screen agar tidak terjadi double sync
             listener.remove()
         }
     }
-
-    /* LaunchedEffect(userId) {
-        if (userId == null) return@LaunchedEffect
-        db.collection("users").document(userId).addSnapshotListener { snapshot, _ ->
-            if (snapshot != null && snapshot.exists()) {
-                val coins = snapshot.getLong("coins")?.toInt() ?: 0
-                val scrollIds = snapshot.get("scrolls") as? List<String> ?: emptyList()
-                val powerUpsStrings = snapshot.get("powerUps") as? List<String> ?: emptyList()
-                val powerUps = powerUpsStrings.mapNotNull {
-                    try { PowerUpType.valueOf(it) } catch (e: Exception) { null }
-                }
-                coroutineScope.launch {
-                    val detailedScrolls = if (scrollIds.isNotEmpty()) {
-                        try {
-                            // Ambil detail dari koleksi learning_contents berdasarkan ID
-                            val scrollSnapshots = db.collection("learning_contents")
-                                .whereIn(com.google.firebase.firestore.FieldPath.documentId(), scrollIds)
-                                .get()
-                                .await() // Membutuhkan import kotlinx.coroutines.tasks.await
-
-                            scrollSnapshots.documents.mapNotNull { doc ->
-                                com.LambdaProject.MathArt.data.Reward(
-                                    type = com.LambdaProject.MathArt.data.RewardType.SCROLL,
-                                    id = doc.id,
-                                    title = doc.getString("title") ?: "Materi Baru",
-                                    content = doc.getString("content") ?: ""
-                                )
-                            }
-                        } catch (e: Exception) {
-                            emptyList()
-                        }
-                    } else {
-                        emptyList()
-                    }
-
-                    // Sekarang tipe data sudah sesuai: List<Reward>
-                    inventory = Inventory(
-                        coins = coins,
-                        scrolls = detailedScrolls,
-                        powerUps = powerUps
-                    )
-                }
-            }
-        }
-    } */
 
     Scaffold(
         containerColor = Color(0xFFE7E8EF),
@@ -277,7 +204,7 @@ fun ExplorationLobbyScreen(
                         inventory = inventory,
                         unlockedArtifacts = mapViewModel.unlockedArtifactDetails,
                         onArtifactClick = { artifact ->
-                            selectedArtifactForModal = artifact // Set state untuk buka modal
+                            selectedArtifactForModal = artifact
                         },
                         isMallDisabled = isSessionActive)
                 }
@@ -329,7 +256,6 @@ suspend fun fetchScrollDetails(db: FirebaseFirestore, scrollIds: List<String>): 
     if (scrollIds.isEmpty()) return emptyList()
 
     return try {
-        // Menggunakan whereIn untuk mengambil maksimal 30 dokumen dalam 1 permintaan (hemat kuota READ)
         val scrollSnapshots = db.collection("learning_contents")
             .whereIn(FieldPath.documentId(), scrollIds)
             .get()

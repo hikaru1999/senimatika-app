@@ -112,18 +112,6 @@ fun GameDescriptionTab(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            /* Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 12.dp)
-            ) {
-                if (hasCombined) {
-                    VisibilityTag(text = "Combined Mode", color = Color(0xFFFF6D00))
-                } else {
-                    if (hasFog) VisibilityTag(text = "Fog of War", color = Color(0xFF03A9F4))
-                    if (hasNight) VisibilityTag(text = "Night Mode", color = Color(0xFF7E57C2))
-                }
-            } */
-
             Text(
                 text = description,
                 textAlign = TextAlign.Center,

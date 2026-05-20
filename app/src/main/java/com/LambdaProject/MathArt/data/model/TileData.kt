@@ -16,7 +16,6 @@ data class TileData(
 
 fun TileData.isWalkable(): Boolean {
     val groundWalkable = groundVariant.startsWith("tile_path")
-    // Station is now non-walkable as requested
     return groundWalkable && !obj.isBlocking() && obj != ObjectType.STATION
 }
 

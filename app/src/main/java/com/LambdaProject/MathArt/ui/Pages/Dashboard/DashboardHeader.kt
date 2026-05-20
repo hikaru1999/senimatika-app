@@ -37,7 +37,6 @@ fun DashboardHeader(
         viewModel.listenForNewNotifications(userId)
     }
 
-    // Mengambil inisial nama untuk Avatar
     val initial = if (username.isNotEmpty()) username.take(1).uppercase() else "U"
 
     Box(
@@ -60,29 +59,6 @@ fun DashboardHeader(
                 .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Profil Avatar Bulat dengan Gradient
-            /* Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF1976D2), Color(0xFF42A5F5))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = initial,
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = interFontFamily
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp)) */
-
             // Teks Sapaan
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -101,7 +77,7 @@ fun DashboardHeader(
                 )
             }
 
-            // Tombol Notifikasi dengan Efek Kaca/Elevasi Ringan
+            // Tombol Notifikasi
             Box(
                 modifier = Modifier.wrapContentSize(),
                 contentAlignment = Alignment.TopEnd
@@ -127,7 +103,7 @@ fun DashboardHeader(
                     }
                 }
 
-                // Dot Indikator Notifikasi yang lebih "hidup"
+                // Dot Indikator Notifikasi
                 if (hasNewNotification) {
                     Box(
                         modifier = Modifier

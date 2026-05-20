@@ -16,11 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
-@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
+@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility", "RememberReturnType")
 @Composable
 fun MathText(
     text: String,
     onRenderComplete: () -> Unit = {},
+    onImageClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     fontSize: Int = 14,
     color: Color = Color.Black,
@@ -29,7 +30,8 @@ fun MathText(
 ) {
     val density = LocalDensity.current
     var isReady by remember(text) { mutableStateOf(false) }
-    var webViewHeight by remember { mutableStateOf(100.dp) }
+//    var webViewHeight by remember { mutableStateOf(100.dp) }
+    var webViewHeight by remember(text) { mutableStateOf(1.dp) }
 
     val textColor = String.format("#%06X", 0xFFFFFF and color.toArgb())
     val cssFontWeight = fontWeight.weight
@@ -96,6 +98,7 @@ fun MathText(
                     display: block;
                     margin: 10px auto;
                     border-radius: 10px;
+                    cursor: pointer;
                     box-shadow: 0 4x 8px rgba(0,0,0,0,1);
                 }
                 ul {
@@ -121,8 +124,9 @@ fun MathText(
                     // Standarisasi baris baru
                     text = text.replace(/\r\n/g, '\n');
                     
-                    // Bold
+                    // Bold & Italic
                     text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    text = text.replace(/(^|[^a-zA-Z0-9])_([^_]+)_(?![a-zA-Z0-9])/g, '$1<i>$2</i>');
                     
                     // ALignment Tags
                     text = text.replace(/\[justify\]([\s\S]*?)\[\/justify\]/g, function(m, p1) {
@@ -138,25 +142,28 @@ fun MathText(
                         return '<div class="left">' + p1.trim() + '</div>';
                     });
                     
-                    text = text.replace(/(^|[^a-zA-Z0-9])_([^_]+)_(?![a-zA-Z0-9])/g, '$1<i>$2</i>');
-                    
                     // Numbered & Bullet List
 //                    text = text.replace(/(^|\n|[ \t]*)(\d+)\.[ \t]+(.*?)(?=\n|$)/g, '$1<li class="num-item">$3</li>');
 //                    text = text.replace(/(^|\n|[ \t]*)\*[ \t]+(.*?)(?=\n|$)/g, '$1<li class="bullet-item">$2</li>');
 
+                    text = text.replace(/(?:^|\n)\*[ \t]+(.*?)(?=\n|$)/g, '\n<li class="bullet-item">$1</li>');
                     text = text.replace(/(^|\n)(\d+)\.[ \t]+(.*?)(?=\n|$)/g, '$1<li class="num-item">$3</li>');
-                    text = text.replace(/(^|\n)\*[ \t]+(.*?)(?=\n|$)/g, '$1<li class="bullet-item">$2</li>');
-                    
-                    text = text.replace(/(?:<li class="num-item">[\s\S]*?<\/li>\s*)+/g, function(match) {
-                        return '<ol>' + match.replace(/ class="num-item"/g, '') + '</ol>';
-                    });
                     
                     text = text.replace(/(?:<li class="bullet-item">[\s\S]*?<\/li>\s*)+/g, function(match) {
-                        return '<ul>' + match.replace(/ class="bullet-item"/g, '') + '</ul>';
+                        return '<ul>' + match.trim() + '</ul>';
+                    });
+    
+                    text = text.replace(/(?:<li class="num-item">[\s\S]*?<\/li>\s*)+/g, function(match) {
+                        return '<ol>' + match.trim() + '</ol>';
                     });
                     
                     // Images
-                    text = text.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" onload="updateHeight()" onerror="this.style.display=\'none\'">');
+                    text = text.replace(/!\[(.*?)\]\((.*?)\)/g, function(match, alt, src) {
+                        return '<img src="' + src + '" alt="' + alt + '" ' +
+                               'onclick="Android.openImage(\'' + src + '\')" ' +
+                               'onload="updateHeight()" ' +
+                               'onerror="this.style.display=\'none\'">';
+                    });
                     
                     // Others
                     text = text.replace(/>\n/g, '>');
@@ -166,12 +173,19 @@ fun MathText(
                     return text;
                 }
                 
+                function openImage(src) {
+                    Android.openImage(src);
+                }
+                
                 function updateHeight() {
-                    var wrapper = document.getElementById('math-wrapper');
-                    if (wrapper) {
-                        var height = wrapper.scrollHeight;
-                        Android.updateHeight(height);
-                    }
+                    window.requestAnimationFrame(function() {
+                        var wrapper = document.getElementById('math-wrapper');
+                        if (wrapper) {
+                            // getBoundingClientRect lebih akurat untuk konten yang di-skew/render
+                            var height = wrapper.getBoundingClientRect().height;
+                            Android.updateHeight(height);
+                        }
+                    });
                 }
                 
                 function renderMath() {
@@ -188,6 +202,10 @@ fun MathText(
                             ],
                             throwOnError : false
                         });
+                    }
+                    
+                    if (window.ResizeObserver) {
+                        new ResizeObserver(updateHeight).observe(wrapper);
                     }
                     
                     updateHeight();
@@ -221,14 +239,14 @@ fun MathText(
     AndroidView(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = webViewHeight)
+            .heightIn(webViewHeight)
             .graphicsLayer {
-                // Sembunyikan (alpha 0) sampai render selesai untuk mencegah "gepeng"
-                alpha = if (isReady) 1f else 0f
+                alpha = if (isReady && webViewHeight > 10.dp) 1f else 0f
+//                alpha = if (isReady) 1f else 0f
             },
         factory = { context ->
             WebView(context).apply {
-                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
                 settings.javaScriptEnabled = true
                 settings.allowFileAccess = true
@@ -242,19 +260,41 @@ fun MathText(
                     @JavascriptInterface
                     fun updateHeight(height: Float) {
                         val heightInDp = (height / context.resources.displayMetrics.density).dp
-                        if (heightInDp > 1.dp) {
-                            webViewHeight = heightInDp + 12.dp
-                            isReady = true // Tampilkan view
-                            onRenderComplete()
+                        if (heightInDp != webViewHeight) {
+                            post {
+                                webViewHeight = heightInDp + 4.dp // Sedikit padding untuk safety
+                                isReady = true
+                                onRenderComplete()
+                            }
                         }
+//                        if (heightInDp > 1.dp) {
+//                            webViewHeight = heightInDp + 12.dp
+//                            isReady = true // Tampilkan view
+//                            onRenderComplete()
+//                        }
+                    }
+
+                    @JavascriptInterface
+                    fun openImage(url: String) {
+                        post { onImageClick(url) }
                     }
                 }, "Android")
-                webViewClient = WebViewClient()
+//                webViewClient = WebViewClient()
 
-                isClickable = false
-                isFocusable = false
-                isEnabled = false
-                setOnTouchListener { _, _ -> true }
+                isClickable = true
+                isFocusable = true
+                isEnabled = true
+
+                setOnTouchListener { v, event ->
+                    v.onTouchEvent(event)
+                    false
+                }
+
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        view?.loadUrl("javascript:updateHeight()")
+                    }
+                }
             }
         },
         update = { webView ->

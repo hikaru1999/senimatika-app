@@ -146,7 +146,7 @@ class ExplorationAudioManager(private val context: Context) {
         val interval = duration / steps
         val deltaVolume = startVolume / steps
 
-        fadeJob?.cancel() // Batalkan jika ada fade lain
+        fadeJob?.cancel()
         fadeJob = CoroutineScope(Dispatchers.Main).launch {
             var vol = startVolume
             try {
@@ -159,7 +159,7 @@ class ExplorationAudioManager(private val context: Context) {
                 stopBGM()
                 onComplete()
             } catch (e: CancellationException) {
-                // Ignore cancellation
+                // Ignore
             } finally {
                 fadeJob = null
             }

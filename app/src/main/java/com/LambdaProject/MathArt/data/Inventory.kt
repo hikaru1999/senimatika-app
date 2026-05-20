@@ -2,13 +2,13 @@ package com.LambdaProject.MathArt.data
 
 data class Inventory(
     val coins: Int = 0,
-    /* val scrolls: List<String> = emptyList(), */
     val scrolls: List<Reward> = emptyList(),
     val powerUps: List<PowerUpType> = emptyList()
 )
 
-val MAX_BAG_WEIGHT = 20.0f
-val ADD_STRAP = 5.0f
+const val MAX_BAG_WEIGHT = 20.0f
+const val ADD_STRAP = 5.0f
+const val SCROLL_WEIGHT = 0.2f
 
 fun getPowerUpWeight(type: PowerUpType): Float {
     return when (type) {
@@ -37,8 +37,6 @@ fun getCooldownDuration(type: PowerUpType): Long {
         PowerUpType.BINOCULAR -> 30000L
     }
 }
-
-val SCROLL_WEIGHT = 0.2f
 
 fun Inventory.calculateTotalWeight(): Float {
     val puWeight = powerUps.sumOf { getPowerUpWeight(it).toDouble() }.toFloat()

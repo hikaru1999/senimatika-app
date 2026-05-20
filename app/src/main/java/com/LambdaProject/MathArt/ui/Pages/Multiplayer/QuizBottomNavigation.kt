@@ -25,6 +25,7 @@ import kotlinx.coroutines.*
 
 @Composable
 fun BottomQuizNav(
+    onAnsweredChange: (Boolean) -> Unit,
     selectedAnswers: List<Int>,
     userTextAnswer: String? = null,
     timeLeft: Int,
@@ -40,7 +41,7 @@ fun BottomQuizNav(
     materialId: String
 ) {
     var isLoading by remember { mutableStateOf(false) }
-    var isAnswered by remember { mutableStateOf(false) }
+//    var isAnswered by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -121,7 +122,7 @@ fun BottomQuizNav(
             Button(
                 onClick = {
                     isLoading = true
-                    isAnswered = true
+                    onAnsweredChange(true)
 
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(2000)

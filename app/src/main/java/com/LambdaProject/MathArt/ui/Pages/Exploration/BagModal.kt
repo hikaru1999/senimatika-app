@@ -201,7 +201,7 @@ fun BagModal(
                         Text(
                             text = "Battle Ready",
                             style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold),
-                            color = Color(0xFFB71C1C) // Warna merah untuk battle
+                            color = Color(0xFFB71C1C)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -234,7 +234,7 @@ fun BagModal(
                             Text(
                                 text = "Equipment Tools",
                                 style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.ExtraBold),
-                                color = Color(0xFF1A237E) // Warna biru untuk equipment
+                                color = Color(0xFF1A237E)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
 

@@ -39,7 +39,7 @@ fun ExplorationCard(onClick: () -> Unit) {
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .height(160.dp) // Lebih tinggi dari button sebelumnya agar gambar terlihat
+            .height(160.dp)
             .clickable { onClick() }
             .shadow(
                 12.dp,
@@ -49,7 +49,6 @@ fun ExplorationCard(onClick: () -> Unit) {
         shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Background Image - Ganti R.drawable.bg_exploration dengan id gambar Anda
             Image(
                 painter = painterResource(id = com.LambdaProject.MathArt.R.drawable.img_explore),
                 contentDescription = null,
@@ -57,7 +56,6 @@ fun ExplorationCard(onClick: () -> Unit) {
                 contentScale = ContentScale.Crop
             )
 
-            // Overlay Gradasi agar teks terbaca jelas
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -71,7 +69,6 @@ fun ExplorationCard(onClick: () -> Unit) {
                     )
             )
 
-            // Konten Teks & Ikon
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -81,7 +78,7 @@ fun ExplorationCard(onClick: () -> Unit) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Surface(
-                        color = Color(0xFFFFD600), // Kuning emas untuk kesan harta karun
+                        color = Color(0xFFFFD600),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                     ) {
                         Text(
@@ -113,7 +110,6 @@ fun ExplorationCard(onClick: () -> Unit) {
                     )
                 }
 
-                // Ikon Play melingkar di pojok
                 Surface(
                     shape = CircleShape,
                     color = Color.White,

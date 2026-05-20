@@ -13,7 +13,6 @@ object StudyDurationManager {
     private var startTime = 0L
     private var isAppInForeground = false
     private var periodicJob: Job? = null
-
     private var accumulatedTimeBuffer = 0L
 
     private val firebaseAuth = FirebaseAuth.getInstance()
@@ -49,7 +48,6 @@ object StudyDurationManager {
             val sessionTime = System.currentTimeMillis() - startTime
             accumulatedTimeBuffer += sessionTime
 
-            // Simpan sisa buffer saat aplikasi ditutup
             flushBufferToFirestore()
 
             isAppInForeground = false
@@ -61,11 +59,10 @@ object StudyDurationManager {
         if (accumulatedTimeBuffer <= 0) return
 
         val timeToSave = accumulatedTimeBuffer
-        accumulatedTimeBuffer = 0 // Reset buffer segera
+        accumulatedTimeBuffer = 0
 
         val userDoc = firestore.collection("durations").document(user.uid)
 
-        // Gunakan set dengan Merge agar tidak perlu cek dokumen exists (Hemat Read)
         userDoc.set(
             mapOf(
                 "duration" to FieldValue.increment(timeToSave),
@@ -73,7 +70,6 @@ object StudyDurationManager {
             ),
             com.google.firebase.firestore.SetOptions.merge()
         ).addOnFailureListener {
-            // Jika gagal, kembalikan ke buffer untuk dicoba nanti
             accumulatedTimeBuffer += timeToSave
             Log.e("StudyDuration", "Failed to save, buffered back")
         }
@@ -87,7 +83,6 @@ object StudyDurationManager {
             val snapshot = transaction.get(userDoc)
             val currentDuration = snapshot.getLong("duration") ?: 0L
 
-            // Cek apakah timestamp awal sudah ada
             if (!snapshot.contains("startTimestamp")) {
                 transaction.set(userDoc, mapOf(
                     "duration" to currentDuration + elapsedTime,
@@ -112,7 +107,7 @@ object StudyDurationManager {
     private fun startPeriodicSave() {
         periodicJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
-                delay(300_000) // 5 menit
+                delay(300_000)
 
                 if (isAppInForeground) {
                     val now = System.currentTimeMillis()
@@ -120,11 +115,6 @@ object StudyDurationManager {
                     startTime = now
                     flushBufferToFirestore()
                 }
-
-                /* val now = System.currentTimeMillis()
-                val elapsed = now - startTime
-                saveStudyDuration(elapsed)
-                startTime = now */
             }
         }
     }
@@ -133,39 +123,6 @@ object StudyDurationManager {
         periodicJob?.cancel()
         periodicJob = null
     }
-
-    /* fun checkAndResetWeeklyDuration(userId: String, onDone: () -> Unit = {} ) {
-        val docRef = firestore.collection("durations").document(userId)
-        docRef.get().addOnSuccessListener { document ->
-            val now = System.currentTimeMillis()
-
-            val calendar = Calendar.getInstance().apply {
-                timeInMillis = now
-                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            val mondayMidnight = calendar.timeInMillis
-            val fiveMinutesAgo = now - 5 * 60 * 1000
-
-            if (document.exists()) {
-                val lastTimestamp = document.getLong("startTimestamp") ?: 0L
-
-                if (lastTimestamp < mondayMidnight) {
-                    docRef.set(
-                        mapOf(
-                            "duration" to 0L,
-                            "startTimestamp" to now
-                        )
-                    )
-                }
-            }
-            onDone()
-        }
-    } */
 
     fun checkAndResetWeeklyDuration(userId: String, onDone: () -> Unit = {} ) {
         val docRef = firestore.collection("durations").document(userId)
@@ -178,7 +135,6 @@ object StudyDurationManager {
                 val lastTimestamp = document.getLong("startTimestamp") ?: 0L
 
                 if (lastTimestamp < mondayMidnight) {
-                    // Reset dilakukan hanya jika perlu (1 Write)
                     docRef.update(
                         mapOf(
                             "duration" to 0L,
@@ -189,31 +145,11 @@ object StudyDurationManager {
                     onDone()
                 }
             } else {
-                // Dokumen baru (First time user)
                 docRef.set(mapOf("duration" to 0L, "startTimestamp" to now))
                 onDone()
             }
         }.addOnFailureListener { onDone() }
     }
-
-    /* fun checkAndResetWeeklyDuration(userId: String, onDone: () -> Unit = {}) {
-        val docRef = firestore.collection("durations").document(userId)
-        docRef.get().addOnSuccessListener { document ->
-            if (document.exists()) {
-                val startTimestamp = document.getLong("startTimestamp") ?: System.currentTimeMillis()
-                val now = System.currentTimeMillis()
-                val sevenDaysMillis = 7 * 24 * 60 * 60 * 1000L
-
-                if (now - startTimestamp >= sevenDaysMillis) {
-                    docRef.set(mapOf(
-                        "duration" to 0L,
-                        "startTimestamp" to now
-                    ))
-                }
-            }
-            onDone()
-        }
-    } */
 
     private fun getMondayMidnightTimestamp(): Long {
         return Calendar.getInstance().apply {

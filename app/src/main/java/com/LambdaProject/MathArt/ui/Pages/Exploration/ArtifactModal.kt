@@ -57,11 +57,10 @@ fun ArtifactInfoModal(
             .clickable { onClose() },
         contentAlignment = Alignment.Center
     ) {
-        // Box pembungkus untuk menaruh tombol silang di atas Surface
         Box(
             modifier = Modifier
                 .fillMaxWidth(0.85f)
-                .fillMaxHeight(0.85f) // Sesuaikan tinggi agar tidak menabrak batas layar
+                .fillMaxHeight(0.85f)
         ) {
             Surface(
                 modifier = Modifier
@@ -111,7 +110,7 @@ fun ArtifactInfoModal(
 
                     Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFF8D6E63).copy(alpha = 0.2f))
 
-                    // Isi (Content) - Weight(1f) agar Column bisa diisi penuh tanpa overflow
+                    // Isi (Content) - Weight(1f)
                     Box(modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
@@ -152,11 +151,9 @@ fun ArtifactInfoModal(
                             )
                         }
                     }
-                    // Spacer di bawah dihapus karena tombol sudah dipindah ke atas
                 }
             }
 
-            // TOMBOL SILANG (X) di pojok kanan atas
             IconButton(
                 onClick = onClose,
                 modifier = Modifier

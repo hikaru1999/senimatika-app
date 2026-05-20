@@ -99,14 +99,10 @@ fun InventoryTabContent(
                             )
                         }
                     }
+
                     Spacer(modifier = Modifier.width(16.dp))
+
                     Column(modifier = Modifier.weight(1f)) {
-                        /* Text(
-                            "Koin Kamu:",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            fontFamily = interFontFamily
-                        ) */
                         Text(
                             "${inventory.coins} Koin",
                             fontSize = 18.sp,
@@ -119,7 +115,7 @@ fun InventoryTabContent(
                     // Mall Button
                     Button(
                         onClick = { isMallOpen = true },
-                        enabled = !isMallDisabled, // Gunakan properti enabled agar lebih native
+                        enabled = !isMallDisabled,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isMallDisabled) Color.Gray.copy(alpha = 0.1f) else Color(0xFFE3F2FD),
                             contentColor = if (isMallDisabled) Color.Gray else Color(0xFF1976D2),
@@ -130,7 +126,7 @@ fun InventoryTabContent(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                         modifier = Modifier
                             .height(50.dp)
-                            .defaultMinSize(minWidth = 1.dp) // Menghilangkan minWidth default Button yang lebar
+                            .defaultMinSize(minWidth = 1.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -175,7 +171,7 @@ fun InventoryTabContent(
                                 Surface(
                                     modifier = Modifier.size(60.dp),
                                     shape = RoundedCornerShape(15.dp),
-                                    color = Color(0xFFF9FBE7), // Warna hijau lime pucat
+                                    color = Color(0xFFF9FBE7),
                                     border = BorderStroke(1.dp, Color(0xFF8D6E63).copy(alpha = 0.3f))
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -186,17 +182,6 @@ fun InventoryTabContent(
                                         )
                                     }
                                 }
-                                /* Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = artifact.title,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center,
-                                    fontFamily = interFontFamily,
-                                    maxLines = 2,
-                                    lineHeight = 12.sp,
-                                    color = Color(0xFF3E2723)
-                                ) */
                             }
                         }
                     }
@@ -289,7 +274,6 @@ fun InventoryTabContent(
                     Column(
                         modifier = Modifier.clickable(enabled = false) { },
                         horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Merender visual gulungan dan teks matematika (KaTeX)
                         ScrollRewardView(
                             title = selectedScroll!!.title,
                             content = selectedScroll!!.content

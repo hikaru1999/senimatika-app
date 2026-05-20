@@ -16,7 +16,6 @@ fun unlockGeneralAchievement(userId: String, achievementName: String) {
 
     achievementRef.get().addOnSuccessListener { document ->
         if (!document.exists()) {
-
             val localData = DataAchievements.find { it.name == achievementName }
             val imageName = when(achievementName) {
                 "Penjelajah" -> "ic_explorer"
@@ -75,26 +74,26 @@ fun unlockExplorerAchievement(userId: String, studyDuration: Long) {
     }
 }
 
-fun getAchievementIcon(imageName: String?): Int {
-    return when (imageName) {
-        "ic_explorer" -> R.drawable.ic_explorer
-        "img_rocket_pemula" -> R.drawable.img_rocket_pemula
-        "img_pros" -> R.drawable.img_pros
-        "ic_scientist" -> R.drawable.ic_scientist
-        "ic_magician" -> R.drawable.ic_magician
-        "ic_algebra_master" -> R.drawable.ic_algebra_master
-        "ic_geometry_master" -> R.drawable.ic_geometry_master
-        "ic_statistic_master" -> R.drawable.ic_statistic_master
-        "ic_expert" -> R.drawable.ic_expert
-        "ic_calculus_master" -> R.drawable.ic_calculus_master
-        "ic_genius" -> R.drawable.ic_genius
-        "ic_beginner_exploration" -> R.drawable.ic_beginner_exploration
-        "ic_treasure_hunter_1" -> R.drawable.ic_treasure_hunter_1
-        "ic_boss_hunter_1" -> R.drawable.ic_boss_hunter_1
-        "ic_treasure_hunter_2" -> R.drawable.ic_treasure_hunter_2
-        "ic_boss_hunter_2" -> R.drawable.ic_boss_hunter_2
-        "ic_master_exploration" -> R.drawable.ic_master_exploration
-        "ic_wolf" -> R.drawable.ic_wolf
-        else -> R.drawable.obj_sack
-    }
-}
+//fun getAchievementIcon(imageName: String?): Int {
+//    return when (imageName) {
+//        "ic_explorer" -> R.drawable.ic_explorer
+//        "img_rocket_pemula" -> R.drawable.img_rocket_pemula
+//        "img_pros" -> R.drawable.img_pros
+//        "ic_scientist" -> R.drawable.ic_scientist
+//        "ic_magician" -> R.drawable.ic_magician
+//        "ic_algebra_master" -> R.drawable.ic_algebra_master
+//        "ic_geometry_master" -> R.drawable.ic_geometry_master
+//        "ic_statistic_master" -> R.drawable.ic_statistic_master
+//        "ic_expert" -> R.drawable.ic_expert
+//        "ic_calculus_master" -> R.drawable.ic_calculus_master
+//        "ic_genius" -> R.drawable.ic_genius
+//        "ic_beginner_exploration" -> R.drawable.ic_beginner_exploration
+//        "ic_treasure_hunter_1" -> R.drawable.ic_treasure_hunter_1
+//        "ic_boss_hunter_1" -> R.drawable.ic_boss_hunter_1
+//        "ic_treasure_hunter_2" -> R.drawable.ic_treasure_hunter_2
+//        "ic_boss_hunter_2" -> R.drawable.ic_boss_hunter_2
+//        "ic_master_exploration" -> R.drawable.ic_master_exploration
+//        "ic_wolf" -> R.drawable.ic_wolf
+//        else -> R.drawable.obj_sack
+//    }
+//}

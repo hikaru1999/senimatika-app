@@ -71,7 +71,6 @@ fun PrepareExplorationModal(
                 .padding(top = 48.dp)
         ) {
             Column {
-                // Header with Gradient Background and Close Button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -298,7 +297,7 @@ fun PrepareExplorationModal(
                     }
                     if (isOverweight) {
                         Text(
-                            "Beban terlalu berat! Kurangi beberapa item.",
+                            "Ransel terlalu berat! Kurangi beberapa item.",
                             color = Color.Red,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -306,6 +305,7 @@ fun PrepareExplorationModal(
                         )
                     }
                 }
+
                 // Tombol Konfirmasi
                 Box(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
                     Button(

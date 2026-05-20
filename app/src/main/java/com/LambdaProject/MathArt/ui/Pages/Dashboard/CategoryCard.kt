@@ -19,45 +19,6 @@ import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.data.model.CategoryItem
 
-/* @Composable
-fun CategoryCard(category: CategoryItem) {
-    Card(
-        modifier = Modifier
-            .size(100.dp)
-            .padding(8.dp),
-        shape = RoundedCornerShape(5.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFD7EBFF)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Image(
-                painter = painterResource(id = category.imageRes),
-                contentDescription = category.name,
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(5.dp)),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = category.name,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = interFontFamily,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-} */
-
 @Composable
 fun CategoryCard(category: CategoryItem) {
     Box(

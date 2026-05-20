@@ -7,7 +7,7 @@ fun getAchievementIcon(achievementName: String): Int {
         "Penjelajah" -> R.drawable.ic_explorer
         "Pemula" -> R.drawable.img_rocket_pemula
         "Profesional" -> R.drawable.img_pros
-        "Ilmuan" -> R.drawable.ic_scientist
+        "Ilmuwan" -> R.drawable.ic_scientist
         "Math Magician" -> R.drawable.ic_magician
         "Master Aljabar" -> R.drawable.ic_algebra_master
         "Master Geometri" -> R.drawable.ic_geometry_master

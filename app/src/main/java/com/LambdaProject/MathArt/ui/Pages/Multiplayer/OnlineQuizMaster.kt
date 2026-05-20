@@ -6,9 +6,12 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.*
@@ -26,6 +29,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +44,7 @@ import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ui.components.MathText
+import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
 import kotlinx.coroutines.*
 
 @SuppressLint("MutableCollectionMutableState")
@@ -88,12 +93,15 @@ fun OnlineQuizMaster(
     var scoreState by remember { mutableStateOf<ScorestreakState?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     var showPowerUpInfoDialog by remember { mutableStateOf(false) }
+    var zoomImageUrl by remember { mutableStateOf<String?>(null) }
 
     var showZoomDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val currentQuestionType = question.type
 
-
+    BackHandler(enabled = zoomImageUrl != null) {
+        zoomImageUrl = null
+    }
 
     LaunchedEffect(key1 = currentIndex) {
         isAnswered = false
@@ -107,7 +115,9 @@ fun OnlineQuizMaster(
         val endTime = startTime + durationMs
 
         launch {
-            while (true) {
+            while (isActive) {
+                if (isAnswered) break
+
                 val now = SystemClock.elapsedRealtime()
                 val timeLeftMs = (endTime - now).coerceAtLeast(0L)
 
@@ -299,7 +309,8 @@ fun OnlineQuizMaster(
                         viewModel = viewModel,
                         onFinishQuiz = onFinishQuiz,
                         materialId = materialId,
-                        onPowerUpClicked = { showPowerUpInfoDialog = true }
+                        onPowerUpClicked = { showPowerUpInfoDialog = true },
+                        onAnsweredChange = { isAnswered = it },
                     )
                 }
             }
@@ -391,6 +402,9 @@ fun OnlineQuizMaster(
                                     modifier = Modifier.fillMaxWidth(),
                                     textAlign = "left",
                                     fontSize = 14,
+                                    onImageClick = { url ->
+                                        zoomImageUrl = url
+                                    }
                                 )
                             } else {
                                 Box(Modifier.height(100.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -488,7 +502,7 @@ fun OnlineQuizMaster(
                                     } else {
                                         RadioButton(
                                             selected = isSelected,
-                                            onClick = null, // Handled by Surface onClick
+                                            onClick = null,
                                             colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF1976D2))
                                         )
                                     }
@@ -543,5 +557,9 @@ fun OnlineQuizMaster(
                 ZoomableImageDialog(imageRes = imageRes, onDismiss = { showZoomDialog = false })
             }
         }
+        ZoomableImageOverlay(
+            imageUrl = zoomImageUrl,
+            onDismiss = { zoomImageUrl = null }
+        )
     }
 }

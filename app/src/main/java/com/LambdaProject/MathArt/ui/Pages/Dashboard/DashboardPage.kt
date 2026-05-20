@@ -73,8 +73,7 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
                     }
                 )
             }
-            
-            // RangkumanCard positioned at absolute bottom to cover gaps caused by rounded BottomNav
+
             AnimatedVisibility(
                 visible = showRangkumanCard,
                 enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(400)),

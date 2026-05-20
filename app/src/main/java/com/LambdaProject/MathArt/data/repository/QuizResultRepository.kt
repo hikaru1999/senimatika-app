@@ -15,7 +15,6 @@ import kotlinx.coroutines.tasks.await
 class QuizResultRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-
     suspend fun saveQuizResult(result: QuizResult): Result<Unit> {
         return try {
             val documentId = "${result.userId}_${result.materialId}"
@@ -64,10 +63,6 @@ class QuizResultRepository(
                     "completedQuizzes", FieldValue.arrayUnion(materialId),
                     "coins", FieldValue.increment(rewardCoins.toLong())
                 ).await()
-                /* userRef.update("completedQuizzes", FieldValue.arrayUnion(materialId)).await()
-                val currentCoins = snapshot.getLong("coins") ?: 0
-                userRef.update("coins", currentCoins + rewardCoins).await() */
-
                 Log.d("Reward", "Reward diberikan: $rewardCoins koin untuk kuis $materialId")
                 true
             } else {
@@ -96,14 +91,6 @@ class QuizResultRepository(
                         results[doc.id] = it
                     }
                 }
-
-                /* for (doc in snapshot.documents) {
-                    val uid = doc.id
-                    val username = doc.getString("username")
-                    if (username != null) {
-                        results[uid] = username
-                    }
-                } */
             }
 
             results
@@ -122,11 +109,6 @@ class QuizResultRepository(
                 .await()
 
             val results = snapshot.toObjects(QuizResult::class.java)
-
-
-            /* if (results.isNotEmpty()) {
-                Log.d("LeaderboardRepository", "First result: ${results.first().userId}, Points: ${results.first().totalPoints}")
-            } */
 
             Result.success(results)
         } catch (e: Exception) {

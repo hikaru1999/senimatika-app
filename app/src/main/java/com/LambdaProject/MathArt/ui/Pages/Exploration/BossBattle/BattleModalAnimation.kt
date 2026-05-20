@@ -1,6 +1,5 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -17,13 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.LambdaProject.MathArt.ViewModels.AchievementViewModel
 import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
-import com.LambdaProject.MathArt.data.DataAchievements
 import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
-import com.LambdaProject.MathArt.data.model.unlockGeneralAchievement
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
 @Composable

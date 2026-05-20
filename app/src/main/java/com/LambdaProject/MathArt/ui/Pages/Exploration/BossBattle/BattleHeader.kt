@@ -203,22 +203,6 @@ fun BossThinkingSection(progress: Float, timeLeft: Long, bossName: String, isChr
                         .background(statusColor)
                 )
             }
-
-            /* if (timeLeft > 0 && !isChrono) {
-                Text(
-                    text = "${(timeLeft / 1000) + 1} detik tersisa",
-                    color = statusColor.copy(alpha = 0.6f),
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            } */
-            /* LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.width(180.dp).height(4.dp).clip(CircleShape),
-                color = statusColor,
-                trackColor = Color(0xFF3E2723)
-            ) */
         }
     }
 }

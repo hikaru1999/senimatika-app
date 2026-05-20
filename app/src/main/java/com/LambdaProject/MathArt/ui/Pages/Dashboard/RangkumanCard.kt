@@ -150,12 +150,10 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
                         letterSpacing = 1.sp
                     )
                 }
-                
-                // Tambahan Spacer yang cukup besar agar tombol tidak terhalang BottomNav saat discroll ke paling bawah
+
                 Spacer(modifier = Modifier.height(100.dp))
             }
-            
-            // Elemen penutup celah (Box putih solid di layer terbawah)
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
