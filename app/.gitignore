@@ -1,9 +1,27 @@
+.gradle/
 /build
+gradle-app.setting
+!gradle-wrapper.jar
 .gradlelocal.properties
+local.properties
+
+.idea/
+*.iml
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+*.ipr
+*.iws
 
 google-services.json
 *.jks
 *.keystore
+*.p12
+*.jceks
+google-services-desktop.json
 
 *.mp4
 *.mp3
@@ -14,4 +32,12 @@ google-services.json
 *.png
 *.jpg
 *.jpeg
+*.bmp
 *.webp
+
+.DS_Store
+Thumbs.db
+
+/captures/
+.externalNativeBuild/
+.cxx/
