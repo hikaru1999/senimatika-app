@@ -60,7 +60,6 @@ fun ExplorationSummaryModal(
                 stiffness = Spring.StiffnessLow
             )
         )
-        // Audio handling
         if (!stats.isSuccess) {
             audio.playSfx("gameover")
         } else {

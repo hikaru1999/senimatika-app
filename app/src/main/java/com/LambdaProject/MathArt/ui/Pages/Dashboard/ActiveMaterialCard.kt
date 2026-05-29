@@ -182,7 +182,6 @@ fun getUserMaterialProgress(
             onResult(maxPage)
         }
         .addOnFailureListener { exception ->
-            Log.e("Firestore", "Failed to get maxPage", exception)
             onResult(0)
         }
 }

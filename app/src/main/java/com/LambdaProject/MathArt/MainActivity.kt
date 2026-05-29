@@ -383,7 +383,7 @@ class MainActivity : ComponentActivity() {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .zIndex(9999f) // Sangat tinggi
+                                    .zIndex(9999f)
                             ) {
                                 AchievementSnackbar(
                                     item = badge,

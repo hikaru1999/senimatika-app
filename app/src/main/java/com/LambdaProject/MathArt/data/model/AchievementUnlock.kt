@@ -51,7 +51,7 @@ fun unlockGeneralAchievement(userId: String, achievementName: String) {
 
             achievementRef.set(newAchievement)
                 .addOnSuccessListener {
-                    Log.d("Firestore", "Achievement '$achievementName' disimpan di path users/$userId/achievements")
+                    Log.d("Firestore", "Achievement '$achievementName' sukses disimpan")
                 }
                 .addOnFailureListener { e ->
                     Log.e("Firestore", "Gagal simpan achievement", e)

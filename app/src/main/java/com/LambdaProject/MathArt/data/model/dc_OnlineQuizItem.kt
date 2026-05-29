@@ -18,7 +18,6 @@ data class OnlineQuizDesc (
     val title: String = "",
     val description: String = "",
     val questions: List<QuizQuestionRef> = emptyList(),
-    // UI Metadata
     val durationMinutes: Int = 0,
     val rewardCoin: Int = 0,
     val imageRes: Int = 0,

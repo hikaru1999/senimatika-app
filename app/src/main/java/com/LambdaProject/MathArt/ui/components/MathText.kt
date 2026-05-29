@@ -262,14 +262,14 @@ fun MathText(
                         val heightInDp = (height / context.resources.displayMetrics.density).dp
                         if (heightInDp != webViewHeight) {
                             post {
-                                webViewHeight = heightInDp + 4.dp // Sedikit padding untuk safety
+                                webViewHeight = heightInDp + 4.dp
                                 isReady = true
                                 onRenderComplete()
                             }
                         }
 //                        if (heightInDp > 1.dp) {
 //                            webViewHeight = heightInDp + 12.dp
-//                            isReady = true // Tampilkan view
+//                            isReady = true
 //                            onRenderComplete()
 //                        }
                     }

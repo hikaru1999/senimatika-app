@@ -71,7 +71,6 @@ fun ProfileForm(
                 )
             )
     ) {
-        // Decorative background circles
         Box(
             modifier = Modifier
                 .size(300.dp)
@@ -148,7 +147,6 @@ fun ProfileForm(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Full Name Field
                     OutlinedTextField(
                         value = fullName,
                         onValueChange = { fullName = it },
@@ -165,7 +163,6 @@ fun ProfileForm(
                         )
                     )
 
-                    // Jenjang Dropdown
                     ExposedDropdownMenuBox(
                         expanded = expandedJenjang,
                         onExpandedChange = { expandedJenjang = !expandedJenjang },
@@ -198,14 +195,13 @@ fun ProfileForm(
                                     onClick = {
                                         grade = selectedGrade
                                         expandedJenjang = false
-                                        kelas = "" // Reset kelas
+                                        kelas = ""
                                     }
                                 )
                             }
                         }
                     }
 
-                    // Kelas Dropdown
                     val kelasOptions = kelasMap[grade] ?: emptyList()
                     ExposedDropdownMenuBox(
                         expanded = expandedKelas,

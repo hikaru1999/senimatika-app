@@ -48,7 +48,6 @@ fun StationQuizModal(
     var isAnswered by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
     var showFailure by remember { mutableStateOf(false) }
-
     var typedAnswer by remember(question) { mutableStateOf("") }
 
     val penaltyDisplay = remember { (3..5).random() }
@@ -59,8 +58,8 @@ fun StationQuizModal(
     val innerPaper = Color(0xFFE5DCC3)
 
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    val remaining = (cooldownEndMillis - currentTime).coerceAtLeast(0L)
 
+    val remaining = (cooldownEndMillis - currentTime).coerceAtLeast(0L)
     val secondsLeft = (remaining / 1000) % 60
     val minutesLeft = (remaining / 1000) / 60
     val timeFormatted = String.format("%02d:%02d", minutesLeft, secondsLeft)
@@ -170,7 +169,6 @@ fun StationQuizModal(
                                     Spacer(modifier = Modifier.height(24.dp))
 
                                     if (question.questionType == "short_answer") {
-                                        // TAMPILAN ISIAN SINGKAT
                                         OutlinedTextField(
                                             value = typedAnswer,
                                             onValueChange = {
@@ -402,7 +400,6 @@ fun StationQuizModal(
 
                             Spacer(Modifier.height(24.dp))
 
-                            // Visual Timer Penalti
                             /* Box(contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     progress = { timerCount / 10f },
@@ -426,7 +423,6 @@ fun StationQuizModal(
                         .padding(20.dp)
                         .heightIn(max = 600.dp)
                 ) {
-                    // Header Area - RPG Label Style
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
@@ -508,7 +504,7 @@ fun StationQuizModal(
                             val isSelected = selectedOption == index
 
                             val backgroundColor = when {
-                                isAnswered && index == question.correctAnswer && showSuccess -> Color(0xFFC8E6C9) // Sukses Hijau Muda
+                                isAnswered && index == question.correctAnswer && showSuccess -> Color(0xFFC8E6C9)
                                 isSelected -> Color(0xFFD3C5B9)
                                 else -> Color(0xFFFDF8E1)
                             }
@@ -644,9 +640,9 @@ fun StationQuizModal(
                             modifier = Modifier.padding(24.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Warning, // Ikon Peringatan
+                                imageVector = Icons.Default.Warning,
                                 contentDescription = null,
-                                tint = Color(0xFFB71C1C), // Merah Marun
+                                tint = Color(0xFFB71C1C),
                                 modifier = Modifier.size(80.dp)
                             )
 
@@ -672,7 +668,6 @@ fun StationQuizModal(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Indikator Visual Hitung Mundur
                             /* Box(contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     progress = { timerCount / 10f },

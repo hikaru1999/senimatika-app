@@ -262,7 +262,6 @@ fun OnlineQuizMaster(
             },
             bottomBar = {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Time Indicator Bar (Modernized)
                     val progressColor = when {
                         animatedProgress.value > 0.6f -> Color(0xFF66BB6A)
                         animatedProgress.value > 0.3f -> Color(0xFFFFB300)

@@ -387,12 +387,12 @@ fun ExplorationMapScreen(
                                                 Icon(
                                                     imageVector = Icons.Default.CheckCircle,
                                                     contentDescription = "Collected",
-                                                    tint = Color(0xFF4CAF50), // Warna hijau sukses
+                                                    tint = Color(0xFF4CAF50),
                                                     modifier = Modifier
-                                                        .size(tileSize / 3) // Ukuran proporsional dengan tile (sekitar 1/3)
+                                                        .size(tileSize / 3)
                                                         .background(Color.White, CircleShape)
                                                         .border(1.dp, Color.White, CircleShape)
-                                                        .zIndex(5f) // Pastikan paling depan
+                                                        .zIndex(5f)
                                                 )
                                             }
                                         }
@@ -593,7 +593,7 @@ fun ExplorationMapScreen(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
-                    .size(45.dp) // Ukuran lingkaran
+                    .size(45.dp)
                     .background(buttonBgColor, CircleShape)
                     .border(1.dp, iconTintColor.copy(alpha = 0.3f), CircleShape)
                     .clickable { showExitConfirmation = true },
@@ -787,12 +787,12 @@ fun ExplorationMapScreen(
                 onDismissRequest = { showExitConfirmation = false },
                 containerColor = Color(0xFF212121),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.border(2.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp)), // Border Emas
+                modifier = Modifier.border(2.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp)),
                 icon = {
                     Icon(
                         Icons.Default.Save,
                         contentDescription = null,
-                        tint = Color(0xFFFFD700), // Icon warna emas
+                        tint = Color(0xFFFFD700),
                         modifier = Modifier.size(32.dp)
                     )
                 },

@@ -24,7 +24,6 @@ fun MovementController(
 ) {
     val iconSize = 48.dp
     val moveCooldown = 350L
-    // State to track the last movement time
     var isLocked by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 

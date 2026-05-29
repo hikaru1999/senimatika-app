@@ -61,7 +61,7 @@ class RegisterViewModel @Inject constructor(
     ) {
         firestore.collection("users")
             .whereEqualTo("username", username)
-            .limit(1) // Selalu limit 1 untuk efisiensi
+            .limit(1)
             .get(Source.DEFAULT)
             .addOnSuccessListener { usernameResult ->
                 if (!usernameResult.isEmpty) {
@@ -78,8 +78,6 @@ class RegisterViewModel @Inject constructor(
                 }
             }
             .addOnFailureListener {
-                // Jika gagal di cache (misal offline total), anggap saja tidak ada
-                // agar user tetap bisa mencoba submit ke server (server-side validation)
                 onResult(false)
             }
     }

@@ -55,7 +55,6 @@ fun ProfileBody(
                 )
                 .clip(RoundedCornerShape(28.dp))
         ) {
-            // Decorative background circle
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -156,7 +155,6 @@ fun ProfileBody(
         
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Action Buttons (Modern Minimalist)
         ProfileActionButton(
             label = "Beri Penilaian Aplikasi",
             iconRes = R.drawable.ic_assessment,
@@ -173,7 +171,6 @@ fun ProfileBody(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Logout Button (Minimalist Red)
         Button(
             modifier = Modifier
                 .fillMaxWidth()
@@ -255,7 +252,7 @@ fun ProfileActionButton(label: String, iconRes: Int, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f)
             )
             Icon(
-                painter = painterResource(R.drawable.ic_play), // Using ic_play as a chevron-like icon
+                painter = painterResource(R.drawable.ic_play),
                 contentDescription = null,
                 modifier = Modifier
                     .size(16.dp)

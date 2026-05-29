@@ -26,7 +26,6 @@ fun ProfileHeader(fullName: String, email: String, coins: Int) {
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Avatar Section dengan Shadow Lembut
         Box(contentAlignment = Alignment.BottomEnd) {
             Surface(
                 modifier = Modifier
@@ -49,7 +48,6 @@ fun ProfileHeader(fullName: String, email: String, coins: Int) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Info Teks (Indigo & Bold)
         Text(
             text = fullName,
             fontFamily = interFontFamily,

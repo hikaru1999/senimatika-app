@@ -35,9 +35,9 @@ fun ForgotPasswordScreen(navController: NavController) {
 
     var identifier by remember { mutableStateOf(TextFieldValue()) }
     var isSubmitted by remember { mutableStateOf(false) }
-
     var showSuccessBanner by remember { mutableStateOf(false) }
     var showErrorBanner by remember { mutableStateOf(false) }
+
     val errorMessage = (state as? ForgotPasswordViewModel.ForgotPasswordState.Error)?.message ?: ""
 
     LaunchedEffect(state) {
@@ -77,7 +77,6 @@ fun ForgotPasswordScreen(navController: NavController) {
                 )
             )
     ) {
-        // Decorative circles for background
         Box(
             modifier = Modifier
                 .size(300.dp)

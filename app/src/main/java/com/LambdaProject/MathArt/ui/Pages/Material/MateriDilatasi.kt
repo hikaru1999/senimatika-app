@@ -38,7 +38,6 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Section: Header Image
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -47,14 +46,13 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             shape = RoundedCornerShape(24.dp)
         ) {
             Image(
-                painter = painterResource(id = R.drawable.img_reflection), // Note: Using img_reflection as per original, though title is Dilatasi
+                painter = painterResource(id = R.drawable.img_reflection),
                 contentDescription = "Dilatasi",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize().padding(16.dp)
             )
         }
 
-        // Section: Definition
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "Dilatasi (Perkalian)",
@@ -74,7 +72,6 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             )
         }
 
-        // Section: Properties
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -117,7 +114,6 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             }
         }
 
-        // Section: Case Study
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Penerapan pada Motif Batik",
@@ -149,7 +145,6 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             )
         }
 
-        // Section: Video
         Surface(
             modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).shadow(8.dp, RoundedCornerShape(16.dp)),
             shape = RoundedCornerShape(16.dp),
@@ -175,7 +170,6 @@ fun MateriDilatasi(currentPage: Int, myPage: Int, onQuizNavigate: () -> Unit, on
             }
         }
 
-        // Bottom Button
         Button(
             onClick = { if (userId != null) updateAccessiblePage(userId, 5); onQuizNavigate() },
             modifier = Modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(16.dp)),

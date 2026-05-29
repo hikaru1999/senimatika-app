@@ -43,7 +43,6 @@ fun BottomNavigationMenu(navController: NavController) {
             modifier = Modifier.height(90.dp),
             windowInsets = WindowInsets.navigationBars
         ) {
-            // Beranda
             CustomNavItem(
                 label = "Beranda",
                 iconRes = R.drawable.ic_home_blue,
@@ -60,7 +59,6 @@ fun BottomNavigationMenu(navController: NavController) {
                 }
             )
 
-            // Quiz
             CustomNavItem(
                 label = "Quiz",
                 iconRes = R.drawable.ic_quiz_icon,
@@ -76,7 +74,6 @@ fun BottomNavigationMenu(navController: NavController) {
                 }
             )
 
-            // Belajarku (Locked)
             CustomNavItem(
                 label = "Belajarku",
                 iconRes = R.drawable.ic_book_blue,
@@ -85,7 +82,6 @@ fun BottomNavigationMenu(navController: NavController) {
                 onClick = { /* Locked */ }
             )
 
-            // Profil
             CustomNavItem(
                 label = "Profil",
                 iconRes = R.drawable.ic_user_blue,
@@ -178,8 +174,7 @@ fun RowScope.CustomNavItem(
                 fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
                 color = contentColor
             )
-            
-            // Minimalist dot/line indicator
+
             Box(
                 modifier = Modifier
                     .width(indicatorWidth)

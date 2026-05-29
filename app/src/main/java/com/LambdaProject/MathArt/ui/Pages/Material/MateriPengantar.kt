@@ -41,7 +41,6 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Section: Title & Video
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Pengantar Etnomatematika",
@@ -65,7 +64,6 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Description
         Text(
             text = buildAnnotatedString {
                 withStyle(
@@ -84,7 +82,6 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             color = Color(0xFF455A64)
         )
 
-        // Section: Mini Quiz
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -193,7 +190,6 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Transformasi Geometri Intro
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Transformasi Geometri",
@@ -224,7 +220,6 @@ fun MateriPengantar(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Bottom Navigation Button
         Button(
             onClick = {
                 if (userId != null) {

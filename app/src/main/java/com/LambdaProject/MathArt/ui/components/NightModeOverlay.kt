@@ -18,7 +18,8 @@ import androidx.compose.ui.unit.Dp
 
 @Composable
 fun NightModeOverlay(
-    mapId: String,    playerX: Int,
+    mapId: String,
+    playerX: Int,
     playerY: Int,
     isTorchActive: Boolean,
     isLanternActive: Boolean,

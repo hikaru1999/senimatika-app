@@ -72,7 +72,6 @@ class DashboardViewModel : ViewModel() {
         userDocRef.get(Source.DEFAULT).addOnSuccessListener { userSnapshot ->
             val lastSeen = userSnapshot.getTimestamp("lastSeenNotification")?.toDate() ?: Date(0)
 
-            // Achievement Listener dengan Limit 1
             achievementListener = firestore.collection("userAchievements")
                 .whereEqualTo("userId", userId)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -86,7 +85,6 @@ class DashboardViewModel : ViewModel() {
                     }
                 }
 
-            // Challenge Listener dengan Limit 1
             challengeListener = firestore.collection("challenges")
                 .whereEqualTo("toUserId", userId)
                 .whereEqualTo("status", "pending")

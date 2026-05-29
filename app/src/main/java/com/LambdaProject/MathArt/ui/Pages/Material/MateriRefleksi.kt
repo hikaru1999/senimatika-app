@@ -43,7 +43,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Section: Header Image
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -59,7 +58,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Definition
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "Refleksi (Pencerminan)",
@@ -79,7 +77,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Properties
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -122,7 +119,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Case Study
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Eksplorasi Budaya",
@@ -148,7 +144,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Interactive Quiz Card
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -211,7 +206,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Video
         Surface(
             modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).shadow(8.dp, RoundedCornerShape(16.dp)),
             shape = RoundedCornerShape(16.dp),
@@ -220,7 +214,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             YouTubePlayer(youtubeUrl = "https://youtu.be/Cv_zkDAU6UY")
         }
 
-        // Section: Annotation
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -238,7 +231,6 @@ fun MateriRefleksi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Bottom Button
         Button(
             onClick = { if (userId != null) updateAccessiblePage(userId, 3); onNext() },
             modifier = Modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(16.dp)),

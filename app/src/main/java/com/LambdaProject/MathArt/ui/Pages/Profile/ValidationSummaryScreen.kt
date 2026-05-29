@@ -99,9 +99,9 @@ fun ValidationSummaryScreen(
         result?.let { data ->
             val enumRole = ValidatorRole.valueOf(data.role.uppercase())
             val decisionColor = when (data.decision) {
-                Decision.LAYAK -> Color(0xFF2E7D32) // Hijau
-                Decision.LAYAK_DENGAN_REVISI -> Color(0xFFEF6C00) // Oranye
-                Decision.TIDAK_LAYAK -> Color(0xFFC62828) // Merah
+                Decision.LAYAK -> Color(0xFF2E7D32)
+                Decision.LAYAK_DENGAN_REVISI -> Color(0xFFEF6C00)
+                Decision.TIDAK_LAYAK -> Color(0xFFC62828)
             }
             Column(
                 modifier = Modifier

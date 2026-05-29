@@ -42,9 +42,9 @@ fun MallModal(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val primaryDark = Color(0xFF1A237E)
-    val accentGold = Color(0xFFFBC02D)
-    val bgCanvas = Color(0xFFF5F7FA)
+//    val primaryDark = Color(0xFF1A237E)
+//    val accentGold = Color(0xFFFBC02D)
+//    val bgCanvas = Color(0xFFF5F7FA)
 
     LaunchedEffect(userId) {
         userId?.let {

@@ -18,10 +18,8 @@ class SplashViewModel(context: Context) : ViewModel() {
 
     private val _splashState = MutableStateFlow<SplashState>(SplashState.Loading)
     val splashState: StateFlow<SplashState> = _splashState.asStateFlow()
-
     private val userPreferences = UserPreferences(context)
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var hasNavigated = false
 

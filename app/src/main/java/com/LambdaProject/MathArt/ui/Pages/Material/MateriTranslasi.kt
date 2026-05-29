@@ -39,7 +39,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Section: Header Image
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -55,7 +54,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Definition
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "Translasi (Pergeseran)",
@@ -75,7 +73,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Properties (Sifat-sifat)
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -123,7 +120,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Batik Case Study
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Penerapan pada Batik Parang",
@@ -158,7 +154,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Video Exploration
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Mari Menyimak",
@@ -179,7 +174,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Interactive Activity
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -210,7 +204,6 @@ fun MateriTranslasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Bottom Navigation Button
         Button(
             onClick = {
                 if (userId != null) {

@@ -248,7 +248,7 @@ fun QuestionnaireMasterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = Color(0xFF42A5F5), // Biru muda
+                        color = Color(0xFF42A5F5),
                         shape = RoundedCornerShape(12.dp)
                     )
                     .padding(16.dp)
@@ -317,7 +317,6 @@ fun QuestionnaireMasterScreen(
                 }
             }
 
-            // 🟩 2. Seksi Kuesioner
             FormSection(title = "Pernyataan") {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(18.dp)

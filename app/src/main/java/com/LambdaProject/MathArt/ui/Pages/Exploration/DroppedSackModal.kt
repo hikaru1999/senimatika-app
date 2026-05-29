@@ -69,7 +69,7 @@ fun DroppedSackModal(
                 .fillMaxHeight(0.85f)
                 .clickable(enabled = false) {},
             shape = RoundedCornerShape(24.dp),
-            color = Color(0xFFF0E7D8), // Parchment
+            color = Color(0xFFF0E7D8),
             border = BorderStroke(3.dp, if (isAfterDeadSack) Color(0xFFB71C1C) else Color(0xFF5D4037))
         ) {
             Column(modifier = Modifier.padding(24.dp)) {

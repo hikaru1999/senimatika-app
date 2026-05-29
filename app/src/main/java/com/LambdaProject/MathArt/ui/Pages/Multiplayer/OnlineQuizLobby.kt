@@ -178,7 +178,6 @@ private fun DeskripsiContent(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 100.dp)
         ) {
-            // Hero Image Section with shadow
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -214,7 +213,6 @@ private fun DeskripsiContent(
 
                 Spacer(Modifier.height(20.dp))
 
-                // Modern Stats Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -239,7 +237,6 @@ private fun DeskripsiContent(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // Tag Badge
                         Surface(
                             color = Color(0xFFFFD600),
                             shape = RoundedCornerShape(4.dp),
@@ -285,7 +282,6 @@ private fun DeskripsiContent(
             }
         }
 
-        // Action Bar at Bottom
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)

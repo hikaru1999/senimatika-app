@@ -96,7 +96,6 @@ fun QuizTopBar(
                     tint = Color(0xFF1A237E)
                 )
             }
-            // Minimalist Back Button
             /* Surface(
                 onClick = { showDialog = true },
                 color = Color(0xFFF5F5F5),
@@ -115,7 +114,6 @@ fun QuizTopBar(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Elegant Progress Section
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -176,7 +174,6 @@ fun QuizTopBar(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Points Pill Badge
             Surface(
                 color = Color(0xFFE3F2FD),
                 shape = RoundedCornerShape(16.dp),
