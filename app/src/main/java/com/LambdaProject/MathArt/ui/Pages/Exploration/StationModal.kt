@@ -104,7 +104,7 @@ fun StationModal(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Clue Display (Hints)
+                    // Hint display
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.padding(bottom = 24.dp)

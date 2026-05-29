@@ -15,7 +15,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.data.*
 import com.LambdaProject.MathArt.R
@@ -156,26 +155,6 @@ fun CoinRewardView(amount: Int) {
             text = "Koin Emas",
             style = MaterialTheme.typography.bodyMedium,
             color = Color(0xFFFFD600)
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF000000)@Composable
-fun PreviewScrollWithPicture() {
-    val dummyContent = """
-        Test Formatting with Picture. 
-        Nama saya **Ardhika Fajar Ramadhan**. 
-        Saya adalah _developer_ dari senimatika. 
-        
-        ![deskripsi gambar](https://i.ibb.co.com/zW1qFM58/img-batik.png)
-        
-        Apakah picturenya muncul?
-    """.trimIndent()
-
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        ScrollRewardView(
-            title = "Demo Formatting",
-            content = dummyContent
         )
     }
 }

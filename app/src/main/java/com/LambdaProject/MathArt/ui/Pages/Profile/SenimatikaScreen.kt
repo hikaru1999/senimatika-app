@@ -62,7 +62,6 @@ fun SenimatikaScreen(navController: NavController) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Section with Logo
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -219,7 +218,7 @@ fun DeveloperCard(role: String, name: String, institution: String, location: Str
             Spacer(modifier = Modifier.height(12.dp))
             
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ContactIcon(iconRes = R.drawable.ic_assessment) // Replace with appropriate icon if needed
+                ContactIcon(iconRes = R.drawable.ic_assessment)
                 ContactIcon(iconRes = R.drawable.ic_logo_linkedin)
             }
         }

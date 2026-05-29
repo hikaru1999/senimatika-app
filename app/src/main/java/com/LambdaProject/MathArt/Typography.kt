@@ -7,13 +7,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
 
-val requinerFont = FontFamily(
-    Font(R.font.requiner, FontWeight.Normal)
-)
-
-val vactoryFont = FontFamily(
-    Font(R.font.vactory, FontWeight.Normal)
-)
+//val requinerFont = FontFamily(
+//    Font(R.font.requiner, FontWeight.Normal)
+//)
+//
+//val vactoryFont = FontFamily(
+//    Font(R.font.vactory, FontWeight.Normal)
+//)
 
 val helveticaFont = FontFamily(
     Font(R.font.helvetica, FontWeight.Normal),

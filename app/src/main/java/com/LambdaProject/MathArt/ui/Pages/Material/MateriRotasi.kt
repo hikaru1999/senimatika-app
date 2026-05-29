@@ -38,7 +38,6 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Section: Header Image
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -54,7 +53,6 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Definition
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "Rotasi (Perputaran)",
@@ -74,7 +72,6 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Properties
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -117,7 +114,6 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Section: Batik Simbut
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Simetri pada Batik Simbut",
@@ -144,7 +140,6 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             )
         }
 
-        // Section: Video
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 text = "Video Pembelajaran",
@@ -165,7 +160,6 @@ fun MateriRotasi(currentPage: Int, myPage: Int, onNext: () -> Unit) {
             }
         }
 
-        // Bottom Button
         Button(
             onClick = { if (userId != null) updateAccessiblePage(userId, 4); onNext() },
             modifier = Modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(16.dp)),

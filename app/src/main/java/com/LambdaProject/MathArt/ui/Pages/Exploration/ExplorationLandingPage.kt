@@ -225,12 +225,11 @@ fun MapThumbnailCard(
                     )
             )
 
-            // Dipindah ke sini agar bisa menggunakan .align(Alignment.TopEnd)
             /* if (isActiveSession && !isLocked) {
                 Surface(
                     color = Color(0xFFFBC02D),
                     shape = RoundedCornerShape(bottomStart = 12.dp),
-                    modifier = Modifier.align(Alignment.TopEnd) // SEKARANG BEKERJA
+                    modifier = Modifier.align(Alignment.TopEnd)
                 ) {
                     Text(
                         text = "LANJUTKAN",

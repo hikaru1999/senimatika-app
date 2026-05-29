@@ -74,7 +74,7 @@ class ValidatorViewModel @Inject constructor(
                 if (result != null) {
                     _result.value = result
                     onFound(role)
-                    break // cukup ambil satu, karena validator hanya boleh satu role
+                    break
                 }
             }
         }
@@ -121,15 +121,15 @@ class ValidatorViewModel @Inject constructor(
 
                         if (session.decision == null) {
                             cachedSessions[role] = session
-                            Log.d("ValidatorCache", "✅ Cached session loaded for $role: ${session.responses.size} responses")
+                            Log.d("ValidatorCache", "Cached session loaded for $role: ${session.responses.size} responses")
                         } else {
-                            Log.d("ValidatorCache", "ℹ️ Session for $role already submitted, not resumed")
+                            Log.d("ValidatorCache", "ℹSession for $role already submitted, not resumed")
                         }
                     } catch (e: Exception) {
-                        Log.e("ValidatorCache", "❌ Failed to decode session for $role: ${e.message}")
+                        Log.e("ValidatorCache", "Failed to decode session for $role: ${e.message}")
                     }
                 } else {
-                    Log.d("ValidatorCache", "🚫 No session found for $role")
+                    Log.d("ValidatorCache", "No session found for $role")
                 }
             }
         }
@@ -140,7 +140,7 @@ class ValidatorViewModel @Inject constructor(
             val key = stringPreferencesKey("session_${userId}_${role.name.uppercase()}")
             dataStore.edit { it.remove(key) }
             cachedSessions.remove(role)
-            Log.d("ValidatorCache", "🧹 Session cleared for $role")
+            Log.d("ValidatorCache", "Session cleared for $role")
         }
     }
 

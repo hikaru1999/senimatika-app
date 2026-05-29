@@ -53,7 +53,6 @@ object SessionRepository {
             .document(documentId)
             .update("status", "completed")
             .addOnSuccessListener {
-                Log.d("Firestore", "Session status updated to completed")
                 onComplete()
             }
             .addOnFailureListener { e ->
@@ -65,7 +64,7 @@ object SessionRepository {
         val documentId = "${userId}_$materialId"
         db.collection("sessions")
             .document(documentId)
-            .get(Source.DEFAULT) // Utamakan Cache
+            .get(Source.DEFAULT)
             .addOnSuccessListener { result ->
                 val status = result.getString("status")
                 onResult(status == "active")

@@ -66,8 +66,6 @@ class BossQuizViewModel : ViewModel() {
     var isTimerPaused by mutableStateOf(false)
     var isChronoFreezeActive by mutableStateOf(false)
     var battleAnimationSubText by mutableStateOf("")
-
-    // Streak Logic
     var currentStreak by mutableIntStateOf(0)
     var isStreakProtected by mutableStateOf(false)
     var onFinalAttackTrigger: (() -> Unit)? = null
@@ -329,7 +327,6 @@ class BossQuizViewModel : ViewModel() {
                 isStreakProtected = false
                 delay(2000)
             } else {
-                // Initial Attack Anim (if Fail)
                 battleAnimationText = "ATTACKING!"
                 battleAnimationSubText = "Melakukan serangan..."
                 delay(1000)

@@ -66,7 +66,7 @@ fun OnlineQuizResult(
     }
 
     BackHandler(enabled = true) {
-        // Intercept back button to prevent going back to kuis
+        // ignored
     }
 
     quizResult?.let { result ->
@@ -89,7 +89,6 @@ fun OnlineQuizResult(
                     .padding(horizontal = 24.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // Celebration Header
                 Box(contentAlignment = Alignment.Center) {
                     Surface(
                         modifier = Modifier
@@ -131,7 +130,6 @@ fun OnlineQuizResult(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Stats Section
                 StatsCard(
                     title = "Statistik Performa",
                     group1 = listOf(
@@ -148,7 +146,6 @@ fun OnlineQuizResult(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // First Time Reward Section
                 if (rewardStatus.isNotEmpty()) {
                     Surface(
                         modifier = Modifier

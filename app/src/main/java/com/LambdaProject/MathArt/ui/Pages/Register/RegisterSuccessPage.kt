@@ -39,7 +39,6 @@ fun SuccessPage(navController: NavController, username: String) {
                 )
             )
     ) {
-        // Decorative background elements
         Box(
             modifier = Modifier
                 .size(300.dp)
@@ -61,7 +60,6 @@ fun SuccessPage(navController: NavController, username: String) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Success Illustration with Shadow
             Surface(
                 modifier = Modifier
                     .size(160.dp)
@@ -105,7 +103,6 @@ fun SuccessPage(navController: NavController, username: String) {
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Loading Indicator for feedback
             CircularProgressIndicator(
                 modifier = Modifier.size(32.dp),
                 color = Color.White,

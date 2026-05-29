@@ -74,7 +74,6 @@ fun ArtifactInfoModal(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Header Label
                     /* Text(
                         text = "LANDMARK DITEMUKAN",
                         style = MaterialTheme.typography.labelMedium,
@@ -110,7 +109,7 @@ fun ArtifactInfoModal(
 
                     Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFF8D6E63).copy(alpha = 0.2f))
 
-                    // Isi (Content) - Weight(1f)
+                    // Konten
                     Box(modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())

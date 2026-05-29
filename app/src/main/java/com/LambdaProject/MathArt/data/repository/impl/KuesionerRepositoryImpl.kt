@@ -70,10 +70,9 @@ class KuesionerRepositoryImpl @Inject constructor(
                 .document(userId)
                 .get()
                 .await()
-            Log.d("FirestoreCheck", "Data snapshot = ${snapshot.data}")
             snapshot.toObject(KuesionerResult::class.java)
         } catch (e: Exception) {
-            Log.e("Repo", "Gagal mengambil hasil: ${e.message}")
+            Log.e("Repo", "Gagal mengambil hasil kuis: ${e.message}")
             null
         }
     }

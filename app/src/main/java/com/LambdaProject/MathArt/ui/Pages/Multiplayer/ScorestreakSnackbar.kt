@@ -35,19 +35,18 @@ fun ScorestreakSnackbar(
             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         if (state != null) {
-            // Palette warna warm yang disesuaikan dengan tipe jawaban
             val accentColor = when (state.type) {
-                ScoreType.GOOD -> Color(0xFF8BC34A) // Lime Green (Warmer)
-                ScoreType.COOL -> Color(0xFF00BCD4) // Cyan (Warmer Blue)
-                ScoreType.AWESOME -> Color(0xFFFFB300) // Amber (Warm)
-                ScoreType.UPS, ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> Color(0xFFFF7043) // Deep Orange (Warm Red)
+                ScoreType.GOOD -> Color(0xFF8BC34A)
+                ScoreType.COOL -> Color(0xFF00BCD4)
+                ScoreType.AWESOME -> Color(0xFFFFB300)
+                ScoreType.UPS, ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> Color(0xFFFF7043)
             }
 
             val containerColor = when (state.type) {
-                ScoreType.GOOD -> Color(0xFFF9FBE7) // Lime 50
-                ScoreType.COOL -> Color(0xFFE0F7FA) // Cyan 50
-                ScoreType.AWESOME -> Color(0xFFFFF8E1) // Amber 50
-                ScoreType.UPS, ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> Color(0xFFFBE9E7) // Deep Orange 50
+                ScoreType.GOOD -> Color(0xFFF9FBE7)
+                ScoreType.COOL -> Color(0xFFE0F7FA)
+                ScoreType.AWESOME -> Color(0xFFFFF8E1)
+                ScoreType.UPS, ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> Color(0xFFFBE9E7)
             }
 
             Surface(
@@ -66,7 +65,6 @@ fun ScorestreakSnackbar(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    // Icon container with white circle for contrast
                     Box(
                         modifier = Modifier
                             .size(44.dp)
@@ -102,8 +100,7 @@ fun ScorestreakSnackbar(
                             lineHeight = 14.sp
                         )
                     }
-                    
-                    // Small glowing indicator at the end
+
                     Surface(
                         color = Color.White.copy(alpha = 0.5f),
                         shape = CircleShape,

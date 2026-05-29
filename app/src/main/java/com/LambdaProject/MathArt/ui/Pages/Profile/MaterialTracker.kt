@@ -36,9 +36,9 @@ fun MaterialTracker(userId: String, material: MaterialItem) {
     }
 
     val progressColor = when {
-        progress < 0.4f -> Color(0xFFEF5350) // Soft Red
-        progress < 0.7f -> Color(0xFFFFB74D) // Soft Orange
-        else -> Color(0xFF66BB6A) // Soft Green
+        progress < 0.4f -> Color(0xFFEF5350)
+        progress < 0.7f -> Color(0xFFFFB74D)
+        else -> Color(0xFF66BB6A)
     }
 
     Surface(
@@ -83,7 +83,6 @@ fun MaterialTracker(userId: String, material: MaterialItem) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Custom Modern Progress Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

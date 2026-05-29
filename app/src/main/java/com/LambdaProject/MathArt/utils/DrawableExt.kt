@@ -20,6 +20,6 @@ fun getLandmarkResourceId(variant: String?): Int {
         "obj_landmark_sumbar" -> R.drawable.obj_landmark_sumbar
         "obj_landmark_bandung" -> R.drawable.obj_landmark_bandung
         "obj_landmark_jatim" -> R.drawable.obj_landmark_jatim
-        else -> R.drawable.obj_landmark_tugu // Default icon
+        else -> R.drawable.obj_landmark_tugu
     }
 }

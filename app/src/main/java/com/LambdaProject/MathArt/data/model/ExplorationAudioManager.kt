@@ -105,7 +105,7 @@ class ExplorationAudioManager(private val context: Context) {
         fadeJob?.cancel()
         bgmPlayer?.let {
             if (!it.isPlaying) {
-                it.setVolume(0.25f, 0.25f) // Pastikan volume kembali ke mode ambient
+                it.setVolume(0.25f, 0.25f)
                 it.start()
             }
         } ?: run {

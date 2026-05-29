@@ -26,14 +26,11 @@ class AchievementViewModel : ViewModel() {
     private var achievementListener: ListenerRegistration? = null
 
     fun triggerAchievement(item: AchievementItem) {
-        Log.d("ACH_DEBUG", "Fungsi trigger dipanggil untuk: ${item.name}")
         val isAlreadyInQueue = _achievementQueue.any { it.name == item.name }
         val isCurrentlyShowing = _currentAchievement.value?.name == item.name
 
         if (!isAlreadyInQueue && !isCurrentlyShowing) {
             _achievementQueue.add(item)
-            Log.d("ACH_DEBUG", "Berhasil masuk antrean. Sisa antrean: ${_achievementQueue.size}")
-
             if (_currentAchievement.value == null) {
                 processNext()
             }

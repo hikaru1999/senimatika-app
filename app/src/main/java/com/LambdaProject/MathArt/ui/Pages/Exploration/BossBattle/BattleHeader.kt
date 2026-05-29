@@ -52,7 +52,7 @@ fun BattleHeader(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // --- PLAYER SECTION ---
+            // Player Section
             Row(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
@@ -86,7 +86,7 @@ fun BattleHeader(
                 fontSize = 14.sp
             )
 
-            // --- OPPONENT SECTION ---
+            // Opponent Section
             Row(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically

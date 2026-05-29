@@ -286,8 +286,6 @@ fun BagModal(
 //                                    modifier = Modifier
 //                                        .width(72.dp)
 //                                        .clickable {
-//                                            // Memanfaatkan triggerArtifact yang sudah ada
-//                                            // Atau langsung set state jika data sudah lengkap
 //                                            viewModel.openArtifactFromInventory(artifact)
 //                                        }
 //                                ) {
@@ -298,7 +296,6 @@ fun BagModal(
 //                                        border = BorderStroke(2.dp, Color(0xFF8D6E63).copy(alpha = 0.5f))
 //                                    ) {
 //                                        Box(contentAlignment = Alignment.Center) {
-//                                            // Ganti dengan ikon landmark yang sesuai
 //                                            Image(
 //                                                painter = painterResource(id = R.drawable.obj_landmark_tugu),
 //                                                contentDescription = artifact.title,
@@ -515,7 +512,7 @@ fun PowerUpItemView(
                 .clickable(enabled = !isCooldown) { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            // Background Ikon
+            // Background Icon
             Surface(
                 modifier = Modifier.size(54.dp),
                 shape = RoundedCornerShape(12.dp),

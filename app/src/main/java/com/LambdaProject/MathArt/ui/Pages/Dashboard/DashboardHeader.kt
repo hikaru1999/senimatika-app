@@ -59,7 +59,6 @@ fun DashboardHeader(
                 .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Teks Sapaan
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Halo, $username!",
@@ -103,7 +102,7 @@ fun DashboardHeader(
                     }
                 }
 
-                // Dot Indikator Notifikasi
+                // Indikator Badge Notifikasi
                 if (hasNewNotification) {
                     Box(
                         modifier = Modifier

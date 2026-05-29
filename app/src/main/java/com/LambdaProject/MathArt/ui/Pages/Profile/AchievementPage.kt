@@ -206,7 +206,6 @@ fun AchievementRowItem(achievement: AchievementItem, isUnlocked: Boolean) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Container
             Box(
                 modifier = Modifier
                     .size(70.dp)
@@ -233,7 +232,7 @@ fun AchievementRowItem(achievement: AchievementItem, isUnlocked: Boolean) {
                 
                 if (!isUnlocked) {
                     Icon(
-                        painter = painterResource(id = com.LambdaProject.MathArt.R.drawable.ic_info), // Representing a lock or info
+                        painter = painterResource(id = R.drawable.ic_info),
                         contentDescription = "Locked",
                         modifier = Modifier
                             .size(16.dp)

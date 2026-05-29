@@ -47,7 +47,6 @@ fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Achievement Card
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -137,7 +136,6 @@ fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
             }
         }
 
-        // Quiz Detail Card
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -198,7 +196,6 @@ fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
             }
         }
 
-        // Final Action
         Button(
             onClick = { showDialog = true },
             modifier = Modifier

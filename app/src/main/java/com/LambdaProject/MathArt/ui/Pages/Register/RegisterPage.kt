@@ -74,7 +74,6 @@ fun RegisterScreen(
                 )
             )
     ) {
-        // Decorative circles for background
         Box(
             modifier = Modifier
                 .size(300.dp)
@@ -303,7 +302,6 @@ fun RegisterScreen(
     }
 }
 
-// Helper to handle delays in Compose easily
 private fun delayScope(ms: Long, block: () -> Unit) {
     CoroutineScope(Dispatchers.Main).launch {
         delay(ms)

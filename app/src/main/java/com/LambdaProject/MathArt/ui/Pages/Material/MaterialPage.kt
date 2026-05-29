@@ -79,14 +79,13 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFF8F9FE)) // Warna latar belakang yang sangat lembut
+                .background(Color(0xFFF8F9FE))
         ) {
-            // Tab Row Modern & Minimalist
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 16.dp,
                 containerColor = Color.White,
-                divider = {}, // Menghilangkan garis bawah default
+                divider = {},
                 indicator = { tabPositions ->
                     Box(
                         Modifier
@@ -94,7 +93,7 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                             .fillMaxSize()
                             .padding(horizontal = 4.dp, vertical = 8.dp)
                             .background(
-                                color = Color(0xFF5294FF).copy(alpha = 0.1f), // Highlight halus di belakang teks
+                                color = Color(0xFF5294FF).copy(alpha = 0.1f),
                                 shape = RoundedCornerShape(12.dp)
                             )
                             .border(
@@ -214,7 +213,7 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                         6 -> SummaryScreen(
                             viewModel = quizViewModel,
                             onBackToDashboard = {
-                                navController.navigate("dashboard/{userName}") { // Asumsi route dashboard
+                                navController.navigate("dashboard/{userName}") {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }

@@ -86,7 +86,6 @@ fun BattleActionOverlay(text: String, subText: String) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- ANIMASI FLOAT IN UNTUK SUB-TEKS ---
             AnimatedContent(
                 targetState = subText,
                 transitionSpec = {

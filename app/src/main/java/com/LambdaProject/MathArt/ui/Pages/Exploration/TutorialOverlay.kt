@@ -47,7 +47,7 @@ fun TutorialOverlay(
     val headerColor = when {
         isBossSequence -> Color.Red
         isIntro -> Color(0xFF1976D2)
-        else -> Color(0xFFFFA000) // Orange for special events
+        else -> Color(0xFFFFA000)
     }
 
     Box(

@@ -41,7 +41,6 @@ fun OnlineQuizCard(
         shape = RoundedCornerShape(24.dp)
     ) {
         Column {
-            // Header Image with Overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -53,7 +52,6 @@ fun OnlineQuizCard(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-                // Gradient overlay for better text readability
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -63,8 +61,7 @@ fun OnlineQuizCard(
                             )
                         )
                 )
-                
-                // Badge for class level
+
                 Surface(
                     color = Color(0xFF1976D2),
                     shape = RoundedCornerShape(8.dp),

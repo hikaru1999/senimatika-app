@@ -48,15 +48,12 @@ class MapViewModel : ViewModel() {
     var isDroppedSackOpen by mutableStateOf(false)
     var currentSackPos by mutableStateOf<Pair<Int, Int>?>(null)
     var sackInventoryPreview by mutableStateOf<Inventory?>(null)
-    // Chest Interaction
     var isChestOpen by mutableStateOf(false)
     var currentReward by mutableStateOf<Reward?>(null)
     var currentChestPos by mutableStateOf<Pair<Int, Int>?>(null)
-    // Station Interaction
     var isStationOpen by mutableStateOf(false)
-    var sessionCode by mutableStateOf("482") // Default code
+    var sessionCode by mutableStateOf("482")
     val collectedDigits = mutableStateListOf<Char>()
-    // Station Quiz Interaction
     var isStationQuizOpen by mutableStateOf(false)
     var stationQuestion by mutableStateOf<Question?>(null)
     var stationCooldownEnd by mutableLongStateOf(0L)
@@ -67,79 +64,55 @@ class MapViewModel : ViewModel() {
     var maxBagWeight by mutableFloatStateOf(10.0f)
     var isBinocularActive by mutableStateOf(false)
     var isLeatherStrapsActive by mutableStateOf(false)
-
     var isFogOfWarEnabled by mutableStateOf(false)
     var isNightModeEnabled by mutableStateOf(false)
     var isCombinedEnabled by mutableStateOf(false)
     var isNormalEnabled by mutableStateOf(true)
-
-    // Proximity Trigger
     var showStationInteractButton by mutableStateOf(false)
     var currentStationPos by mutableStateOf<Pair<Int, Int>?>(null)
-
-    // Boss Proximity (Tutorial use)
     var isNearBoss by mutableStateOf(false)
     var isTorchActive by mutableStateOf(false)
     var isLanternActive by mutableStateOf(false)
     var torchTimeLeft by mutableIntStateOf(0)
-
-    // Extraction / Summary
     var isExplorationFinished by mutableStateOf(false)
     var explorationSummary by mutableStateOf<ExplorationStats?>(null)
     var bossesDefeatedCount by mutableIntStateOf(0)
-
     var currentBossPos by mutableStateOf<Pair<Int, Int>?>(null)
     var binocularTimeLeft by mutableIntStateOf(0)
-
     var inventory by mutableStateOf(Inventory())
     var isInventoryOpen by mutableStateOf(false)
     var isInteractionLocked by mutableStateOf(false)
-
     var isTutorialReplayByStatus by mutableStateOf(false)
-
     var phase by mutableStateOf<ExplorationPhase>(ExplorationPhase.Playing)
         private set
-
     var selectedArtifact by mutableStateOf<ArtifactData?>(null)
         private set
-
     var unlockedArtifactIds = mutableStateListOf<String>()
         private set
-
     var unlockedArtifactDetails = mutableStateListOf<ArtifactData>()
         private set
-
     var isArtifactModalVisible by mutableStateOf(false)
         private set
-
     val openedChests = mutableStateListOf<Pair<Int, Int>>()
     val defeatedBosses = mutableStateListOf<Pair<Int, Int>>()
     val solvedStations = mutableStateListOf<Pair<Int, Int>>()
     val visibleTiles = mutableStateSetOf<Pair<Int, Int>>()
     val discoveredTiles = mutableStateSetOf<Pair<Int, Int>>()
-
     var droppedItemsMap = mutableStateMapOf<String, Inventory>()
     var onBossTriggered: ((Int, Int, String) -> Unit)? = null
     var isDropping by mutableStateOf(false)
-
-    // Tutorial flag
     var shouldShowTutorialOverlay by mutableStateOf(false)
     private val quizIdMap = mutableMapOf<Pair<Int, Int>, String>()
-
     private val _currentSessionActive = MutableStateFlow(false)
     private var loadedUserId: String? = null
     private var saveJob: Job? = null
     private var lastSafeX by mutableIntStateOf(0)
     private var lastSafeY by mutableIntStateOf(0)
-
     private var itemsBroughtFromLobby = listOf<PowerUpType>()
-    // Cloud Session Cache
     var hasActiveCloudSession by mutableStateOf<Boolean?>(null)
     private var isCloudChecking = false
-
     var isOnline by mutableStateOf(true)
     var isSyncingData by mutableStateOf(false)
-
     data class ArtifactData(
         val title: String = "",
         val materi: String = "",
@@ -279,7 +252,7 @@ class MapViewModel : ViewModel() {
         if (scrollIds.isEmpty()) return emptyList()
         val db = FirebaseFirestore.getInstance()
         return try {
-            val snapshots = db.collection("learning_contents") // Pastikan nama koleksi benar
+            val snapshots = db.collection("learning_contents")
                 .whereIn(com.google.firebase.firestore.FieldPath.documentId(), scrollIds)
                 .get()
                 .await()
@@ -308,12 +281,11 @@ class MapViewModel : ViewModel() {
     }
 
     fun triggerArtifact(contentId: String, variant: String) {
-        if (isInteractionLocked) return // Opsional: cegah double trigger
+        if (isInteractionLocked) return
         println("DEBUG VIEWMODEL: Memulai pengambilan data firestore untuk $contentId")
 
         viewModelScope.launch {
             try {
-                // Ambil data dari artifact_contents/{docId}
                 val doc = FirebaseFirestore.getInstance()
                     .collection("artifact_contents")
                     .document(contentId)
@@ -424,7 +396,6 @@ class MapViewModel : ViewModel() {
 //                            title = doc.getString("title") ?: "",
 //                            materi = doc.getString("materi") ?: "",
 //                            content = doc.getString("content") ?: "",
-//                            // PASTIKAN BARIS INI ADA: mengambil field 'variant' dari Firestore
 //                            variant = doc.getString("variant") ?: "obj_landmark_tugu"
 //                        )
 //                        details.add(data)
@@ -462,7 +433,7 @@ class MapViewModel : ViewModel() {
 
 
             val updatedSackList = itemsInSack.powerUps.toMutableList()
-            updatedSackList.remove(pu) // Hapus satu instance saja
+            updatedSackList.remove(pu)
 
             if (updatedSackList.isEmpty()) {
 
@@ -637,7 +608,7 @@ class MapViewModel : ViewModel() {
                     TileData(TileType.GROUND, "tile_ground_1",
                         if (isDeathSack || hasDroppedSack || isCleared) ObjectType.NONE else ObjectType.TREE_MEDIUM,
                         when {
-                            isDeathSack -> "obj_sack"  // Gunakan nama objek Anda
+                            isDeathSack -> "obj_sack"
                             hasDroppedSack -> "obj_sack_inv"
                             isCleared -> ""
                             else -> treeVariants[treeIdx]
@@ -1043,7 +1014,6 @@ class MapViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 if (!inventory.isEmpty()) {
-                    // Jika tas berisi barang, simpan ke dokumen USER (Persisten)
                     val lostData = hashMapOf(
                         "mapId" to currentMapId,
                         "x" to lastSafeX,
@@ -1139,7 +1109,6 @@ class MapViewModel : ViewModel() {
         val sackWeight = itemsInSack.calculateTotalWeight()
 
         if (currentWeight + sackWeight <= MAX_BAG_WEIGHT) {
-            // 1. Ambil semua item (Power-Up & Scrolls jika ada)
             inventory = inventory.copy(
                 powerUps = inventory.powerUps + itemsInSack.powerUps,
                 scrolls = inventory.scrolls + itemsInSack.scrolls
@@ -1711,12 +1680,10 @@ class MapViewModel : ViewModel() {
             val nx = px + dx
             val ny = py + dy
 
-            // Cek batas peta
             if (nx in 0 until mapWidth && ny in 0 until mapHeight) {
                 discoveredTiles.add(nx to ny)
             }
 
-            // Opsional: Jika ingin jangkauan 1.5 tile (2 ubin ke depan)
             /*
             val nx2 = px + (dx * 2)
             val ny2 = py + (dy * 2)
@@ -1750,7 +1717,7 @@ class MapViewModel : ViewModel() {
             }
     }
 
-    var globalActiveMapId by mutableStateOf<String?>(null) // Simpan ID map yang sedang ada sesinya
+    var globalActiveMapId by mutableStateOf<String?>(null)
 
     fun checkGlobalSessionStatus() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return

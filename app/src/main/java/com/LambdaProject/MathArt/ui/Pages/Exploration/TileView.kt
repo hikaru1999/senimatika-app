@@ -11,14 +11,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.LambdaProject.MathArt.utils.toDrawableResId
 import com.LambdaProject.MathArt.R
-
-/**
- * Renders an individual tile with ground and object layers.
- * 
- * Note: Fog is now handled by a global FogLayer for a more natural look.
- *
- * @param tile The data for the tile to render.
- */
 @Composable
 fun TileView(tile: TileData) {
     val context = LocalContext.current
@@ -37,7 +29,7 @@ fun TileView(tile: TileData) {
             )
         }
 
-        // Object Layer (Trees, Houses, Chests, etc.)
+        // Object Layer
         if (tile.objectVariant.isNotEmpty()) {
             val objRes = tile.objectVariant.toDrawableResId(context)
             if (objRes != 0) {

@@ -63,21 +63,18 @@ class QuizResultRepository(
                     "completedQuizzes", FieldValue.arrayUnion(materialId),
                     "coins", FieldValue.increment(rewardCoins.toLong())
                 ).await()
-                Log.d("Reward", "Reward diberikan: $rewardCoins koin untuk kuis $materialId")
                 true
             } else {
-                Log.d("Reward", "Kuis $materialId sudah pernah diselesaikan. Tidak ada reward.")
                 false
             }
         } catch (e: Exception) {
-            Log.e("RewardError", "Gagal memberikan reward: ${e.message}")
             false
         }
     }
 
     suspend fun getUsernamesForUserIds(userIds: List<String>): Map<String, String> {
         return try {
-            val chunks = userIds.chunked(30) // karena Firestore batasi `in` query max 10
+            val chunks = userIds.chunked(30)
             val results = mutableMapOf<String, String>()
 
             for (chunk in chunks) {
@@ -113,7 +110,6 @@ class QuizResultRepository(
             Result.success(results)
         } catch (e: Exception) {
             Log.e("LeaderboardRepository", "Error fetching leaderboard: ${e.message}", e)
-
             Result.failure(e)
         }
     }

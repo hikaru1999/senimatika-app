@@ -241,7 +241,7 @@ fun QuizContent(
                         }
                     }
 
-                    // OPSI
+                    // OPSI JAWABAN
                     Column(modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())) {

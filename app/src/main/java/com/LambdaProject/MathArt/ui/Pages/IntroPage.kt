@@ -39,7 +39,6 @@ fun IntroScreen(navController: NavController, userPreferences: UserPreferences) 
             .fillMaxSize()
             .background(backgroundColor)
     ) {
-        // Decorative background element
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -78,7 +77,6 @@ fun IntroScreen(navController: NavController, userPreferences: UserPreferences) 
                 }
             }
 
-            // Bottom Navigation & Actions
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -144,7 +142,7 @@ fun IntroScreen(navController: NavController, userPreferences: UserPreferences) 
                         )
                     }
                 } else {
-                    Spacer(modifier = Modifier.height(56.dp)) // Maintain layout height
+                    Spacer(modifier = Modifier.height(56.dp))
                 }
             }
         }
@@ -167,7 +165,6 @@ fun IntroPageContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Image Container with subtle elevation effect
         Surface(
             modifier = Modifier
                 .size(180.dp)

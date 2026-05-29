@@ -37,8 +37,6 @@ fun SplashScreen(navController: NavController) {
     val viewModel: SplashViewModel = viewModel(factory = SplashViewModelFactory(context))
     val splashState by viewModel.splashState.collectAsState()
     val scaffoldState = rememberScaffoldState()
-    
-    // Smooth breathing animation for the logo
     val infiniteTransition = rememberInfiniteTransition(label = "logo_pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.98f,
@@ -147,13 +145,12 @@ fun SplashScreen(navController: NavController) {
                 Brush.verticalGradient(
                     colors = listOf(
                         Color.White,
-                        Color(0xFFDCF0FF) // Subtle blue tint for elegance
+                        Color(0xFFDCF0FF)
                     )
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Main Logo with Animation
         Image(
             painter = painterResource(id = R.drawable.img_logo_blue),
             contentDescription = "Logo Aplikasi",
@@ -166,7 +163,6 @@ fun SplashScreen(navController: NavController) {
                 )
         )
 
-        // Footer Section
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -183,8 +179,7 @@ fun SplashScreen(navController: NavController) {
             )
             
             Spacer(modifier = Modifier.height(12.dp))
-            
-            // Logos inside an Elegant White Card
+
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = Color.White,

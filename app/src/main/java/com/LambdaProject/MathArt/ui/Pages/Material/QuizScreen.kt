@@ -54,7 +54,6 @@ fun QuizScreen(
     }
 
     /* LaunchedEffect(Unit) {
-        // Pastikan userId dan materialId valid
         if (userId.isNotEmpty() && materialId.isNotEmpty()) {
             viewModel.initializeQuiz(userId, materialId) {
                 isReady = true
@@ -79,7 +78,6 @@ fun QuizScreen(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Instruction Card
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -115,7 +113,6 @@ fun QuizScreen(
             }
         }
 
-        // Question Image Card
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,7 +129,6 @@ fun QuizScreen(
             )
         }
 
-        // Options Section
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = "Pilih Jawabanmu:",
@@ -153,7 +149,6 @@ fun QuizScreen(
             }
         }
 
-        // Action Button & Progress
         Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Button(
                 onClick = {
@@ -183,7 +178,6 @@ fun QuizScreen(
                 )
             }
 
-            // Progress Indicator
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

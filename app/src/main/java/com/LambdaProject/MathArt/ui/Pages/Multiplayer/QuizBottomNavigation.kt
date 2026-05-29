@@ -77,47 +77,46 @@ fun BottomQuizNav(
                 }
             } */
             // Power-up
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(3) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp) // beri ruang untuk badge di luar lingkaran
-                            .clickable { onPowerUpClicked() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Lingkaran utama power-up
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .shadow(4.dp, CircleShape)
-                                .background(powerUpColors[index], CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = powerUpIcons[index]),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(14.dp)
-                                .align(Alignment.TopEnd)
-                                .offset(x = 4.dp, y = (-4).dp) // posisi di luar lingkaran
-                                .background(Color.DarkGray, shape = CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = "Terkunci",
-                                tint = Color.White,
-                                modifier = Modifier.size(8.dp)
-                            )
-                        }
-                    }
-                }
-            }
+//            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+//                repeat(3) { index ->
+//                    Box(
+//                        modifier = Modifier
+//                            .size(40.dp)
+//                            .clickable { onPowerUpClicked() },
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        Box(
+//                            modifier = Modifier
+//                                .size(32.dp)
+//                                .shadow(4.dp, CircleShape)
+//                                .background(powerUpColors[index], CircleShape),
+//                            contentAlignment = Alignment.Center
+//                        ) {
+//                            Image(
+//                                painter = painterResource(id = powerUpIcons[index]),
+//                                contentDescription = null,
+//                                modifier = Modifier.size(18.dp)
+//                            )
+//                        }
+//
+//                        Box(
+//                            modifier = Modifier
+//                                .size(14.dp)
+//                                .align(Alignment.TopEnd)
+//                                .offset(x = 4.dp, y = (-4).dp)
+//                                .background(Color.DarkGray, shape = CircleShape),
+//                            contentAlignment = Alignment.Center
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Default.Lock,
+//                                contentDescription = "Terkunci",
+//                                tint = Color.White,
+//                                modifier = Modifier.size(8.dp)
+//                            )
+//                        }
+//                    }
+//                }
+//            }
 
             Button(
                 onClick = {
@@ -138,13 +137,10 @@ fun BottomQuizNav(
                             }
                         )
 
-                        Log.d("QuizDebug", "currentIndex: $currentIndex | totalQuestions: $totalQuestions")
-
                         if (currentIndex == totalQuestions - 1) {
                             delay(1250)
 
                             val userId = viewModel.getCurrentUserId() ?: return@launch
-                            Log.d("QuizDebug", "Trying to save: userId=$userId, materialId=$materialId")
                             viewModel.saveQuizResult(userId, materialId)
                             onFinishQuiz()
                         }

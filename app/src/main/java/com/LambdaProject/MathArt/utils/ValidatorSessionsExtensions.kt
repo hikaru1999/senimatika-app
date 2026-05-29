@@ -15,7 +15,7 @@ fun ValidatorSession.toKuesionerResult(
         userId = validatorId,
         name = name,
         institution = institution,
-        role = role.lowercase(), // konversi string ke enum
+        role = role.lowercase(),
         responses = responses.associate { it.questionId to it.selectedValue },
         decision = decision,
         comment = comment,

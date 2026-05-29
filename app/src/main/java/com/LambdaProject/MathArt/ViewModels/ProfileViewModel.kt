@@ -117,7 +117,6 @@ class  ProfileViewModel @Inject constructor(
     private fun checkAndResetDuration() {
         if (userId.isNotEmpty()) {
             StudyDurationManager.checkAndResetWeeklyDuration(userId) {
-                // Setelah reset, refresh nilai durasi
                 observeStudyDuration()
             }
         }

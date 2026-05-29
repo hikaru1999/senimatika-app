@@ -279,8 +279,9 @@ fun PrepareExplorationModal(
                             color = if (isOverweight) Color.Red else Color(0xFF1A237E)
                         )
                     }
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Progress Bar Kapasitas
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
