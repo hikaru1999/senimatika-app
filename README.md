@@ -1,25 +1,26 @@
-# 🎨 Senimatika: Adventure-Based Math Learning
+# Senimatika: Android-based Mathematics Learning Platform
 
-**Senimatika** adalah aplikasi mobile berbasis Android yang menggabungkan elemen petualangan (RPG) dengan pembelajaran matematika interaktif. Aplikasi ini dirancang untuk memberikan pengalaman belajar yang imersif melalui eksplorasi peta, tantangan area, dan pertempuran bos yang semuanya diselesaikan dengan logika matematika.
+**Senimatika** adalah aplikasi mobile berbasis Android yang memadukan elemen matematika, etnomatematika, dan gamifikasi. Aplikasi ini dirancang untuk memberikan pengalaman belajar matematika yang interaktif melalui kuis, eksplorasi peta, dan tantangan matematika yang semuanya diselesaikan dengan logika matematika.
 
 ---
 
-## 🚀 Fitur Utama
+## Fitur Utama
 
-- **Exploration Map**: Menjelajahi dunia fantasi dengan sistem navigasi joystick yang halus dan fitur *Fog of War*.
-- **Boss Battle Quiz**: Pertempuran real-time melawan bos di mana setiap serangan ditentukan oleh kecepatan dan ketepatan menjawab soal.
-- **Station Quiz**: Tantangan statis di berbagai titik peta untuk membuka akses ke area baru.
-- **MathText Rendering**: Dukungan penuh untuk notasi matematika kompleks (KaTeX) dan format teks Markdown.
+- **Annotation**: Gunakan fitur "coretan" untuk menandai pola/unsur dalam karya atau kebudayaan yang dikaitkan dengan konsep matematika.
+- **Asynchronous Online Quiz**: Selesaikan kuis yang tersedia dengan tepat dan cepat. Adu skill matematika dengan pengguna lainnya untuk memperoleh skor tertinggi pada leaderboard.
+- **Exploration Map**: Belajar matematika dengan menjelajahi peta fantasi. Ambil harta karun sebanyak-banyaknya dan pergi ke titik finsih untuk mengekstrak hasil buruan.
+- **Boss Battle Quiz**: Pertempuran real-time melawan bos pada peta pantasi di mana setiap serangan ditentukan oleh kecepatan dan ketepatan menjawab kuis.
+- **Station Quiz**: Tantangan spesifik di berbagai titik peta untuk membuka akses ke area tertentu.
+- **MathText Rendering**: Dukungan penuh untuk notasi matematika kompleks (LaTeX) dan format teks Markdown.
 - **Hybrid Zoom System**: Fitur zoom gambar native untuk memperjelas grafik soal tanpa mengganggu performa rendering teks.
-- **Inventory & Power-Ups**: Gunakan item strategis seperti *Freeze Timer* atau *Healing Vial* untuk membantu menyelesaikan kuis sulit.
+- **Inventory & Power-Ups**: Gunakan item strategis seperti *Freeze Timer* atau *Healing Vial* untuk membantu menyelesaikan kuis sulit dalam melawan boss.
 
 ---
 
-## 🛠️ Tech Stack & Optimasi
-
-Proyek ini dibangun dengan fokus pada performa tinggi, bahkan untuk perangkat **entry-level** (RAM 3-4GB):
+## Tech Stack & Optimasi
 
 - **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (100% Declarative UI).
+- **Admin & Management**: [SenimatikaAdmin](https://github.com/hikaru1999/senimatika-admin) — Dashboard khusus untuk manajemen konten kuis, monitoring leaderboard, dan pengelolaan data eksplorasi secara terpusat.
 - **Backend**: [Firebase](https://firebase.google.com/) (Realtime Database, Authentication, & Cloud Storage).
 - **Architecture**: MVVM (Model-View-ViewModel) dengan Clean Architecture.
 - **Dependency Injection**: [Hilt](https://dagger.dev/hilt/) (Dagger).
@@ -29,32 +30,22 @@ Proyek ini dibangun dengan fokus pada performa tinggi, bahkan untuk perangkat **
 
 ---
 
-## 📉 Optimasi Performa (Portfolio Highlights)
-
-Aplikasi ini mengimplementasikan beberapa teknik optimasi tingkat lanjut:
-1. **Lambda-based Approach**: Menggerakkan karakter di peta menggunakan fase *Placement* (bukan *Recomposition*) untuk mencapai 60 FPS yang stabil.
-2. **Hybrid Zoom Component**: Mengisolasi interaksi zoom gambar ke komponen Native Compose guna mengurangi beban CPU pada WebView.
-3. **State Flow Optimization**: Menggunakan `StateFlow` untuk sinkronisasi timer kuis guna menghindari *UI Thread blocking*.
-
----
-
-## 📦 Cara Menjalankan Proyek
+## Cara Menjalankan Proyek
 
 Karena alasan keamanan dan efisiensi repositori, beberapa file telah dikecualikan (`.gitignore`):
 
 1. **Firebase Configuration**:
     - Anda perlu menyediakan file `google-services.json` milik Anda sendiri.
-    - Letakkan file tersebut di folder `app/`.
 2. **Multimedia Assets**:
     - File audio dan video berukuran besar tidak disertakan dalam repositori ini.
 3. **Setup**:
     - Clone repositori ini.
-    - Lakukan `Build Project` di Android Studio (versi Flamingo atau lebih baru).
+    - Lakukan `Build Project` di Android Studio.
     - Pastikan koneksi internet aktif untuk sinkronisasi Firebase.
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
 Proyek ini dibuat untuk tujuan edukasi dan portofolio pribadi. Seluruh aset gambar dan suara adalah milik masing-masing kreator aslinya.
 
