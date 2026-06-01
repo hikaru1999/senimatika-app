@@ -10,7 +10,6 @@
 .DS_Store
 /build
 /captures
-!screenshots/
 .externalNativeBuild
 .cxx
 local.properties
@@ -29,3 +28,6 @@ google-services.json
 *.jpg
 *.jpeg
 *.webp
+
+!screenshots/
+!screenshots/*
