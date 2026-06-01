@@ -5,7 +5,7 @@
 ---
 ## Fitur Utama
 
-- **Annotation**: Gunakan fitur "coretan" untuk menandai pola/unsur dalam karya atau kebudayaan yang dikaitkan dengan konsep matematika.
+- **Annotation**: Fitur "coretan" untuk menandai pola/unsur pada suatu karya seni atau kebudayaan yang dikaitkan dengan konsep matematika.
 - **Asynchronous Online Quiz**: Selesaikan kuis yang tersedia dengan tepat dan cepat. Adu skill matematika dengan pengguna lainnya untuk memperoleh skor tertinggi pada leaderboard.
 - **Exploration Map**: Belajar matematika dengan menjelajahi peta fantasi. Ambil harta karun sebanyak-banyaknya dan pergi ke titik finsih untuk mengekstrak hasil buruan.
 - **Boss Battle Quiz**: Pertempuran real-time melawan bos pada peta pantasi di mana setiap serangan ditentukan oleh kecepatan dan ketepatan menjawab kuis.
@@ -19,9 +19,9 @@
 ## Tech Stack & Optimasi
 
 - **UI Framework**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (100% Declarative UI).
-- **Admin & Management**: [SenimatikaAdmin](https://github.com/hikaru1999/senimatika-admin) — Dashboard khusus untuk manajemen konten kuis, monitoring leaderboard, dan pengelolaan data eksplorasi secara terpusat.
+- **Admin & Management**: [SenimatikaAdmin](https://github.com/hikaru1999/senimatika-admin) — Dashboard khusus untuk manajemen konten materi, kuis, dan pengelolaan data peta eksplorasi secara terpusat.
 - **Backend**: [Firebase](https://firebase.google.com/) (Realtime Database, Authentication, & Cloud Storage).
-- **Architecture**: MVVM (Model-View-ViewModel) dengan Clean Architecture.
+- **Architecture**: MVVM (Model-View-ViewModel).
 - **Dependency Injection**: [Hilt](https://dagger.dev/hilt/) (Dagger).
 - **Asynchronous**: [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) & Flow.
 - **Math Rendering**: [KaTeX](https://katex.org/) terintegrasi via WebView yang dioptimalkan dengan *Lambda Offset* untuk mencegah *recomposition* berlebih.
@@ -31,10 +31,10 @@
 
 ## Cara Menjalankan Proyek
 
-Karena alasan keamanan dan efisiensi repositori, beberapa file telah dikecualikan (`.gitignore`):
+Karena alasan keamanan dan efisiensi repositori, beberapa file telah dikecualikan (baca: `.gitignore`):
 
 1. **Firebase Configuration**:
-    - Anda perlu menyediakan file `google-services.json` milik Anda sendiri.
+    - Sediakan file `google-services.json` dari project Firebase Anda.
 2. **Multimedia Assets**:
     - File audio dan video berukuran besar tidak disertakan dalam repositori ini.
 3. **Setup**:
