@@ -3,28 +3,6 @@
 **Senimatika** adalah aplikasi mobile berbasis Android yang memadukan elemen matematika, etnomatematika, dan gamifikasi. Aplikasi ini dirancang untuk memberikan pengalaman belajar matematika yang interaktif melalui kuis, eksplorasi peta, dan tantangan matematika yang semuanya diselesaikan dengan logika matematika.
 
 ---
-
-## 📱 Application Preview
-
-<p align="center">
-  <img src="screenshots/1.png" width="19%">
-  <img src="screenshots/2.png" width="19%">
-  <img src="screenshots/3.png" width="19%">
-  <img src="screenshots/4.png" width="19%">
-  <img src="screenshots/5.png" width="19%">
-</p>
-<p align="center">
-  <img src="screenshots/6.png" width="19%">
-  <img src="screenshots/7.png" width="19%">
-  <img src="screenshots/8.png" width="19%">
-  <img src="screenshots/9.png" width="19%">
-  <img src="screenshots/10.png" width="19%">
-</p>
-
-<p align="center">
-  <i>Eksplorasi - Boss Battle - Online Quiz - Result - Inventory - Station - Annotation - Math Render - Zoom - Admin</i>
-</p>
-
 ## Fitur Utama
 
 - **Annotation**: Gunakan fitur "coretan" untuk menandai pola/unsur dalam karya atau kebudayaan yang dikaitkan dengan konsep matematika.
@@ -65,6 +43,18 @@ Karena alasan keamanan dan efisiensi repositori, beberapa file telah dikecualika
     - Pastikan koneksi internet aktif untuk sinkronisasi Firebase.
 
 ---
+## Gallery
+---
+<p align="center">
+  <img src="screenshots/2.png" width="30%">
+  <img src="screenshots/4.png" width="30%">
+  <img src="screenshots/6.png" width="30%">
+</p>
+<p align="center">
+  <img src="screenshots/7.png" width="30%">
+  <img src="screenshots/8.png" width="30%">
+  <img src="screenshots/10.png" width="30%">
+</p>
 
 ## Lisensi
 
