@@ -43,8 +43,10 @@ import com.LambdaProject.MathArt.data.model.QuestionType
 import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.ui.Pages.NotFoundScreen
 import com.LambdaProject.MathArt.ui.components.MathText
 import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
 
 @SuppressLint("MutableCollectionMutableState")
@@ -59,19 +61,62 @@ fun OnlineQuizMaster(
     userId: String,
     viewModel: OnlineQuizViewModel = hiltViewModel()
 ) {
+    var isDataInvalid by remember { mutableStateOf(false) }
+
     LaunchedEffect(materialId, userId) {
         viewModel.loadQuizForSelectedMaterial(userId, materialId)
+
+        val db = FirebaseFirestore.getInstance()
+        val listener = db.collection("online_quizzes").document(materialId)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot == null || !snapshot.exists() || snapshot.getBoolean("active") == false) {
+                    isDataInvalid = true
+                }
+            }
     }
 
     val questions by viewModel.questions.collectAsState()
+    val isQuizNotFound by viewModel.isQuizNotFound.collectAsState()
     val currentIndex by viewModel.currentQuestionIndex.collectAsState()
     val currentBasePoints by viewModel.currentBasePoints.collectAsState()
     val scorestreakState by viewModel.scorestreakState.collectAsState()
     val context = LocalContext.current
 
+//    if (questions.isEmpty() || currentIndex >= questions.size) {
+//        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//            CircularProgressIndicator(color = Color(0xFF1976D2), strokeWidth = 3.dp)
+//        }
+//        return
+//    }
+    if (isQuizNotFound || isDataInvalid) {
+        NotFoundScreen(
+            title = "Data Tidak Ditemukan",
+            message = "Maaf, konten ini sedang tidak tersedia.",
+            onBack = {
+                viewModel.refreshMaterials()
+                navController.popBackStack("OnlineQuizPage", inclusive = false)
+            }
+        )
+        return
+    }
+
     if (questions.isEmpty() || currentIndex >= questions.size) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF1976D2), strokeWidth = 3.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF8F9FE)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFF197602), strokeWidth = 3.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Memuat kuis...",
+                    fontFamily = interFontFamily,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         return
     }
@@ -94,13 +139,19 @@ fun OnlineQuizMaster(
     var showDialog by remember { mutableStateOf(false) }
     var showPowerUpInfoDialog by remember { mutableStateOf(false) }
     var zoomImageUrl by remember { mutableStateOf<String?>(null) }
-
     var showZoomDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val currentQuestionType = question.type
 
     BackHandler(enabled = zoomImageUrl != null) {
         zoomImageUrl = null
+    }
+
+    LaunchedEffect(questions) {
+        if (questions.isEmpty()) {
+            delay(3000)
+            if (questions.isEmpty()) isDataInvalid = true
+        }
     }
 
     LaunchedEffect(key1 = currentIndex) {
@@ -240,7 +291,7 @@ fun OnlineQuizMaster(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8F9FE))
-            /*.consumeWindowInsets(WindowInsets.ime) */
+        /*.consumeWindowInsets(WindowInsets.ime) */
     ) {
         ScorestreakSnackbar(
             state = scoreState,
@@ -285,7 +336,7 @@ fun OnlineQuizMaster(
                                 )
                         )
                     }
-                    
+
                     BottomQuizNav(
                         selectedAnswers = selectedAnswers.value.toList(),
                         userTextAnswer = typedAnswer.value,
@@ -466,7 +517,7 @@ fun OnlineQuizMaster(
                     } else {
                         question.choices.forEachIndexed { index, choice ->
                             val isSelected = selectedAnswers.value.contains(index)
-                            
+
                             val surfaceColor = if (isSelected) Color(0xFFE3F2FD) else Color.White
                             val borderColor = if (isSelected) Color(0xFF1976D2) else Color(0xFFEEEEEE)
                             val textColor = if (isSelected) Color(0xFF1976D2) else Color(0xFF1A237E)
@@ -548,7 +599,7 @@ fun OnlineQuizMaster(
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
@@ -556,6 +607,7 @@ fun OnlineQuizMaster(
                 ZoomableImageDialog(imageRes = imageRes, onDismiss = { showZoomDialog = false })
             }
         }
+
         ZoomableImageOverlay(
             imageUrl = zoomImageUrl,
             onDismiss = { zoomImageUrl = null }

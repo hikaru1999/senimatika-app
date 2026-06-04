@@ -94,34 +94,73 @@ class OnlineQuizViewModel @Inject constructor(
     private val _leaderboard = MutableStateFlow<List<LeaderboardEntry>>(emptyList())
     val leaderboard: StateFlow<List<LeaderboardEntry>> = _leaderboard
 
+    private val _isQuizNotFound = MutableStateFlow(false)
+    val isQuizNotFound: StateFlow<Boolean> = _isQuizNotFound
+
     private var challengeListener: ListenerRegistration? = null
+    private var materialsListener: ListenerRegistration? = null
 
     init {
         loadAllQuizzes()
     }
 
     private fun loadAllQuizzes() {
-        viewModelScope.launch {
-            try {
-                val snapshot = firestore.collection("online_quizzes")
-                    .whereEqualTo("active", true)
-                    .get(Source.DEFAULT)
-                    .await()
-                val quizList = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(OnlineQuizDesc::class.java)?.let { quiz ->
-                        val fixedQuiz = if (quiz.imageRes == 0) {
-                            quiz.copy(imageRes = R.drawable.img_geo)
-                        } else {
-                            quiz
-                        }
-                        fixedQuiz.copy(id = doc.id)
-                    }
+        materialsListener?.remove()
+
+        materialsListener = firestore.collection("online_quizzes")
+            .whereEqualTo("active", true)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e("OnlineQuizViewModel", "Listen failed.", e)
+                    return@addSnapshotListener
                 }
-                _materials.value = quizList
-            } catch (e: Exception) {
-                Log.e("OnlineQuizViewModel", "Error loading quizzes: ${e.message}")
+
+                if (snapshot != null) {
+                    val quizList = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(OnlineQuizDesc::class.java)?.let { quiz ->
+                            val fixedQuiz = if (quiz.imageRes == 0) {
+                                quiz.copy(imageRes = R.drawable.img_geo)
+                            } else {
+                                quiz
+                            }
+                            fixedQuiz.copy(id = doc.id)
+                        }
+                    }
+                    _materials.value = quizList
+                    Log.d("OnlineQuizViewModel", "Real-time update: ${quizList.size} quizzes")
+                }
             }
-        }
+
+//        viewModelScope.launch {
+//            try {
+//                val snapshot = firestore.collection("online_quizzes")
+//                    .whereEqualTo("active", true)
+//                    .get(Source.SERVER)
+//                    .await()
+//
+//                val quizList = snapshot.documents.mapNotNull { doc ->
+//                    doc.toObject(OnlineQuizDesc::class.java)?.let { quiz ->
+//                        val fixedQuiz = if (quiz.imageRes == 0) {
+//                            quiz.copy(imageRes = R.drawable.img_geo)
+//                        } else {
+//                            quiz
+//                        }
+//                        fixedQuiz.copy(id = doc.id)
+//                    }
+//                }
+//                _materials.value = quizList
+//            } catch (e: Exception) {
+//                Log.e("OnlineQuizViewModel", "Error loading quizzes: ${e.message}")
+//            }
+//        }
+    }
+
+    fun refreshMaterials() {
+        loadAllQuizzes()
+    }
+
+    fun clearSelectedMaterial() {
+        _selectedMaterial.value = null
     }
 
     /* fun sendChallenge(toUserId: String) {
@@ -165,11 +204,25 @@ class OnlineQuizViewModel @Inject constructor(
     fun loadQuizForSelectedMaterial(userId: String, materialId: String) {
         viewModelScope.launch {
             try {
-                val quizDoc = firestore.collection("online_quizzes").document(materialId).get(Source.DEFAULT).await()
-                val quizData = quizDoc.toObject(OnlineQuizDesc::class.java) ?: return@launch
-                
+                _isQuizNotFound.value = false
+
+                val quizDoc = firestore.collection("online_quizzes")
+                    .document(materialId)
+                    .get(Source.SERVER)
+                    .await()
+
+                val isActivated = quizDoc.getBoolean("active") ?: false
+                val quizData = quizDoc.toObject(OnlineQuizDesc::class.java)
+
+                if (quizData == null || !isActivated) {
+                    _isQuizNotFound.value = true
+                    _questions.value = emptyList()
+                    return@launch
+                }
+
                 val questionRefs = quizData.questions
                 if (questionRefs.isEmpty()) {
+                    _questions.value = emptyList()
                     return@launch
                 }
 
@@ -248,6 +301,7 @@ class OnlineQuizViewModel @Inject constructor(
                 _questions.value = fullQuestions
                 _currentQuestionIndex.value = 0
             } catch (e: Exception) {
+                _isQuizNotFound.value = true
                 Log.e("OnlineQuizViewModel", "Error loading quiz questions: ${e.message}")
             }
         }
@@ -466,6 +520,7 @@ class OnlineQuizViewModel @Inject constructor(
         super.onCleared()
         challengeListener?.remove()
         challengeListener = null
+        materialsListener?.remove()
     }
 
     /* fun prevQuestion() {

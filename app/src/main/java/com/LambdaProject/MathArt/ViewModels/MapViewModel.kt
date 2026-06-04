@@ -22,7 +22,9 @@ import kotlinx.coroutines.tasks.await
 import com.LambdaProject.MathArt.data.model.ExplorationStats
 import com.LambdaProject.MathArt.data.model.unlockGeneralAchievement
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 import toObjectType
@@ -1432,6 +1434,7 @@ class MapViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
+        sessionListener?.remove()
         saveJob?.cancel()
     }
 
@@ -1717,22 +1720,67 @@ class MapViewModel : ViewModel() {
             }
     }
 
-    var globalActiveMapId by mutableStateOf<String?>(null)
+//    var globalActiveMapId by mutableStateOf<String?>(null)
+    private val _globalActiveMapId = MutableStateFlow<String?>(null)
+    val globalActiveMapId: StateFlow<String?> = _globalActiveMapId.asStateFlow()
 
+    private var sessionListener: ListenerRegistration? = null
+
+    fun forceClearActiveSession() {
+        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("exploration_sessions")
+                    .document(userId)
+                    .delete()
+                    .await()
+
+                _globalActiveMapId.value = null
+
+                Log.d("MapViewModel", "Ghost session deleted from exploration_sessions for user: $userId")
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Failed to delete session document: ${e.message}")
+            }
+        }
+    }
     fun checkGlobalSessionStatus() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        FirebaseFirestore.getInstance()
+        sessionListener = FirebaseFirestore.getInstance()
             .collection("exploration_sessions")
             .document(userId)
-            .get()
-            .addOnSuccessListener { doc ->
-                val isFinished = doc.getBoolean("isFinished") ?: true
-                if (!isFinished) {
-                    globalActiveMapId = doc.getString("mapId")
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.w("MapViewModel", "Listen failed.", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    val isFinished = snapshot.getBoolean("isFinished") ?: true
+                    if (!isFinished) {
+                        _globalActiveMapId.value = snapshot.getString("mapId")
+                    } else {
+                        _globalActiveMapId.value = null
+                    }
                 } else {
-                    globalActiveMapId = null
+                    _globalActiveMapId.value = null
                 }
             }
+
+
+//        FirebaseFirestore.getInstance()
+//            .collection("exploration_sessions")
+//            .document(userId)
+//            .get()
+//            .addOnSuccessListener { doc ->
+//                val isFinished = doc.getBoolean("isFinished") ?: true
+//                if (!isFinished) {
+//                    globalActiveMapId = doc.getString("mapId")
+//                } else {
+//                    globalActiveMapId = null
+//                }
+//            }
     }
 }

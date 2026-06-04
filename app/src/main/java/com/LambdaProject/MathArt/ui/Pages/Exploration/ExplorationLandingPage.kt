@@ -1,19 +1,27 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration
 
-import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -24,15 +32,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.LambdaProject.MathArt.data.Inventory
-import com.LambdaProject.MathArt.data.PowerUpType
 import com.LambdaProject.MathArt.interFontFamily
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
+import kotlinx.coroutines.launch
+
 
 data class GameMapInfo(
     val id: String = "",
@@ -59,40 +68,87 @@ fun ExplorationLandingScreen(
     var availableMaps by remember { mutableStateOf<List<GameMapInfo>>(emptyList()) }
     var isTutorialCompleted by remember { mutableStateOf(false) }
 
-    LaunchedEffect(userId) {
-        if (userId == null) return@LaunchedEffect
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-        db.collection("users").document(userId).get().addOnSuccessListener { snapshot ->
-            isTutorialCompleted = snapshot.getBoolean("tutorial_completed") ?: false
-        }
-
-        db.collection("game_maps")
-            .whereEqualTo("isActive", true)
-            .get()
-            .addOnSuccessListener { result ->
-                val maps = result.documents.map { doc ->
-                    GameMapInfo(
-                        id = doc.id,
-                        name = doc.getString("name") ?: "Unnamed Map",
-                        thumbnailUrl = doc.getString("thumbnailUrl")
-                    )
-                }
-
-                availableMaps = maps.sortedWith(compareBy { map ->
-                    when {
-                        map.id == "tutorial_eksplorasi" -> 0
-
-                        map.name.contains("Level", ignoreCase = true) -> {
-                            val levelNumber = map.name
-                                .substringAfter("Level ")
-                                .filter { it.isDigit() }
-                                .toIntOrNull() ?: 99
-                            100 + levelNumber
-                        }
-                        else -> 999
-                    }
-                })
+    val loadData = {
+        if (userId != null) {
+            db.collection("users").document(userId).get().addOnSuccessListener { snapshot ->
+                isTutorialCompleted = snapshot.getBoolean("tutorial_completed") ?: false
             }
+
+            db.collection("game_maps")
+                .whereEqualTo("isActive", true)
+                .addSnapshotListener { result, error ->
+                    if (error != null) {
+                        isRefreshing = false
+                        return@addSnapshotListener
+                    }
+
+                    val maps = result?.documents?.map { doc ->
+                        GameMapInfo(
+                            id = doc.id,
+                            name = doc.getString("name") ?: "Unnamed Map",
+                            thumbnailUrl = doc.getString("thumbnailUrl")
+                        )
+                    } ?: emptyList()
+
+                    availableMaps = maps.sortedWith(compareBy { map ->
+                        when {
+                            map.id == "tutorial_eksplorasi" -> 0
+                            map.name.contains("Level", ignoreCase = true) -> {
+                                val levelNumber = map.name
+                                    .substringAfter("Level ")
+                                    .filter { it.isDigit() }
+                                    .toIntOrNull() ?: 99
+                                100 + levelNumber
+                            }
+
+                            else -> 999
+                        }
+                    })
+                    isRefreshing = false
+                }
+        }
+//            db.collection("game_maps")
+//                .whereEqualTo("isActive", true)
+//                .get()
+//                .addOnSuccessListener { result ->
+//                    val maps = result.documents.map { doc ->
+//                        GameMapInfo(
+//                            id = doc.id,
+//                            name = doc.getString("name") ?: "Unnamed Map",
+//                            thumbnailUrl = doc.getString("thumbnailUrl")
+//                        )
+//                    }
+//
+//                    availableMaps = maps.sortedWith(compareBy { map ->
+//                        when {
+//                            map.id == "tutorial_eksplorasi" -> 0
+//                            map.name.contains("Level", ignoreCase = true) -> {
+//                                val levelNumber = map.name
+//                                    .substringAfter("Level ")
+//                                    .filter { it.isDigit() }
+//                                    .toIntOrNull() ?: 99
+//                                100 + levelNumber
+//                            }
+//                            else -> 999
+//                        }
+//                    })
+//                    isRefreshing = false
+//                }
+//                .addOnFailureListener {
+//                    isRefreshing = false
+//                }
+//        } else {
+//            isRefreshing = false
+//        }
+    }
+
+    val globalActiveMapId by viewModel.globalActiveMapId.collectAsStateWithLifecycle()
+
+    LaunchedEffect(userId) {
+        loadData()
     }
 
     LaunchedEffect(Unit) {
@@ -123,61 +179,164 @@ fun ExplorationLandingScreen(
             )
         },
     ) { padding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                loadData()
+                viewModel.checkGlobalSessionStatus()
+            },
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp)
         ) {
-            Text(
-                "Wilayah Eksplorasi",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                fontFamily = interFontFamily,
-                color = Color(0xFF1A237E)
-            )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    Column {
+                        Text(
+                            "Wilayah Eksplorasi",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interFontFamily,
+                            color = Color(0xFF1A237E)
+                        )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                "Pilih wilayah untuk melihat detail dan mempersiapkan tas jelajahmu.",
-                fontSize = 13.sp,
-                color = Color.Gray,
-                fontFamily = interFontFamily
-            )
+                        Text(
+                            "Pilih wilayah untuk melihat detail dan mempersiapkan tas jelajahmu.",
+                            fontSize = 13.sp,
+                            color = Color.Gray,
+                            fontFamily = interFontFamily
+                        )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
 
-            availableMaps.forEach { map ->
-                /* val isLevelMap = map.id.startsWith("eksplorasi_level_") /* || map.id == "level_1" */
-                val isLocked = isLevelMap && !isTutorialCompleted */
-
-                val isTutorialLock = map.name.contains("Level", ignoreCase = true) && !isTutorialCompleted
-
-                /* val isTutorialLock = map.id.startsWith("eksplorasi_level_") && !isTutorialCompleted */
-
-                val isLockedByOtherSession = viewModel.globalActiveMapId != null && viewModel.globalActiveMapId != map.id
-                val isActuallyLocked = isTutorialLock || isLockedByOtherSession
-
-
-                MapThumbnailCard(
-                    map = map,
-                    isLocked = isActuallyLocked,
-                    lockReason = when {
-                        isTutorialLock -> "Selesaikan Tutorial Terlebih Dahulu"
-                        isLockedByOtherSession -> "Selesaikan Eksplorasi di Wilayah Lain"
-                        else -> ""
-                    },
-                    isActiveSession = viewModel.globalActiveMapId == map.id,
-                    onClick = { 
-                        if (!isActuallyLocked) {
-                            navController.navigate("ExplorationLobby/${map.id}")
+                if (availableMaps.isEmpty() && !isRefreshing) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("Belum ada wilayah tersedia", color = Color.Gray)
+                            Text("Tarik ke bawah untuk memuat ulang", fontSize = 11.sp, color = Color.LightGray)
                         }
                     }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                items(
+                    items = availableMaps,
+                    key = { it.id }
+                ) { map ->
+                    val isTutorialLock = map.name.contains("Level", ignoreCase = true) && !isTutorialCompleted
+                    val isLockedByOtherSession = globalActiveMapId != null && globalActiveMapId != map.id
+                    val isActuallyLocked = isTutorialLock || isLockedByOtherSession
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem(
+                                fadeInSpec = tween(durationMillis = 500),
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessLow,
+                                    dampingRatio = Spring.DampingRatioLowBouncy
+                                ),
+                                fadeOutSpec = tween(durationMillis = 200)
+                            )
+                    ) {
+                        MapThumbnailCard(
+                            map = map,
+                            isLocked = isActuallyLocked,
+                            lockReason = when {
+                                isTutorialLock -> "Selesaikan Tutorial Terlebih Dahulu"
+                                isLockedByOtherSession -> "Selesaikan Eksplorasi di Wilayah Lain"
+                                else -> ""
+                            },
+                            isActiveSession = globalActiveMapId == map.id,
+                            onClick = {
+                                if (!isActuallyLocked) {
+                                    navController.navigate("ExplorationLobby/${map.id}")
+                                }
+                            }
+                        )
+                    }
+                }
             }
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .verticalScroll(rememberScrollState())
+//                    .padding(24.dp)
+//            ) {
+//                Text(
+//                    "Wilayah Eksplorasi",
+//                    style = MaterialTheme.typography.titleLarge,
+//                    fontWeight = FontWeight.Bold,
+//                    fontFamily = interFontFamily,
+//                    color = Color(0xFF1A237E)
+//                )
+//
+//                Spacer(modifier = Modifier.height(8.dp))
+//
+//                Text(
+//                    "Pilih wilayah untuk melihat detail dan mempersiapkan tas jelajahmu.",
+//                    fontSize = 13.sp,
+//                    color = Color.Gray,
+//                    fontFamily = interFontFamily
+//                )
+//
+//                Spacer(modifier = Modifier.height(24.dp))
+//
+//                if (availableMaps.isEmpty() && !isRefreshing) {
+//                    Column(
+//                        modifier = Modifier.fillMaxWidth().padding(top = 40.dp),
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                        Text("Belum ada wilayah tersedia", color = Color.Gray)
+//                        Text("Tarik ke bawah untuk memuat ulang", fontSize = 11.sp, color = Color.LightGray)
+//                    }
+//                }
+//
+//                availableMaps.forEach { map ->
+//                    /* val isLevelMap = map.id.startsWith("eksplorasi_level_") /* || map.id == "level_1" */
+//                    val isLocked = isLevelMap && !isTutorialCompleted */
+//
+//                    val isTutorialLock = map.name.contains("Level", ignoreCase = true) && !isTutorialCompleted
+//
+//                    /* val isTutorialLock = map.id.startsWith("eksplorasi_level_") && !isTutorialCompleted */
+//
+////                    val isLockedByOtherSession = viewModel.globalActiveMapId != null && viewModel.globalActiveMapId != map.id
+//                    val isLockedByOtherSession = globalActiveMapId != null && globalActiveMapId != map.id
+//                    val isActuallyLocked = isTutorialLock || isLockedByOtherSession
+//
+//
+//                    MapThumbnailCard(
+//                        map = map,
+//                        isLocked = isActuallyLocked,
+//                        lockReason = when {
+//                            isTutorialLock -> "Selesaikan Tutorial Terlebih Dahulu"
+//                            isLockedByOtherSession -> "Selesaikan Eksplorasi di Wilayah Lain"
+//                            else -> ""
+//                        },
+//                        isActiveSession = globalActiveMapId == map.id,
+////                        isActiveSession = viewModel.globalActiveMapId == map.id,
+//                        onClick = {
+//                            if (!isActuallyLocked) {
+//                                navController.navigate("ExplorationLobby/${map.id}")
+//                            }
+//                        }
+//                    )
+//                    Spacer(modifier = Modifier.height(16.dp))
+//                }
+//            }
         }
     }
 }

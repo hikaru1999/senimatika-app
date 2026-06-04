@@ -375,6 +375,7 @@ class MainActivity : ComponentActivity() {
                                     initialBag = bagItems,
                                     viewModel = mapViewModel,
                                     achViewModel = achViewModel,
+                                    navController = navController,
                                     onBack = { navController.popBackStack()}
                                 )
                             }

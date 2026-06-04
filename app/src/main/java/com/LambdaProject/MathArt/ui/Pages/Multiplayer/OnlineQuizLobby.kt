@@ -30,6 +30,9 @@ import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.data.model.OnlineQuizDesc
 import com.LambdaProject.MathArt.data.model.OnlineUser
+import com.LambdaProject.MathArt.ui.Pages.NotFoundScreen
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,9 +52,42 @@ fun OnlineQuizLobby(
     val userOnlineList by viewModel.userOnlineList.collectAsState()
     val questions by viewModel.questions.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val db = remember { FirebaseFirestore.getInstance() }
+    val isQuizNotFound by viewModel.isQuizNotFound.collectAsState()
 
-    LaunchedEffect(questions) {
-        if (questions.isNotEmpty()) {
+    var isVerifying by remember { mutableStateOf(true) }
+    var checkComplete by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedMaterial) {
+        delay(3000)
+        checkComplete = true
+    }
+
+    LaunchedEffect(selectedMaterial?.id) {
+        val id = selectedMaterial?.id
+        if (id == null) {
+            isVerifying = false
+            checkComplete = true
+            return@LaunchedEffect
+        }
+
+        isVerifying = true
+
+        db.collection("online_quizzes").document(id).get(Source.SERVER)
+            .addOnCompleteListener { task ->
+                val doc = task.result
+                if (task.isSuccessful && doc != null && doc.exists() && doc.getBoolean("active") == true) {
+                    isVerifying = false
+                } else {
+                    viewModel.clearSelectedMaterial()
+                    isVerifying = false
+                }
+                checkComplete = true
+            }
+    }
+
+    LaunchedEffect(questions, isVerifying, selectedMaterial) {
+        if (questions.isNotEmpty() && !isVerifying && selectedMaterial != null) {
             navController.navigate("StartQuiz")
         }
     }
@@ -71,13 +107,33 @@ fun OnlineQuizLobby(
         }
     }
 
-    selectedMaterial?.let { material ->
+    if (isVerifying) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color(0xFFF8F9FE)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFF1976D2))
+                Spacer(Modifier.height(16.dp))
+                Text("Memverifikasi kuis...", fontFamily = interFontFamily, fontSize = 12.sp, color = Color.Gray)
+            }
+        }
+    } else if ((selectedMaterial == null && checkComplete) || isQuizNotFound) {
+        NotFoundScreen(
+            title = "Kuis Tidak Ditemukan",
+            message = "Maaf, konten ini sedang tidak tersedia.",
+            onBack = {
+                viewModel.refreshMaterials()
+                navController.popBackStack()
+            }
+        )
+    } else if (selectedMaterial != null) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
-                            material.title,
+                            selectedMaterial!!.title,
                             fontWeight = FontWeight.Black,
                             fontFamily = interFontFamily,
                             color = Color(0xFF1A237E)
@@ -123,9 +179,9 @@ fun OnlineQuizLobby(
                             },
                             text = {
                                 Text(
-                                    title, 
-                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Black else FontWeight.Bold, 
-                                    fontFamily = interFontFamily, 
+                                    title,
+                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Black else FontWeight.Bold,
+                                    fontFamily = interFontFamily,
                                     color = if (pagerState.currentPage == index) Color(0xFF1976D2) else Color.Gray
                                 )
                             }
@@ -139,7 +195,7 @@ fun OnlineQuizLobby(
                 ) { page ->
                     when (tabKeys[page]) {
                         "description" -> DeskripsiContent(
-                            material = material,
+                            material = selectedMaterial!!,
                             userOnlineList = userOnlineList,
                             onUserSelected = onUserSelected,
                             navController = navController,
@@ -149,13 +205,6 @@ fun OnlineQuizLobby(
                     }
                 }
             }
-        }
-    } ?: run {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color(0xFF1976D2))
         }
     }
 }

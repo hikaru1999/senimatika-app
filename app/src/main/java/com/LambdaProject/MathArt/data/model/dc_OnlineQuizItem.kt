@@ -16,6 +16,7 @@ data class OnlineQuizData (
 data class OnlineQuizDesc (
     val id: String = "",
     val title: String = "",
+    val active: Boolean = true,
     val description: String = "",
     val questions: List<QuizQuestionRef> = emptyList(),
     val durationMinutes: Int = 0,

@@ -29,9 +29,12 @@ import com.LambdaProject.MathArt.data.PowerUpType
 import com.LambdaProject.MathArt.data.Reward
 import com.LambdaProject.MathArt.data.RewardType
 import com.LambdaProject.MathArt.ui.Pages.Exploration.ArtifactInfoModal
+import com.LambdaProject.MathArt.ui.Pages.NotFoundScreen
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -62,11 +65,23 @@ fun ExplorationLobbyScreen(
     var hasNight by remember { mutableStateOf(false) }
     var hasCombined by remember { mutableStateOf(false) }
     var selectedArtifactForModal by remember { mutableStateOf<MapViewModel.ArtifactData?>(null) }
+    var checkComplete by remember { mutableStateOf(false) }
+
+    var isVerifying by remember { mutableStateOf(true) }
+    var isNotFound by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(4000)
+        checkComplete = true
+    }
 
     LaunchedEffect(mapId) {
+        isVerifying = true
         mapViewModel.syncSessionStatus(mapId)
-        db.collection("game_maps").document(mapId).get().addOnSuccessListener { doc ->
-            if (doc.exists()) {
+
+        db.collection("game_maps").document(mapId).get(Source.SERVER)
+            .addOnSuccessListener { doc ->
+            if (doc.exists() && doc.getBoolean("isActive") == true) {
                 mapName = doc.getString("name") ?: "Wilayah Tanpa Nama"
                 mapDescription = doc.getString("description") ?: "Tidak ada deskripsi tersedia."
                 levelType = doc.getString("levelType") ?: "NORMAL"
@@ -75,7 +90,15 @@ fun ExplorationLobbyScreen(
                 hasFog = visibility?.get("fogOfWar") as? Boolean ?: false
                 hasNight = visibility?.get("nightMode") as? Boolean ?: false
                 hasCombined = visibility?.get("fogNightCombined") as? Boolean ?: false
+
+                isVerifying = false
+            } else {
+                isNotFound = true
+                isVerifying = false
             }
+        }.addOnFailureListener {
+                isNotFound = true
+                isVerifying = false
         }
     }
 
@@ -117,138 +140,155 @@ fun ExplorationLobbyScreen(
         }
     }
 
-    Scaffold(
-        containerColor = Color(0xFFE7E8EF),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Persiapan Eksplorasi",
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = interFontFamily,
-                        color = Color(0xFF1A237E)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-    ) { padding ->
-        Column(modifier = Modifier
-            .padding(padding)
-            .fillMaxSize()) {
-            TabRow(
-                selectedTabIndex = pagerState.currentPage,
-                containerColor = Color.White,
-                indicator = { tabPositions ->
-                    SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                        color = Color(0xFF1976D2)
-                    )
-                }
-            ) {
-                tabLabels.forEachIndexed { index, label ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(tabIcons[index], null, modifier = Modifier.size(18.dp), tint = Color(0xFF1A237E))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(label, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFF1A237E))
-                            }
-                        }
-                    )
-                }
-            }
-
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.weight(1f),
-                userScrollEnabled = false
-            ) { page ->
-                when (page) {
-                    0 -> GameDescriptionTab(
-                        name = mapName,
-                        description = mapDescription,
-                        hasFog = hasFog,
-                        hasNight = hasNight,
-                        hasCombined = hasCombined,
-                        levelType = levelType,
-                        onBack = { navController.popBackStack() },
-                        onStartExploration = {
-                            coroutineScope.launch {
-                                try {
-                                    if (isSessionActive) {
-                                        if (mapViewModel.fullMapData.isEmpty() || mapViewModel.currentMapId != mapId) {
-                                            mapViewModel.loadMap(mapId, context)
-                                        }
-                                        navController.navigate("ExplorationLoading/$mapId?bagItems=")
-                                    } else {
-                                        isPrepareModalOpen = true
-                                        isLoading = false
-                                    }
-                                } catch (e: Exception) {
-                                    isLoading = false
-                                    Log.e("ExplorationLobby", "Error: ${e.message}")
-                                }
-                            }
-                        },
-                        isResume = isSessionActive
-                    )
-                    1 -> InventoryTabContent(
-                        inventory = inventory,
-                        unlockedArtifacts = mapViewModel.unlockedArtifactDetails,
-                        onArtifactClick = { artifact ->
-                            selectedArtifactForModal = artifact
-                        },
-                        isMallDisabled = isSessionActive)
-                }
-            }
+    if (isVerifying) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Color(0xFF1976D2))
         }
-
-        if (isPrepareModalOpen && !isSessionActive) {
-            PrepareExplorationModal(
-                permanentPowerUps = inventory.powerUps,
-                onCancel = { isPrepareModalOpen = false },
-                onConfirm = { bagItems ->
-                    coroutineScope.launch {
-                        try {
-                            db.runTransaction { transaction ->
-                                val userDocRef = db.collection("users").document(userId!!)
-                                val snapshot = transaction.get(userDocRef)
-
-                                val currentPUs =
-                                    snapshot.get("powerUps") as? List<String> ?: emptyList()
-                                val updatedWarehousePUs = currentPUs.toMutableList()
-
-                                bagItems.forEach { bekal ->
-                                    updatedWarehousePUs.remove(bekal.name)
-                                }
-
-                                transaction.update(userDocRef, "powerUps", updatedWarehousePUs)
-                            }.await()
-
-                            isPrepareModalOpen = false
-                            val bagString = bagItems.joinToString(",") { it.name }
-                            navController.navigate("ExplorationLoading/$mapId?bagItems=$bagString")
-                        } catch (e: Exception) {
-                            Log.e("Lobby", "Gagal memproses bekal: ${e.message}")
-                        }
-                    }
+    } else if (isNotFound || (mapName == "Memuat..." && checkComplete)) {
+        NotFoundScreen(
+            title = "Wilayah Tidak Tersedia",
+            message = "Maaf, wilayah eksplorasi ini telah ditutup atau tidak ditemukan.",
+            onBack = {
+                if (isSessionActive) {
+                    mapViewModel.forceClearActiveSession()
                 }
-            )
-        }
-    }
-    if (selectedArtifactForModal != null) {
-        ArtifactInfoModal(
-            artifact = selectedArtifactForModal!!,
-            onClose = { selectedArtifactForModal = null }
+                navController.popBackStack()
+            }
         )
+    } else {
+        Scaffold(
+            containerColor = Color(0xFFE7E8EF),
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "Persiapan Eksplorasi",
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = interFontFamily,
+                            color = Color(0xFF1A237E)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                )
+            },
+        ) { padding ->
+            Column(modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()) {
+                TabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    containerColor = Color.White,
+                    indicator = { tabPositions ->
+                        SecondaryIndicator(
+                            Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                            color = Color(0xFF1976D2)
+                        )
+                    }
+                ) {
+                    tabLabels.forEachIndexed { index, label ->
+                        Tab(
+                            selected = pagerState.currentPage == index,
+                            onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(tabIcons[index], null, modifier = Modifier.size(18.dp), tint = Color(0xFF1A237E))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(label, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFF1A237E))
+                                }
+                            }
+                        )
+                    }
+                }
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f),
+                    userScrollEnabled = false
+                ) { page ->
+                    when (page) {
+                        0 -> GameDescriptionTab(
+                            name = mapName,
+                            description = mapDescription,
+                            hasFog = hasFog,
+                            hasNight = hasNight,
+                            hasCombined = hasCombined,
+                            levelType = levelType,
+                            onBack = { navController.popBackStack() },
+                            onStartExploration = {
+                                coroutineScope.launch {
+                                    try {
+                                        if (isSessionActive) {
+                                            if (mapViewModel.fullMapData.isEmpty() || mapViewModel.currentMapId != mapId) {
+                                                mapViewModel.loadMap(mapId, context)
+                                            }
+                                            navController.navigate("ExplorationLoading/$mapId?bagItems=")
+                                        } else {
+                                            isPrepareModalOpen = true
+                                            isLoading = false
+                                        }
+                                    } catch (e: Exception) {
+                                        isLoading = false
+                                        Log.e("ExplorationLobby", "Error: ${e.message}")
+                                    }
+                                }
+                            },
+                            isResume = isSessionActive
+                        )
+                        1 -> InventoryTabContent(
+                            inventory = inventory,
+                            unlockedArtifacts = mapViewModel.unlockedArtifactDetails,
+                            onArtifactClick = { artifact ->
+                                selectedArtifactForModal = artifact
+                            },
+                            isMallDisabled = isSessionActive)
+                    }
+                }
+            }
+
+            if (isPrepareModalOpen && !isSessionActive) {
+                PrepareExplorationModal(
+                    permanentPowerUps = inventory.powerUps,
+                    onCancel = { isPrepareModalOpen = false },
+                    onConfirm = { bagItems ->
+                        coroutineScope.launch {
+                            try {
+                                db.runTransaction { transaction ->
+                                    val userDocRef = db.collection("users").document(userId!!)
+                                    val snapshot = transaction.get(userDocRef)
+
+                                    val currentPUs =
+                                        snapshot.get("powerUps") as? List<String> ?: emptyList()
+                                    val updatedWarehousePUs = currentPUs.toMutableList()
+
+                                    bagItems.forEach { bekal ->
+                                        updatedWarehousePUs.remove(bekal.name)
+                                    }
+
+                                    transaction.update(userDocRef, "powerUps", updatedWarehousePUs)
+                                }.await()
+
+                                isPrepareModalOpen = false
+                                val bagString = bagItems.joinToString(",") { it.name }
+                                navController.navigate("ExplorationLoading/$mapId?bagItems=$bagString")
+                            } catch (e: Exception) {
+                                Log.e("Lobby", "Gagal memproses bekal: ${e.message}")
+                            }
+                        }
+                    }
+                )
+            }
+        }
+        if (selectedArtifactForModal != null) {
+            ArtifactInfoModal(
+                artifact = selectedArtifactForModal!!,
+                onClose = { selectedArtifactForModal = null }
+            )
+        }
     }
 }
 
