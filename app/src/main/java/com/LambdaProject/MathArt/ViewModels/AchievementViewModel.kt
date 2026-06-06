@@ -13,7 +13,10 @@ import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AchievementViewModel : ViewModel() {
@@ -24,6 +27,10 @@ class AchievementViewModel : ViewModel() {
     val currentAchievement: StateFlow<AchievementItem?> = _currentAchievement
     val unlockedAchievements: List<String> = _unlockedAchievements
     private var achievementListener: ListenerRegistration? = null
+
+    val isShowingAchievement: StateFlow<Boolean> = _currentAchievement
+        .map { it != null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun triggerAchievement(item: AchievementItem) {
         val isAlreadyInQueue = _achievementQueue.any { it.name == item.name }
@@ -59,17 +66,12 @@ class AchievementViewModel : ViewModel() {
 
         viewModelScope.launch {
             val nextItem = _achievementQueue.removeAt(0)
-            Log.d("ACH_DEBUG", "UI SHOWN: ${nextItem.name}")
-
             _currentAchievement.value = nextItem
 
             delay(3000)
-
-            Log.d("ACH_DEBUG", "UI HIDDEN: ${nextItem.name}")
             _currentAchievement.value = null
 
             delay(500)
-
             if (_achievementQueue.isNotEmpty()) {
                 processNext()
             }

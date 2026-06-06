@@ -16,6 +16,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +29,7 @@ import com.LambdaProject.MathArt.ViewModels.QuestionResult
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.LambdaProject.MathArt.data.MAX_BAG_WEIGHT
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.ui.Pages.Exploration.BagModal
 import com.LambdaProject.MathArt.ui.components.MathText
 import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
@@ -41,8 +42,9 @@ fun BossQuizModal(
     inventory: Inventory,
     onUpdateInventory: (Inventory) -> Unit,
     onFinish: (Boolean) -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
+    val context = LocalContext.current
     var isFinishingByAttack by remember { mutableStateOf(false) }
 
     LaunchedEffect(
@@ -58,24 +60,24 @@ fun BossQuizModal(
             !viewModel.isChronoFreezeActive &&
             !isFinishingByAttack
         ) {
-            audio.playIntenseWarning(R.raw.timer_intense)
+            AppAudioManager.playIntenseWarning(context,R.raw.timer_intense)
         } else {
-            audio.stopIntenseWarning()
+            AppAudioManager.stopIntenseWarning()
         }
 
         when (viewModel.phase) {
             BossBattlePhase.INTRO -> {
                 delay(2200)
-                audio.playBGM(R.raw.sfx_quiz_bgm)
+                AppAudioManager.playBGM(context,R.raw.sfx_quiz_bgm)
             }
             BossBattlePhase.SUMMARY -> {
-                audio.stopBGMWithFade(duration = 1500)
+                AppAudioManager.stopBGMWithFade(duration = 1500)
                 val isWin = viewModel.bossHp <= 0f || (viewModel.playerHp > viewModel.bossHp && viewModel.playerHp > 0)
                 if (isWin) {
                     delay(500)
-                    audio.playSfx("quizVictory")
+                    AppAudioManager.playSfx("quizVictory")
                 } else {
-                    audio.playSfx("quizFailed")
+                    AppAudioManager.playSfx("quizFailed")
                 }
             }
             else -> {}
@@ -84,7 +86,7 @@ fun BossQuizModal(
 
     LaunchedEffect(Unit) {
         viewModel.onFinalAttackTrigger = {
-            audio.stopBGMWithFade(duration = 2000)
+            AppAudioManager.stopBGMWithFade(duration = 2000)
         }
     }
 
@@ -98,14 +100,14 @@ fun BossQuizModal(
         when (viewModel.phase) {
             BossBattlePhase.INTRO -> BattleIntroAnimation(bossType = viewModel.currentBossType)
             BossBattlePhase.COUNTDOWN -> CountdownAnimation(viewModel.countdownValue)
-            BossBattlePhase.QUIZ -> QuizContent(viewModel,  viewModelMAP, maxBagWeight = viewModelMAP.maxBagWeight, inventory, onUpdateInventory, audio)
+            BossBattlePhase.QUIZ -> QuizContent(viewModel,  viewModelMAP, maxBagWeight = viewModelMAP.maxBagWeight, inventory, onUpdateInventory)
             BossBattlePhase.BATTLE_ANIMATION -> {
                 BattleActionOverlay(
                     text = viewModel.battleAnimationText,
                     subText = viewModel.battleAnimationSubText
                 )
             }
-            BossBattlePhase.SUMMARY -> QuizSummaryAnimated(viewModel, onFinish, audio)
+            BossBattlePhase.SUMMARY -> QuizSummaryAnimated(viewModel, onFinish)
         }
     }
 }
@@ -117,8 +119,9 @@ fun QuizContent(
     maxBagWeight: Float = MAX_BAG_WEIGHT,
     inventory: Inventory,
     onUpdateInventory: (Inventory) -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
+    val context = LocalContext.current
     val question = viewModel.currentQuestion ?: return
     var isMathReady by remember(question.question) { mutableStateOf(false) }
     var typedAnswer by remember(question) { mutableStateOf("") }
@@ -135,14 +138,14 @@ fun QuizContent(
         val isTimeCritical = viewModel.bossTimeLeftMillis in 1..4000
 
         if (viewModel.phase == BossBattlePhase.QUIZ && isTimeCritical && !viewModel.isChronoFreezeActive) {
-            audio.playIntenseWarning(R.raw.timer_intense)
+            AppAudioManager.playIntenseWarning(context,R.raw.timer_intense)
         } else {
-            audio.stopIntenseWarning()
+            AppAudioManager.stopIntenseWarning()
         }
     }
 
     LaunchedEffect(viewModel.currentQuestionIndex) {
-        audio.stopIntenseWarning()
+        AppAudioManager.stopIntenseWarning()
         isSubmitting = false
     }
 
@@ -427,12 +430,12 @@ fun QuizContent(
                                 if (isSubmitting) return@Button
                                 isSubmitting = true
 
-                                audio.stopIntenseWarning()
-                                audio.playSfx("attack")
+                                AppAudioManager.stopIntenseWarning()
+                                AppAudioManager.playSfx("attack")
 
                                 viewModel.submitAnswer(
                                     onFinalAttack = {
-                                        audio.stopBGMWithFade(duration = 1500)
+                                        AppAudioManager.stopBGMWithFade(duration = 1500)
                                     }
                                 )
                             },
@@ -495,7 +498,7 @@ fun QuizContent(
                     PowerUpType.TORCH -> ""
                 }
 
-                audio.playSfx(sfxKey)
+                AppAudioManager.playSfx(sfxKey)
 
                 viewModel.usePowerUp(
                     type = pu,

@@ -6,7 +6,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.*
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.data.model.TileData
 import com.LambdaProject.MathArt.data.model.getInteraction
 import com.LambdaProject.MathArt.data.model.isWalkable
@@ -189,11 +189,12 @@ class MapViewModel : ViewModel() {
             val db = FirebaseFirestore.getInstance()
 
             try {
-                val userTask = db.collection("users").document(currentUserId).get()
-                val sessionTask = db.collection("exploration_sessions").document(currentUserId).get()
+                val userDoc = db.collection("users").document(currentUserId).get().await()
+                val sessionDoc = db.collection("exploration_sessions").document(currentUserId).get().await()
 
-                val userDoc = userTask.await()
-                val sessionDoc = sessionTask.await()
+                val mapDoc = db.collection("game_maps").document(mapId).get(Source.SERVER).await()
+                val serverData = mapDoc.data
+                val mapDefaultHp = mapDoc.getDouble("playerHp")?.toFloat() ?: 100f
 
                 val isTutorialMap = mapId.contains("tutorial")
                 val isTutorialAlreadyDone = userDoc.getBoolean("tutorial_completed") ?: false
@@ -201,7 +202,14 @@ class MapViewModel : ViewModel() {
 
                 legendaryPityCounter = userDoc.getLong("legendaryPityCounter")?.toInt() ?: 0
                 val lostData = userDoc.get("lostInventory") as? Map<String, Any>
+
                 val isResuming = (sessionDoc.getString("mapId") == mapId && !(sessionDoc.getBoolean("isFinished") ?: true))
+
+                if (isResuming) {
+                    playerHp = sessionDoc.getDouble("playerHp")?.toFloat() ?: mapDefaultHp
+                } else {
+                    playerHp = mapDefaultHp
+                }
 
                 var cachedData: Map<String, Any>? = null
                 val cacheFile = File(context?.filesDir, "map_cache_$mapId.json")
@@ -213,9 +221,6 @@ class MapViewModel : ViewModel() {
                     }
                     processLoadedMapData(mapId, cachedData!!, sessionDoc, isResuming, lostData)
                 }
-
-                val mapDoc = db.collection("game_maps").document(mapId).get(Source.SERVER).await()
-                val serverData = mapDoc.data
 
                 if (serverData != null && serverData != cachedData) {
                     processLoadedMapData(mapId, serverData, sessionDoc, isResuming, lostData)
@@ -504,7 +509,7 @@ class MapViewModel : ViewModel() {
         if (isResuming) {
             stationCooldownEnd = sessionDoc.getLong("stationCooldownEnd") ?: 0L
             sessionCode = sessionDoc.getString("sessionCode") ?: "482"
-            playerHp = sessionDoc.getDouble("playerHp")?.toFloat() ?: 100f
+//            playerHp = sessionDoc.getDouble("playerHp")?.toFloat() ?: 100f
             playerX = sessionDoc.getLong("playerX")?.toInt() ?: 0
             playerY = sessionDoc.getLong("playerY")?.toInt() ?: 0
 
@@ -585,11 +590,11 @@ class MapViewModel : ViewModel() {
                 shouldShowTutorialOverlay = true
             }
 
-            playerHp = if (mapId.contains("large") || mapId.contains("level_3")) {
-                40f
-            } else {
-                100f
-            }
+//            playerHp = if (mapId.contains("large") || mapId.contains("level_3")) {
+//                40f
+//            } else {
+//                100f
+//            }
         }
 
         val treeVariants = listOf("obj_tree_1", "obj_tree_2", "obj_tree_3")
@@ -667,7 +672,7 @@ class MapViewModel : ViewModel() {
         return map
     }
 
-    fun move(dx: Int, dy: Int, context: Context? = null, audio: ExplorationAudioManager? = null) {
+    fun move(dx: Int, dy: Int, context: Context? = null, /* audio: ExplorationAudioManager? = null */) {
         if (isLoading || isChestOpen || isInventoryOpen || isExplorationFinished || isStationOpen || isStationQuizOpen || isInteractionLocked) return
 
         val newX = playerX + dx
@@ -677,7 +682,7 @@ class MapViewModel : ViewModel() {
 
         val targetTile = fullMapData[newY][newX]
         if(!targetTile.isWalkable()) {
-            audio?.playSfx("block")
+            AppAudioManager.playSfx("block")
             return
         }
 
@@ -686,18 +691,19 @@ class MapViewModel : ViewModel() {
 
         playerX = newX
         playerY = newY
-        audio?.playSfx("move")
+
+        AppAudioManager.playSfx("move")
 
         updateDiscovery(playerX, playerY, dx, dy)
-
         checkProximity(playerX, playerY)
 
         val interaction = targetTile.getInteraction()
         if (interaction == InteractionType.BOSS) {
             saveToCloud(customX = lastSafeX, customY = lastSafeY)
-            handleInteraction(targetTile, newX, newY, context, audio)
+//            handleInteraction(targetTile, newX, newY, context, audio)
+            handleInteraction(targetTile, newX, newY, context)
         } else {
-            handleInteraction(targetTile, newX, newY, context, audio)
+            handleInteraction(targetTile, newX, newY, context)
             saveProgressDebounced()
         }
     }
@@ -793,7 +799,7 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    fun handleInteraction(tile: TileData, x: Int, y: Int, context: Context? = null, audio: ExplorationAudioManager?) {
+    fun handleInteraction(tile: TileData, x: Int, y: Int, context: Context? = null, /* audio: ExplorationAudioManager?*/) {
         if (isInteractionLocked) return
 
         if (tile.objectVariant == "obj_sack") {
@@ -838,10 +844,11 @@ class MapViewModel : ViewModel() {
             InteractionType.FINISH -> {
                 if (phase != ExplorationPhase.Playing) return
                 isInteractionLocked = true
-                audio?.stopBGM()
+                AppAudioManager.stopBGM()
+
                 viewModelScope.launch {
                     delay(500)
-                    audio?.playSfx("success")
+                    AppAudioManager.playSfx("success")
                     extractItems(context)
                 }
             }
@@ -1176,7 +1183,7 @@ class MapViewModel : ViewModel() {
         isInventoryOpen = !isInventoryOpen
     }
     
-    fun usePowerUp(type: PowerUpType, context: Context?, audio: ExplorationAudioManager?) {
+    fun usePowerUp(type: PowerUpType, context: Context?, /* audio: ExplorationAudioManager? */) {
         val currentPowerUps = inventory.powerUps.toMutableList()
         if (!currentPowerUps.contains(type)) return
 
@@ -1184,7 +1191,7 @@ class MapViewModel : ViewModel() {
             PowerUpType.HEALING_VIAL-> {
                 currentPowerUps.remove(type)
                 playerHp = (playerHp + 20f).coerceAtMost(100f)
-                audio?.playSfx("drink")
+                AppAudioManager.playSfx("drink")
             }
 
             PowerUpType.LEATHER_STRAPS -> {
@@ -1193,7 +1200,7 @@ class MapViewModel : ViewModel() {
                         isLeatherStrapsActive = false
                         refreshPowerUpEffects()
                         /* maxBagWeight = MAX_BAG_WEIGHT */
-                        audio?.playSfx("")
+                        AppAudioManager.playSfx("")
                     } else {
                         Log.d("Inventory", "Gagal melepas: Tas terlalu penuh!")
                     }
@@ -1201,14 +1208,14 @@ class MapViewModel : ViewModel() {
                     isLeatherStrapsActive = true
                     /* maxBagWeight = MAX_BAG_WEIGHT + ADD_STRAP */
                     refreshPowerUpEffects()
-                    audio?.playSfx("wear")
+                    AppAudioManager.playSfx("wear")
                 }
             }
 
             PowerUpType.MAGIC_KEY -> {
                 if (showStationInteractButton && currentStationPos != null) {
                     currentPowerUps.remove(type)
-                    useMagicKeyOnStation(context, audio)
+                    useMagicKeyOnStation(context, /* audio */)
                 } else {
                     return
                 }
@@ -1219,7 +1226,7 @@ class MapViewModel : ViewModel() {
                 viewModelScope.launch {
                     isBinocularActive = true
                     binocularTimeLeft = 5
-                    audio?.playSfx("zoom_out")
+                    AppAudioManager.playSfx("zoom_out")
 
                     while (binocularTimeLeft > 0) {
                         delay(1000)
@@ -1236,7 +1243,7 @@ class MapViewModel : ViewModel() {
                 viewModelScope.launch {
                     isTorchActive = true
                     torchTimeLeft = 5
-                    audio?.playSfx("light_on")
+                    AppAudioManager.playSfx("light_on")
                     while (torchTimeLeft > 0) {
                         delay(1000)
                         torchTimeLeft--
@@ -1247,7 +1254,7 @@ class MapViewModel : ViewModel() {
 
             PowerUpType.LANTERN -> {
                 isLanternActive = !isLanternActive
-                audio?.playSfx(if (isLanternActive) "light_on" else "")
+                AppAudioManager.playSfx(if (isLanternActive) "light_on" else "")
             }
 
             else -> {
@@ -1259,13 +1266,13 @@ class MapViewModel : ViewModel() {
         saveProgressDebounced()
     }
 
-    private fun useMagicKeyOnStation(context: Context?, audio: ExplorationAudioManager?) {
+    private fun useMagicKeyOnStation(context: Context?, /* audio: ExplorationAudioManager?*/) {
         currentStationPos?.let { pos ->
             solvedStations.add(pos)
             removeObjectAt(pos.first, pos.second)
 
             inventory = inventory.copy(coins = inventory.coins + 100)
-            audio?.playSfx("unlocked")
+            AppAudioManager.playSfx("unlocked")
 
             checkProximity(playerX, playerY)
             saveToCloud()

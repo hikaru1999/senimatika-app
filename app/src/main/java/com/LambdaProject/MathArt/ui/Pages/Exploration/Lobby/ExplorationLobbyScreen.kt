@@ -66,9 +66,18 @@ fun ExplorationLobbyScreen(
     var hasCombined by remember { mutableStateOf(false) }
     var selectedArtifactForModal by remember { mutableStateOf<MapViewModel.ArtifactData?>(null) }
     var checkComplete by remember { mutableStateOf(false) }
+    var mapPlayerHp by remember { mutableFloatStateOf(100f) }
 
     var isVerifying by remember { mutableStateOf(true) }
     var isNotFound by remember { mutableStateOf(false) }
+
+    val actuallyNotFound = isNotFound || (mapName == "Memuat..." && checkComplete)
+
+    LaunchedEffect(actuallyNotFound) {
+        if (actuallyNotFound) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", true)
+        }
+    }
 
     LaunchedEffect(Unit) {
         delay(4000)
@@ -83,6 +92,7 @@ fun ExplorationLobbyScreen(
             .addOnSuccessListener { doc ->
             if (doc.exists() && doc.getBoolean("isActive") == true) {
                 mapName = doc.getString("name") ?: "Wilayah Tanpa Nama"
+                mapPlayerHp = doc.getDouble("playerHp")?.toFloat() ?: 100f
                 mapDescription = doc.getString("description") ?: "Tidak ada deskripsi tersedia."
                 levelType = doc.getString("levelType") ?: "NORMAL"
 
@@ -146,9 +156,10 @@ fun ExplorationLobbyScreen(
         }
     } else if (isNotFound || (mapName == "Memuat..." && checkComplete)) {
         NotFoundScreen(
-            title = "Wilayah Tidak Tersedia",
-            message = "Maaf, wilayah eksplorasi ini telah ditutup atau tidak ditemukan.",
+            title = "Yah, Peta Tidak Tersedia",
+            message = "Maaf ya, peta eksplorasi ini sedang tidak tersedia.",
             onBack = {
+                navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", false)
                 if (isSessionActive) {
                     mapViewModel.forceClearActiveSession()
                 }
@@ -218,6 +229,7 @@ fun ExplorationLobbyScreen(
                             hasNight = hasNight,
                             hasCombined = hasCombined,
                             levelType = levelType,
+                            playerHp = mapPlayerHp,
                             onBack = { navController.popBackStack() },
                             onStartExploration = {
                                 coroutineScope.launch {

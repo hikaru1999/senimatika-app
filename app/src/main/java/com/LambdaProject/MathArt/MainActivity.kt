@@ -21,11 +21,24 @@ import com.LambdaProject.MathArt.ui.Pages.Material.QuizScreen
 import com.LambdaProject.MathArt.ui.theme.LearnApplicationTheme
 import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.copy
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
 import com.LambdaProject.MathArt.data.AppLifeCycleObserver
 import com.LambdaProject.MathArt.ui.Pages.Profile.AchievementPage
@@ -56,8 +69,11 @@ import com.LambdaProject.MathArt.ui.Pages.Profile.QuestionnaireMasterScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.ValidationSummaryScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.ValidatorRoleScreen
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
+import com.LambdaProject.MathArt.data.NetworkObserver
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.ui.Pages.Exploration.Lobby.ExplorationLobbyScreen
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -69,6 +85,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppAudioManager.initialize(this)
         forceLightMode()
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifeCycleObserver())
@@ -79,6 +96,9 @@ class MainActivity : ComponentActivity() {
 
             setContent {
                 val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+
                 val quizViewModel = remember { QuizViewModel() }
                 val viewModel: OnlineQuizViewModel = hiltViewModel()
                 val quizList by viewModel.materials.collectAsState()
@@ -88,9 +108,66 @@ class MainActivity : ComponentActivity() {
                 val activeBadge by achViewModel.currentAchievement.collectAsState()
                 val userId = FirebaseAuth.getInstance().currentUser?.uid
 
+                val context = LocalContext.current
+                val networkObserver = remember { NetworkObserver(context) }
+                val isOnline by networkObserver.isConnected.collectAsState(initial = true)
+                val isNetworkLost = !isOnline
+
+                var countdown by remember { mutableIntStateOf(15) }
+                var showNetworkSnackbar by remember { mutableStateOf(false) }
+                var isReconnecting by remember { mutableStateOf(false) }
+
+                val isSuccessState = !isNetworkLost && isReconnecting
+                val currentAchievement by achViewModel.currentAchievement.collectAsState()
+
+                val isNestedNotFound by navBackStackEntry?.savedStateHandle
+                    ?.getLiveData<Boolean>("is_not_found")
+                    ?.observeAsState(false) ?: remember { mutableStateOf(false)}
+
+                val isSafeZone = currentRoute == "splash" ||
+                        currentRoute == "login" ||
+                        currentRoute == "register" ||
+                        currentRoute == "ForgotPassword" ||
+                        isNestedNotFound == true
+
+                val isSnackbarVisible = (showNetworkSnackbar || currentAchievement != null) && !isSafeZone
+
                 LaunchedEffect(userId) {
                     if (userId != null) {
                         achViewModel.listenForNewAchievements(userId)
+                    }
+                }
+
+                LaunchedEffect(isOnline, isSafeZone) {
+                    if (isSafeZone) {
+                        showNetworkSnackbar = false
+                        isReconnecting = false
+                        return@LaunchedEffect
+                    }
+
+                    if (!isOnline) {
+                        showNetworkSnackbar = true
+                        isReconnecting = true
+                        countdown = 30
+
+                        while (countdown > 0 && !isOnline) {
+                            delay(1000)
+                            countdown--
+                        }
+
+                        if (countdown <= 0 && !isOnline) {
+                            FirebaseAuth.getInstance().signOut()
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    } else {
+                        if (isReconnecting) {
+                            countdown = 0
+                            delay(1500)
+                            showNetworkSnackbar = false
+                            isReconnecting = false
+                        }
                     }
                 }
 
@@ -380,18 +457,50 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        activeBadge?.let { badge ->
+
+//                        if (isNetworkLost) {
+//                        }
+
+                        AnimatedVisibility(
+                            visible = showNetworkSnackbar && !isSafeZone,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 300)),
+                            exit = fadeOut(animationSpec = tween(durationMillis = 300))
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .zIndex(9999f)
-                            ) {
-                                AchievementSnackbar(
-                                    item = badge,
-                                    visible = true
-                                )
-                            }
+                                    .zIndex(998f)
+                                    .background(Color.Black.copy(alpha = 0.4f))
+                                    .pointerInput(Unit) {
+                                        detectTapGestures {
+
+                                        }
+                                    }
+                            )
                         }
+
+                        UniversalSnackbar(
+                            achievementItem = currentAchievement,
+                            isNetworkLost = isNetworkLost,
+                            isSuccess = isSuccessState,
+                            remainingSeconds = countdown,
+                            visible = isSnackbarVisible
+                        )
+
+
+
+//                        activeBadge?.let { badge ->
+//                            Box(
+//                                modifier = Modifier
+//                                    .fillMaxSize()
+//                                    .zIndex(9999f)
+//                            ) {
+//                                AchievementSnackbar(
+//                                    item = badge,
+//                                    visible = true
+//                                )
+//                            }
+//                        }
                     }
                 }
             }

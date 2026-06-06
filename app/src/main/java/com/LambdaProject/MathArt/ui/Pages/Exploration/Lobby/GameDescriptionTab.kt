@@ -34,6 +34,7 @@ fun GameDescriptionTab(
     hasFog: Boolean,
     hasNight: Boolean,
     hasCombined: Boolean,
+    playerHp: Float,
     onBack: () -> Unit,
     onStartExploration: () -> Unit,
     isResume: Boolean = false
@@ -84,8 +85,9 @@ fun GameDescriptionTab(
             )
 
             Row (
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.padding(vertical = 8.dp)
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
             ) {
                 Surface(
                     color = if (levelType == "TUTORIAL") Color(0xFFFF9800) else Color(0xFFE8EAF6),
@@ -101,6 +103,8 @@ fun GameDescriptionTab(
                         letterSpacing = 1.sp
                     )
                 }
+
+                VisibilityTag(text = "${playerHp.toInt()} HP", color = Color(0xFFEF5350))
 
                 if (hasCombined) {
                     VisibilityTag(text = "Combined Mode", color = Color(0xFFFF6D00))

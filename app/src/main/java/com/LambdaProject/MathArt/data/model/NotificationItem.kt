@@ -12,5 +12,5 @@ data class NotificationItem(
 
 enum class NotificationType {
     ACHIEVEMENT,
-    PVP_CHALLENGE
+//    PVP_CHALLENGE
 }

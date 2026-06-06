@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.R
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.data.model.ExplorationStats
 import com.LambdaProject.MathArt.interFontFamily
 import kotlinx.coroutines.CoroutineScope
@@ -46,24 +46,25 @@ fun ExplorationSummaryModal(
     stats: ExplorationStats,
     isTutorialReplay: Boolean = false,
     onClose: () -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
     var isProcessing by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val scale = remember { Animatable(0.8f) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         scale.animateTo(
             targetValue = 1f,
             animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
+                dampingRatio =DampingRatioMediumBouncy,
+                stiffness = StiffnessLow
             )
         )
         if (!stats.isSuccess) {
-            audio.playSfx("gameover")
+            AppAudioManager.playSfx("gameover")
         } else {
-            audio.playSfx("victory")
+            AppAudioManager.playSfx("victory")
         }
     }
 
@@ -168,12 +169,19 @@ fun ExplorationSummaryModal(
                         if (!isProcessing) {
                             isProcessing = true
                             isLoading = true
-                            audio.stopBGM()
-                            CoroutineScope(Dispatchers.Main).launch {
+                            AppAudioManager.stopBGM()
+
+                            scope.launch {
                                 delay(2000)
                                 onClose()
                                 isLoading = false
                             }
+
+//                            CoroutineScope(Dispatchers.Main).launch {
+//                                delay(2000)
+//                                onClose()
+//                                isLoading = false
+//                            }
                         }
                     },
                     modifier = Modifier

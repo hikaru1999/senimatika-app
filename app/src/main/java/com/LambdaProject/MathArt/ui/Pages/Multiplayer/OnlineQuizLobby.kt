@@ -54,9 +54,16 @@ fun OnlineQuizLobby(
     val coroutineScope = rememberCoroutineScope()
     val db = remember { FirebaseFirestore.getInstance() }
     val isQuizNotFound by viewModel.isQuizNotFound.collectAsState()
+    var checkComplete by remember { mutableStateOf(false) }
+    val isCurrentlyNotFound = (selectedMaterial == null && checkComplete) || isQuizNotFound
 
     var isVerifying by remember { mutableStateOf(true) }
-    var checkComplete by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isCurrentlyNotFound) {
+        if (isCurrentlyNotFound) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", true)
+        }
+    }
 
     LaunchedEffect(selectedMaterial) {
         delay(3000)
@@ -120,9 +127,10 @@ fun OnlineQuizLobby(
         }
     } else if ((selectedMaterial == null && checkComplete) || isQuizNotFound) {
         NotFoundScreen(
-            title = "Kuis Tidak Ditemukan",
-            message = "Maaf, konten ini sedang tidak tersedia.",
+            title = "Yah, Kuis Tidak Ditemukan",
+            message = "Maaf ya, konten ini sedang tidak tersedia.",
             onBack = {
+                navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", false)
                 viewModel.refreshMaterials()
                 navController.popBackStack()
             }

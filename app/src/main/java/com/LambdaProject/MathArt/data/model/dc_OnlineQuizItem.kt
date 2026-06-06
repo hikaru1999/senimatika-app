@@ -3,14 +3,14 @@ package com.LambdaProject.MathArt.data.model
 import androidx.annotation.Keep
 import com.google.firebase.firestore.PropertyName
 
-@Keep
-data class OnlineQuizData (
-    val id: String = "",
-    val title: String = "",
-    val description: String = "",
-    val questions: List<OnlineQuizQuestion> = emptyList(),
-    val totalPoints: Int = 0
-)
+//@Keep
+//data class OnlineQuizData (
+//    val id: String = "",
+//    val title: String = "",
+//    val description: String = "",
+//    val questions: List<OnlineQuizQuestion> = emptyList(),
+//    val totalPoints: Int = 0
+//)
 
 @Keep
 data class OnlineQuizDesc (

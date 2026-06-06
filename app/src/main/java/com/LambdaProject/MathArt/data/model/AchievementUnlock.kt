@@ -17,32 +17,33 @@ fun unlockGeneralAchievement(userId: String, achievementName: String) {
     achievementRef.get().addOnSuccessListener { document ->
         if (!document.exists()) {
             val localData = DataAchievements.find { it.name == achievementName }
-            val imageName = when(achievementName) {
-                "Penjelajah" -> "ic_explorer"
-                "Pemula" -> "img_rocket_pemula"
-                "Profesional" -> "img_pros"
-                "Ilmuwan" -> "ic_scientist"
-                "Math Magician" -> "ic_magician"
-                "Master Aljabar" -> "ic_algebra_master"
-                "Master Geometri" -> "ic_geometry_master"
-                "Ahli Ramalan" -> "ic_statistic_master"
-                "Ahli Matematika" -> "ic_expert"
-                "Ahli Kalkulus" -> "ic_calculus_master"
-                "Jenius Matematika" -> "ic_genius"
-                "Apprentice No More" -> "ic_beginner_exploration"
-                "The Fortune Finder" -> "ic_treasure_hunter_1"
-                "No More Lessons" -> "ic_boss_hunter_1"
-                "Indiana Jones’ Grocery List" -> "ic_treasure_hunter_2"
-                "Who is the Boss Now?" -> "ic_boss_hunter_2"
-                "Beyond the Guided Path" -> "ic_master_exploration"
-                "Lone Wolf Archivist" -> "ic_wolf"
-                else -> "ic_coin"
-            }
+//            val imageName = when(achievementName) {
+//                "Penjelajah" -> "ic_explorer"
+//                "Pemula" -> "img_rocket_pemula"
+//                "Profesional" -> "img_pros"
+//                "Ilmuwan" -> "ic_scientist"
+//                "Math Magician" -> "ic_magician"
+//                "Master Aljabar" -> "ic_algebra_master"
+//                "Master Geometri" -> "ic_geometry_master"
+//                "Ahli Ramalan" -> "ic_statistic_master"
+//                "Ahli Matematika" -> "ic_expert"
+//                "Ahli Kalkulus" -> "ic_calculus_master"
+//                "Jenius Matematika" -> "ic_genius"
+//                "Apprentice No More" -> "ic_beginner_exploration"
+//                "The Fortune Finder" -> "ic_treasure_hunter_1"
+//                "No More Lessons" -> "ic_boss_hunter_1"
+//                "Indiana Jones’ Grocery List" -> "ic_treasure_hunter_2"
+//                "Who is the Boss Now?" -> "ic_boss_hunter_2"
+//                "Beyond the Guided Path" -> "ic_master_exploration"
+//                "Lone Wolf Archivist" -> "ic_wolf"
+//                else -> "ic_coin"
+//            }
 
             val newAchievement = hashMapOf(
                 "name" to achievementName,
-                "imageRes" to getAchievementIcon(imageName),
-                "imageName" to imageName,
+                "imageRes" to (localData?.imageRes ?: R.drawable.obj_sack),
+//                "imageRes" to getAchievementIcon(imageName),
+//                "imageName" to imageName,
                 "timestamp" to Timestamp.now(),
                 "isUnlocked" to true,
                 "isRead" to false,

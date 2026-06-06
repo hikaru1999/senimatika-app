@@ -13,11 +13,13 @@ import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
+import com.LambdaProject.MathArt.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -91,12 +93,11 @@ fun CountdownAnimation(value: Int) {
 fun QuizSummaryAnimated(
     viewModel: BossQuizViewModel,
     onFinish: (Boolean) -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
+    val context = LocalContext.current
     var visibleItems by remember { mutableIntStateOf(0) }
-
     val results = viewModel.questionResults
-
     val bossName = when (viewModel.currentBossType) {
         "boss_1", "obj_boss_1" -> "Vardos"
         "boss_2", "obj_boss_2" -> "Grooten"
@@ -149,7 +150,8 @@ fun QuizSummaryAnimated(
                     onClick = {
                         onFinish(isWin)
                         viewModel.closeQuiz()
-                        audio.resumeAmbient()
+                        AppAudioManager.resumeAmbient(context)
+//                        AppAudioManager.playBGM(context, R.raw.bgm_master, isAmbient = true)
                     },
                     modifier = Modifier
                         .fillMaxWidth()

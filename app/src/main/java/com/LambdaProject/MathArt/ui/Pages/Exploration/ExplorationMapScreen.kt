@@ -39,7 +39,7 @@ import com.LambdaProject.MathArt.ViewModels.ExplorationPhase
 import com.LambdaProject.MathArt.data.NetworkObserver
 import com.LambdaProject.MathArt.data.ObjectType
 import com.LambdaProject.MathArt.data.TileType
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.data.model.TileData
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle.BossQuizModal
@@ -83,7 +83,7 @@ fun ExplorationMapScreen(
     var isMapDeactivatedByAdmin by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val audio = remember { ExplorationAudioManager(context) }
+    val audio = AppAudioManager
     val scope = rememberCoroutineScope()
     val fadeInAlpha by animateFloatAsState(
         targetValue = if (mapVisible) 1f else 0f,
@@ -95,11 +95,18 @@ fun ExplorationMapScreen(
     val isOnline by networkObserver.isConnected.collectAsState(initial = true)
 
     val isNight = viewModel.isNightModeEnabled || viewModel.isCombinedEnabled
+    val isDataReady = viewModel.fullMapData.isNotEmpty() && !viewModel.isLoading
     val buttonBgColor = if (isNight) Color.Black.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.6f)
     val iconTintColor = if (isNight) Color.White else Color.Black
 
     var lastDx by remember { mutableIntStateOf(0) }
     var lastDy by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(isDataReady) {
+        if (isDataReady) {
+            mapVisible = true
+        }
+    }
 
     LaunchedEffect(mapId) {
         val listener = FirebaseFirestore.getInstance()
@@ -112,6 +119,10 @@ fun ExplorationMapScreen(
             }
     }
 
+    LaunchedEffect(isOnline) {
+        viewModel.saveProgressDebounced()
+    }
+
     DisposableEffect(mapId) {
         onDispose {
             audio.stopBGM()
@@ -119,32 +130,45 @@ fun ExplorationMapScreen(
         }
     }
 
-    LaunchedEffect(viewModel.currentMapId, viewModel.isNightModeEnabled, viewModel.isCombinedEnabled) {
-        val isDark = viewModel.isNightModeEnabled || viewModel.isCombinedEnabled
+    LaunchedEffect(
+        viewModel.currentMapId,
+        viewModel.isNightModeEnabled,
+        viewModel.isCombinedEnabled,
+        viewModel.currentBossPos,
+        viewModel.isLoading
+    ) {
+        if (viewModel.isLoading) return@LaunchedEffect
 
-        val bgmResource = if (isDark) {
-            R.raw.bgm_slow_ambient
-        } else {
-            R.raw.bgm_master
-        }
-
-        if (isInitialLoad) {
-            delay(500)
-            isInitialLoad = false
-        }
-
-        audio.stopBGM()
-        delay(100)
-        audio.playBGM(bgmResource, isAmbient = true)
-
-        mapVisible = true
-    }
-
-    LaunchedEffect(viewModel.currentBossPos) {
         if (viewModel.currentBossPos != null) {
             audio.stopBGMWithFade(duration = 500)
+            return@LaunchedEffect
+        }
+
+        val isDark = viewModel.isNightModeEnabled || viewModel.isCombinedEnabled
+        val bgmResource = if (isDark) R.raw.bgm_slow_ambient else R.raw.bgm_master
+
+        if (isInitialLoad) {
+            mapVisible = true
+            delay(1000)
+            AppAudioManager.playBGM(context, bgmResource, isAmbient = true)
+            isInitialLoad = false
+        } else {
+            delay(600)
+            AppAudioManager.playBGM(context,bgmResource, isAmbient = true)
+            mapVisible = true
         }
     }
+
+//    LaunchedEffect(viewModel.currentBossPos) {
+//        if (viewModel.currentBossPos != null) {
+//            audio.stopBGMWithFade(duration = 500)
+//        } else {
+//            if (!isInitialLoad) {
+//                delay(800)
+//                audio.resumeAmbient(context)
+//            }
+//        }
+//    }
 
     LaunchedEffect(initialBag) {
         if (initialBag.isNotEmpty()) {
@@ -292,34 +316,42 @@ fun ExplorationMapScreen(
         }
     }
 
-    if (!isOnline) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .zIndex(100f),
-            color = Color.Red.copy(alpha = 0.8f)
-        ) {
-            Text(
-                "Koneksi Terputus. Progress terkini mungkin tidak tersimpan.",
-                color = Color.White,
-                fontSize = 10.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(2.dp)
-            )
+    LaunchedEffect(isMapDeactivatedByAdmin) {
+        if (isMapDeactivatedByAdmin) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", true)
         }
     }
 
     if (isMapDeactivatedByAdmin) {
         NotFoundScreen(
-            title = "Akses Wilayah Terputus",
-            message = "Wilayah ini baru saja dinonaktifkan oleh pusat komando (Admin). Kamu akan dikembalikan ke beranda.",
+            title = "Yah, Peta Tidak Tersedia",
+            message = "Maaf ya, peta eksplorasi ini sedang tidak tersedia.",
             onBack = {
+                navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", false)
                 viewModel.forceClearActiveSession()
                 audio.stopBGM()
                 audio.forceStopAll()
                 navController.popBackStack("ExplorationLandingPage", inclusive = false)
             }
         )
+    } else if (viewModel.isLoading || viewModel.fullMapData.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFF1976D2), strokeWidth = 3.dp)
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    "Mempersiapkan wilayah...",
+                    fontFamily = interFontFamily,
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+        }
     } else {
         Box(
             modifier = Modifier
@@ -660,7 +692,7 @@ fun ExplorationMapScreen(
                             if (hasMagicKey) {
                                 Button(
                                     onClick = {
-                                        viewModel.usePowerUp(PowerUpType.MAGIC_KEY, context, audio)
+                                        viewModel.usePowerUp(PowerUpType.MAGIC_KEY, context, /* audio */)
                                     },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFFFFD700),
@@ -681,7 +713,7 @@ fun ExplorationMapScreen(
                     onMove = { dx, dy ->
                         lastDx = dx
                         lastDy = dy
-                        viewModel.move(dx, dy, context, audio)
+                        viewModel.move(dx, dy, context)
                     }
                 )
             }
@@ -697,7 +729,7 @@ fun ExplorationMapScreen(
                     isDropping = viewModel.isDropping,
                     onClose = { viewModel.toggleInventory() },
                     onDropPowerUp = { pu -> viewModel.dropPowerUp(pu) },
-                    onUsePowerUp = { viewModel.usePowerUp(it, context, audio) }
+                    onUsePowerUp = { viewModel.usePowerUp(it, context) }
                 )
             }
 
@@ -705,7 +737,7 @@ fun ExplorationMapScreen(
                 ChestPopup(
                     reward = viewModel.currentReward!!,
                     isReplay = viewModel.isTutorialReplayByStatus,
-                    audio = audio,
+                    /* audio = audio, */
                     onCollect = { viewModel.collectReward() })
             }
 
@@ -771,7 +803,6 @@ fun ExplorationMapScreen(
                             viewModel.failExploration()
                         }
                     },
-                    audio = audio
                 )
             }
 
@@ -784,7 +815,6 @@ fun ExplorationMapScreen(
                         viewModel.clearSession(context)
                         onBack()
                     },
-                    audio = audio
                 )
             }
 
@@ -902,6 +932,25 @@ fun ExplorationMapScreen(
                     .padding(start = 16.dp, bottom = 16.dp)
                     .zIndex(1000f)
             )
+
+            if (!isOnline) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .zIndex(100f),
+                    color = Color.Red
+                ) {
+                    Text(
+                        "Koneksi Terputus. Progress terkini mungkin tidak tersimpan.",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp)
+                    )
+                }
+            }
         }
 
         if (viewModel.isArtifactModalVisible) {

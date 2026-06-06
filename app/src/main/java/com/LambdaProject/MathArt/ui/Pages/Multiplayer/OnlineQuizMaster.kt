@@ -35,7 +35,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.LambdaProject.MathArt.data.model.ScoreSoundManager
 import com.LambdaProject.MathArt.data.powerUpColors
 import com.LambdaProject.MathArt.data.powerUpIcons
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
@@ -43,6 +42,8 @@ import com.LambdaProject.MathArt.data.model.QuestionType
 import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.data.NetworkObserver
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.ui.Pages.NotFoundScreen
 import com.LambdaProject.MathArt.ui.components.MathText
 import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
@@ -61,7 +62,13 @@ fun OnlineQuizMaster(
     userId: String,
     viewModel: OnlineQuizViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val networkObserver = remember { NetworkObserver(context) }
+    val isOnline by networkObserver.isConnected.collectAsState(initial = true)
+
     var isDataInvalid by remember { mutableStateOf(false) }
+    var wasOffline by remember { mutableStateOf(false) }
+    var isAnswered by remember { mutableStateOf(false) }
 
     LaunchedEffect(materialId, userId) {
         viewModel.loadQuizForSelectedMaterial(userId, materialId)
@@ -75,12 +82,22 @@ fun OnlineQuizMaster(
             }
     }
 
+    LaunchedEffect(isOnline) {
+        if (!isOnline) {
+            wasOffline = true
+        } else if (isOnline && wasOffline) {
+            if (isAnswered) {
+                delay(500)
+            }
+            wasOffline = false
+        }
+    }
+
     val questions by viewModel.questions.collectAsState()
     val isQuizNotFound by viewModel.isQuizNotFound.collectAsState()
     val currentIndex by viewModel.currentQuestionIndex.collectAsState()
     val currentBasePoints by viewModel.currentBasePoints.collectAsState()
     val scorestreakState by viewModel.scorestreakState.collectAsState()
-    val context = LocalContext.current
 
 //    if (questions.isEmpty() || currentIndex >= questions.size) {
 //        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -88,11 +105,21 @@ fun OnlineQuizMaster(
 //        }
 //        return
 //    }
+
+    LaunchedEffect(isQuizNotFound, isDataInvalid) {
+        if (isQuizNotFound || isDataInvalid) {
+            navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", true)
+        } else {
+            navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", false)
+        }
+    }
+
     if (isQuizNotFound || isDataInvalid) {
         NotFoundScreen(
-            title = "Data Tidak Ditemukan",
-            message = "Maaf, konten ini sedang tidak tersedia.",
+            title = "Yah, Kuis Tidak Ditemukan",
+            message = "Maaf ya, konten ini sedang tidak tersedia.",
             onBack = {
+                navController.currentBackStackEntry?.savedStateHandle?.set("is_not_found", false)
                 viewModel.refreshMaterials()
                 navController.popBackStack("OnlineQuizPage", inclusive = false)
             }
@@ -131,7 +158,6 @@ fun OnlineQuizMaster(
     val imageRes = question.imageRes
 
     var timer by remember(question.questionNumber) { mutableIntStateOf(question.durationSeconds) }
-    var isAnswered by remember { mutableStateOf(false) }
     var isReadyToRender by remember { mutableStateOf(false) }
     var isNavigating by remember { mutableStateOf(false) }
     var showScoreSnackbar by remember { mutableStateOf(false) }
@@ -210,7 +236,7 @@ fun OnlineQuizMaster(
 
     LaunchedEffect(showScoreSnackbar) {
         if (showScoreSnackbar) {
-            ScoreSoundManager.playSound(context, scorestreakState!!.type)
+            AppAudioManager.playScoreSound(scorestreakState!!.type)
             delay(3000)
             showScoreSnackbar = false
         }
