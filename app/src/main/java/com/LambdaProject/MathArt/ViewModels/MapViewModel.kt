@@ -20,6 +20,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import com.LambdaProject.MathArt.data.model.ExplorationStats
+import com.LambdaProject.MathArt.data.model.Mission
+import com.LambdaProject.MathArt.data.model.MissionProgress
+import com.LambdaProject.MathArt.data.model.MissionType
 import com.LambdaProject.MathArt.data.model.unlockGeneralAchievement
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
@@ -38,6 +41,8 @@ sealed class ExplorationPhase {
     object Finished : ExplorationPhase()
 }
 class MapViewModel : ViewModel() {
+    var activeMissions by mutableStateOf<List<MissionProgress>>(emptyList())
+        private set
     var isLoading by mutableStateOf(false)
     var mapWidth by mutableStateOf(0)
     var mapHeight by mutableStateOf(0)
@@ -104,6 +109,15 @@ class MapViewModel : ViewModel() {
     var onBossTriggered: ((Int, Int, String) -> Unit)? = null
     var isDropping by mutableStateOf(false)
     var shouldShowTutorialOverlay by mutableStateOf(false)
+    var explorationBaseExp by mutableIntStateOf(100)
+    var missionBaseExp by mutableIntStateOf(50)
+    val bossExpMap = mutableMapOf<Pair<Int, Int>, Int>()
+    val stationExpMap = mutableMapOf<Pair<Int, Int>, Int>()
+    var accumulatedBossExp by mutableIntStateOf(0)
+    var accumulatedStationExp by mutableIntStateOf(0)
+    var lastTriggeredBossExp by mutableIntStateOf(75)
+    var lastTriggeredStationExp by mutableIntStateOf(150)
+    var mapPlayCount by mutableIntStateOf(0)
     private val quizIdMap = mutableMapOf<Pair<Int, Int>, String>()
     private val _currentSessionActive = MutableStateFlow(false)
     private var loadedUserId: String? = null
@@ -202,6 +216,7 @@ class MapViewModel : ViewModel() {
 
                 legendaryPityCounter = userDoc.getLong("legendaryPityCounter")?.toInt() ?: 0
                 val lostData = userDoc.get("lostInventory") as? Map<String, Any>
+                mapPlayCount = ((userDoc.get("mapPlayCounts") as? Map<String, Any>)?.get(mapId) as? Number)?.toInt() ?: 0
 
                 val isResuming = (sessionDoc.getString("mapId") == mapId && !(sessionDoc.getBoolean("isFinished") ?: true))
 
@@ -486,6 +501,10 @@ class MapViewModel : ViewModel() {
         mapWidth = width
         mapHeight = height
         quizIdMap.clear()
+        bossExpMap.clear()
+        stationExpMap.clear()
+        explorationBaseExp = (mapData["exp"] as? Number)?.toInt() ?: (mapData["baseExp"] as? Number)?.toInt() ?: 100
+        missionBaseExp = (mapData["missionBaseExp"] as? Number)?.toInt() ?: (mapData["missionExp"] as? Number)?.toInt() ?: 50
 
         deathSackInventory = null
         deathSackPos = null
@@ -597,7 +616,24 @@ class MapViewModel : ViewModel() {
 //            }
         }
 
-        val treeVariants = listOf("obj_tree_1", "obj_tree_2", "obj_tree_3")
+        // --- Inisialisasi Misi Wilayah (untuk fresh run maupun resume) ---
+        val rawMissions = (mapData["missions"] as? List<Map<String, Any>>) ?: emptyList()
+        val parsedMissions = rawMissions.map { Mission.fromMap(it) }
+        activeMissions = parsedMissions.map { m ->
+            val initialCount = when (m.type) {
+                MissionType.DEFEAT_BOSS -> defeatedBosses.size
+                MissionType.COLLECT_CHEST -> openedChests.size
+                MissionType.REACH_FINISH -> 0
+                else -> 0
+            }
+            MissionProgress(
+                mission = m,
+                currentCount = initialCount,
+                isCompleted = initialCount >= m.targetCount
+            )
+        }
+
+        val treeVariants = listOf("obj_tree_small", "obj_tree_medium", "obj_tree_large")
 
         fullMapData = List(height) { y ->
             List(width) { x ->
@@ -628,6 +664,14 @@ class MapViewModel : ViewModel() {
                     val isCollected = unlockedArtifactIds.contains(tileMap["contentId"] as? String)
                     if (qId != null) quizIdMap[pos] = qId
 
+                    if (objType == ObjectType.BOSS) {
+                        val bExp = (tileMap["exp"] as? Number)?.toInt() ?: 75
+                        bossExpMap[pos] = bExp
+                    } else if (objType == ObjectType.STATION) {
+                        val sExp = (tileMap["exp"] as? Number)?.toInt() ?: 150
+                        stationExpMap[pos] = sExp
+                    }
+
                     TileData(
                         ground = (tileMap["ground"] as? String)?.toTileType() ?: TileType.GROUND,
                         groundVariant = tileMap["groundVariant"] as? String ?: "tile_ground_1",
@@ -643,6 +687,14 @@ class MapViewModel : ViewModel() {
                     )
                 }
             }
+        }
+
+        if (isResuming) {
+            accumulatedBossExp = defeatedBosses.sumOf { bossExpMap[it] ?: 75 }
+            accumulatedStationExp = solvedStations.sumOf { stationExpMap[it] ?: 150 }
+        } else {
+            accumulatedBossExp = 0
+            accumulatedStationExp = 0
         }
 
         /* revealArea(playerX, playerY, 1) */
@@ -836,6 +888,7 @@ class MapViewModel : ViewModel() {
                 viewModelScope.launch {
                     delay(300)
                     currentBossPos = x to y
+                    lastTriggeredBossExp = bossExpMap[x to y] ?: 75
                     val quizId = quizIdMap[x to y] ?: ""
                     onBossTriggered?.invoke(x, y, quizId)
                     isInteractionLocked = false
@@ -858,13 +911,36 @@ class MapViewModel : ViewModel() {
 
     fun triggerStationInteraction() {
         if (showStationInteractButton && !isInteractionLocked) {
+             currentStationPos?.let { pos ->
+                 lastTriggeredStationExp = stationExpMap[pos] ?: 150
+             }
              isStationOpen = true
         }
     }
 
+    fun updateMissionProgress(type: MissionType, increment: Int) {
+        activeMissions = activeMissions.map { progress ->
+            if (progress.mission.type == type && !progress.isCompleted && !progress.isFailed) {
+                val newCount = progress.currentCount + increment
+                progress.copy(
+                    currentCount = newCount,
+                    isCompleted = newCount >= progress.mission.targetCount
+                )
+            } else progress
+        }
+    }
+
+    fun getMissionBonusCoins(): Int {
+        return activeMissions.filter { it.isCompleted }.sumOf { it.mission.bonusCoins }
+    }
+
     fun onBossDefeated(context: Context? = null) {
         bossesDefeatedCount++
+        updateMissionProgress(MissionType.DEFEAT_BOSS, 1)
         currentBossPos?.let { pos ->
+            val bExp = bossExpMap[pos] ?: 75
+            accumulatedBossExp += bExp
+            lastTriggeredBossExp = bExp
             defeatedBosses.add(pos)
             removeObjectAt(pos.first, pos.second)
 
@@ -889,16 +965,35 @@ class MapViewModel : ViewModel() {
         val userRef = FirebaseFirestore.getInstance().collection("users").document(userId)
         val db = FirebaseFirestore.getInstance()
 
-        val finalBagCoins = inventory.coins
+        updateMissionProgress(MissionType.REACH_FINISH, 1)
+        val missionBonus = getMissionBonusCoins()
+        val baseCoins = inventory.coins
+        val finalBagCoins = baseCoins + missionBonus
         val finalBagScrolls = inventory.scrolls.map { it.id }
         val finalBagPUs = inventory.powerUps.map { it.name }
+
+        val missionTasksBonusExp = activeMissions.filter { it.isCompleted }.sumOf { it.mission.bonusExp }
+        val rawExp = explorationBaseExp + missionBaseExp + missionTasksBonusExp + accumulatedBossExp + accumulatedStationExp
+        val currentSession = mapPlayCount + 1
+        val multiplier = com.LambdaProject.MathArt.data.model.getRepeatPlayMultiplier(currentSession)
+        val finalExp = (rawExp * multiplier).toInt()
 
         val summary = ExplorationStats(
             coinsCollected = finalBagCoins,
             scrollsCollected = finalBagScrolls,
             powerUpsCollected = inventory.powerUps,
             bossesDefeated = bossesDefeatedCount,
-            isSuccess = true
+            isSuccess = true,
+            baseCoins = baseCoins,
+            missionBonusCoins = missionBonus,
+            completedMissions = activeMissions.filter { it.isCompleted },
+            expEarned = finalExp,
+            explorationExp = explorationBaseExp,
+            missionExp = missionBaseExp,
+            missionBonusExp = missionTasksBonusExp,
+            bossExp = accumulatedBossExp,
+            stationExp = accumulatedStationExp,
+            repeatMultiplier = multiplier
         )
 
         db.runTransaction { transaction ->
@@ -907,6 +1002,8 @@ class MapViewModel : ViewModel() {
             val currentCoins = snapshot.getLong("coins") ?: 0
             val currentScrolls = snapshot.get("scrolls") as? List<String> ?: emptyList()
             val currentPowerUpsStrings = snapshot.get("powerUps") as? List<String> ?: emptyList()
+            val mapPlayCounts = (snapshot.get("mapPlayCounts") as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
+            mapPlayCounts[currentMapId] = currentSession
 
             val newCoins = currentCoins + finalBagCoins
             val newScrolls = (currentScrolls + inventory.scrolls.map { it.id }).distinct()
@@ -916,7 +1013,8 @@ class MapViewModel : ViewModel() {
                 "coins" to newCoins,
                 "scrolls" to newScrolls,
                 "powerUps" to newPowerUpsStrings,
-                "lostInventory" to null
+                "lostInventory" to null,
+                "mapPlayCounts" to mapPlayCounts
             ))
 
             val sessionRef = db.collection("exploration_sessions").document(userId)
@@ -925,6 +1023,11 @@ class MapViewModel : ViewModel() {
             explorationSummary = summary
             isExplorationFinished = true
             phase = ExplorationPhase.Finished
+            mapPlayCount = currentSession
+
+            viewModelScope.launch {
+                com.LambdaProject.MathArt.data.model.grantExpToUser(userId, finalExp)
+            }
 
             context?.let { ctx ->
                 File(ctx.filesDir, "map_cache_$currentMapId.json").delete()
@@ -1105,6 +1208,8 @@ class MapViewModel : ViewModel() {
         inventory = Inventory()
         visibleTiles.clear()
         discoveredTiles.clear()
+        accumulatedBossExp = 0
+        accumulatedStationExp = 0
         isExplorationFinished = false
         phase = ExplorationPhase.Playing
         explorationSummary = null
@@ -1171,6 +1276,7 @@ class MapViewModel : ViewModel() {
 
         chestPos?.let { pos ->
             openedChests.add(pos)
+            updateMissionProgress(MissionType.COLLECT_CHEST, 1)
             removeObjectAt(pos.first, pos.second)
         }
 
@@ -1358,13 +1464,11 @@ class MapViewModel : ViewModel() {
             }
             inventory = inventory.copy(coins = newCoins)
 
-            isStationQuizOpen = false
-
             checkProximity(playerX, playerY)
             saveToCloud()
         } else {
-            val penaltyMinutes = (3..5).random()
-            stationCooldownEnd = System.currentTimeMillis() + (penaltyMinutes * 60 * 1000L)
+            stationCooldownEnd = System.currentTimeMillis() + (60 * 1000L) // Cooldown 1 menit
+            saveToCloud()
         }
     }
 
@@ -1684,7 +1788,21 @@ class MapViewModel : ViewModel() {
     } */
 
     fun updateDiscovery(px: Int, py: Int, dx: Int = 0, dy: Int = 0) {
-        discoveredTiles.add(px to py)
+        val radius = when {
+            isBinocularActive -> 3
+            isTorchActive || isLanternActive -> 2
+            else -> 1
+        }
+
+        for (oy in -radius..radius) {
+            for (ox in -radius..radius) {
+                val nx = px + ox
+                val ny = py + oy
+                if (nx in 0 until mapWidth && ny in 0 until mapHeight) {
+                    discoveredTiles.add(nx to ny)
+                }
+            }
+        }
 
         if (dx != 0 || dy != 0) {
             val nx = px + dx
@@ -1693,16 +1811,7 @@ class MapViewModel : ViewModel() {
             if (nx in 0 until mapWidth && ny in 0 until mapHeight) {
                 discoveredTiles.add(nx to ny)
             }
-
-            /*
-            val nx2 = px + (dx * 2)
-            val ny2 = py + (dy * 2)
-            if (nx2 in 0 until mapWidth && ny2 in 0 until mapHeight) {
-                discoveredTiles.add(nx2 to ny2)
-            }
-            */
         }
-
     }
 
     private fun fetchAvailableScroll(onComplete: (Reward) -> Unit) {

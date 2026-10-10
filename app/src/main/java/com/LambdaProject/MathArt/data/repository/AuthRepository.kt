@@ -102,6 +102,7 @@ class AuthRepository @Inject constructor(
                 "fullname" to fullName,
                 "grade" to grade,
                 "kelas" to kelas,
+                "avatar" to com.LambdaProject.MathArt.utils.AvatarHelper.DEFAULT_AVATAR,
                 "isOnline" to true,
                 "coins" to 0,
                 "completedQuizzes" to emptyList<String>(),

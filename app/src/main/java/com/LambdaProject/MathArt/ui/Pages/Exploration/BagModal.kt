@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -57,7 +58,8 @@ fun BagModal(
     onUsePowerUp: ((PowerUpType) -> Unit)? = null,
     onDropPowerUp: ((PowerUpType) -> Unit)? = null,
     isQuizActive: Boolean = false,
-    powerUpCooldowns: Map<PowerUpType, Long> = emptyMap()
+    powerUpCooldowns: Map<PowerUpType, Long> = emptyMap(),
+    isShortAnswerQuiz: Boolean = false
 ) {
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(key1 = isQuizActive) {
@@ -74,6 +76,7 @@ fun BagModal(
         }
     }
 
+    var showDynamicMap by remember { mutableStateOf(false) }
     val totalWeight = inventory.calculateTotalWeight()
     var selectedScroll by remember { mutableStateOf<Reward?>(null) }
     var selectedPowerUp by remember { mutableStateOf<PowerUpType?>(null) }
@@ -174,15 +177,43 @@ fun BagModal(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 if (!isQuizActive) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(painterResource(R.drawable.ic_coin), null, modifier = Modifier.size(32.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Koin: ${inventory.coins}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF5D4037)
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(painterResource(R.drawable.ic_coin), null, modifier = Modifier.size(32.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Koin: ${inventory.coins}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF5D4037)
+                            )
+                        }
+
+                        Button(
+                            onClick = { showDynamicMap = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D4037)),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Peta Wilayah",
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Peta",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontFamily = interFontFamily
+                            )
+                        }
                     }
                 }
 
@@ -422,6 +453,13 @@ fun BagModal(
                 }
             }
         }
+
+        if (showDynamicMap) {
+            DynamicMapModal(
+                viewModel = viewModel,
+                onClose = { showDynamicMap = false }
+            )
+        }
     }
 
     selectedPowerUp?.let { pu ->
@@ -449,6 +487,7 @@ fun BagModal(
               selectedPowerUp = null
             },
             isQuizActive = isQuizActive,
+            isShortAnswerQuiz = isShortAnswerQuiz,
             isEquipped = currentIsEquipped,
             isLobby = false
         )

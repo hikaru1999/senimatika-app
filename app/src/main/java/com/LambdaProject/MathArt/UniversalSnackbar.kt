@@ -1,9 +1,11 @@
 package com.LambdaProject.MathArt
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.WifiOff
@@ -12,76 +14,17 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.data.DataAchievements
 import com.LambdaProject.MathArt.data.model.AchievementItem
 
-//import androidx.compose.ui.tooling.preview.Preview
-//
-//
-//@Preview(showBackground = true, name = "Mode Achievement")
-//@Composable
-//fun PreviewAchievementSnackbar() {
-//    Box(modifier = Modifier.fillMaxSize()) {
-//        UniversalSnackbar(
-//            achievementItem = AchievementItem(
-//                name = "Pakar Geometri",
-//                isUnlocked = true
-//            ),
-//            visible = true
-//        )
-//    }
-//}
-//
-//@Preview(showBackground = true, name = "Mode Network Lost")
-//@Composable
-//fun PreviewNetworkLostSnackbar() {
-//    Box(modifier = Modifier.fillMaxSize()) {
-//        UniversalSnackbar(
-//            isNetworkLost = true,
-//            remainingSeconds = 12,
-//            visible = true
-//        )
-//    }
-//}
-//
-//@Preview(showBackground = true, name = "Gallery Universal Snackbar")
-//@Composable
-//fun PreviewSnackbarGallery() {
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(10.dp),
-//        verticalArrangement = Arrangement.spacedBy(80.dp) // Jarak agar tidak bertumpuk karena AnimatedVisibility
-//    ) {
-//        // Karena UniversalSnackbar aslinya menggunakan statusBarsPadding(),
-//        // di Gallery ini mungkin akan terlihat sangat turun.
-//        // Kita tampilkan statis untuk perbandingan visual.
-//
-//        Text("1. Achievement Mode", fontWeight = FontWeight.Bold)
-//        UniversalSnackbar(
-//            achievementItem = AchievementItem(name = "Kolektor Artefak"),
-//            visible = true
-//        )
-//
-//        Text("2. Network Lost Mode", fontWeight = FontWeight.Bold)
-//        UniversalSnackbar(
-//            isNetworkLost = true,
-//            remainingSeconds = 15,
-//            visible = true
-//        )
-//
-//        Text("3. Reconnect Success Mode", fontWeight = FontWeight.Bold)
-//        UniversalSnackbar(
-//            isSuccess = true,
-//            visible = true
-//        )
-//    }
-//}
 @Composable
 fun UniversalSnackbar(
     achievementItem: AchievementItem? = null,
@@ -90,7 +33,6 @@ fun UniversalSnackbar(
     remainingSeconds: Int = 0,
     visible: Boolean
 ) {
-//    val context = LocalContext.current
     var lastAchievement by remember { mutableStateOf<AchievementItem?>(null) }
     val isAchievementMode = achievementItem != null || (lastAchievement != null && !isNetworkLost && !isSuccess)
 
@@ -100,104 +42,238 @@ fun UniversalSnackbar(
         }
     }
 
-    val backgroundColor = when {
-        isNetworkLost -> Color(0xFFB7190B)
-        isSuccess -> Color(0xFF2E7D32)
-        isAchievementMode -> Color(0xFFFFCF3D)
-        else -> Color.Gray
+    val backgroundBrush = when {
+        isNetworkLost -> Brush.horizontalGradient(
+            listOf(Color(0xFF2D1215), Color(0xFF3F171D))
+        )
+        isSuccess -> Brush.horizontalGradient(
+            listOf(Color(0xFF0D2818), Color(0xFF133F25))
+        )
+        isAchievementMode -> Brush.horizontalGradient(
+            listOf(Color(0xFF0F172A), Color(0xFF1E293B))
+        )
+        else -> Brush.horizontalGradient(
+            listOf(Color(0xFF1E293B), Color(0xFF0F172A))
+        )
     }
 
     val borderColor = when {
-        isNetworkLost -> Color(0xFFEF5350).copy(alpha = 0.6f)
-        isSuccess -> Color(0xFF81C784).copy(alpha = 0.4f)
-        isAchievementMode -> Color(0xFFFFB300).copy(alpha = 0.4f)
-        else -> Color.Transparent
+        isNetworkLost -> Color(0xFFEF5350).copy(alpha = 0.55f)
+        isSuccess -> Color(0xFF4ADE80).copy(alpha = 0.5f)
+        isAchievementMode -> Color(0xFFF59E0B).copy(alpha = 0.55f)
+        else -> Color.White.copy(alpha = 0.1f)
+    }
+
+    val shadowColor = when {
+        isNetworkLost -> Color(0xFFE53935).copy(alpha = 0.25f)
+        isSuccess -> Color(0xFF2E7D32).copy(alpha = 0.25f)
+        isAchievementMode -> Color(0xFFF59E0B).copy(alpha = 0.25f)
+        else -> Color.Black.copy(alpha = 0.3f)
     }
 
     val dynamicResId = remember(lastAchievement) {
         lastAchievement?.let { ach ->
-//            val match = DataAchievements.find { it.name == achievement.name }
-//            match?.imageRes ?: R.drawable.obj_sack
-            DataAchievements.find { it.name == ach.name }?.imageRes
-        } ?: R.drawable.obj_sack
+            ach.imageRes.takeIf { it != 0 && it != R.drawable.obj_sack }
+                ?: DataAchievements.find { it.name.equals(ach.name, ignoreCase = true) }?.imageRes
+                ?: R.drawable.ic_trophy
+        } ?: R.drawable.ic_trophy
     }
 
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter = slideInVertically(
+            initialOffsetY = { -it },
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)
+        ) + fadeIn(),
+        exit = slideOutVertically(
+            targetOffsetY = { -it },
+            animationSpec = spring(stiffness = Spring.StiffnessMedium)
+        ) + fadeOut(),
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
             .zIndex(1000f)
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .padding(horizontal = 24.dp, vertical = 20.dp)
-                .shadow(12.dp, CircleShape),
-            color = backgroundColor,
-            shape = CircleShape,
-            border = BorderStroke(1.5.dp, borderColor)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier.padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .shadow(
+                        elevation = 14.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        spotColor = shadowColor,
+                        ambientColor = shadowColor
+                    ),
+                shape = RoundedCornerShape(20.dp),
+                color = Color.Transparent,
+                border = BorderStroke(1.5.dp, borderColor)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .background(backgroundBrush)
+                        .padding(horizontal = 14.dp)
                 ) {
-                    when {
-                        isNetworkLost -> {
-                            Icon(Icons.Default.WifiOff, null, tint = Color.Red, modifier = Modifier.size(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Badge Icon Container (Fixed 46dp x 46dp)
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    when {
+                                        isNetworkLost -> Color(0xFFEF5350).copy(alpha = 0.18f)
+                                        isSuccess -> Color(0xFF4ADE80).copy(alpha = 0.18f)
+                                        isAchievementMode -> Color(0xFFF59E0B).copy(alpha = 0.18f)
+                                        else -> Color.White.copy(alpha = 0.1f)
+                                    }
+                                )
+                                .border(
+                                    1.dp,
+                                    when {
+                                        isNetworkLost -> Color(0xFFEF5350).copy(alpha = 0.4f)
+                                        isSuccess -> Color(0xFF4ADE80).copy(alpha = 0.4f)
+                                        isAchievementMode -> Color(0xFFF59E0B).copy(alpha = 0.4f)
+                                        else -> Color.Transparent
+                                    },
+                                    RoundedCornerShape(14.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            when {
+                                isNetworkLost -> {
+                                    Icon(
+                                        imageVector = Icons.Default.WifiOff,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFF6B6B),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                isSuccess -> {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF4ADE80),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                isAchievementMode -> {
+                                    Image(
+                                        painter = painterResource(id = dynamicResId),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+                            }
                         }
-                        isSuccess -> {
-                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF388E3C), modifier = Modifier.size(24.dp))
-                        }
-                        isAchievementMode -> {
-                            Image(painter = painterResource(id = dynamicResId), null, modifier = Modifier.size(28.dp))
-                        }
-                    }
-                }
 
-                Spacer(Modifier.width(16.dp))
+                        Spacer(Modifier.width(12.dp))
 
-                Column {
-                    if (isNetworkLost) {
-                        Text(
-                            text = "Ups, koneksi internet terputus!",
-                            fontSize = 16.sp,
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Reconnecting... (${remainingSeconds}s)",
-                            fontSize = 10.sp,
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Black,
-                            color = Color.White
-                        )
-                    } else if (isSuccess){
-                        Text("Connected!", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(0.8f))
-                        Text("Berhasil terhubung kembali", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                    } else if (isAchievementMode) {
-                        Text(
-                            text = "Achievement Unlocked!",
-                            fontSize = 10.sp,
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD50000)
-                        )
-                        Text(
-                            text = lastAchievement?.name ?: "",
-                            fontSize = 16.sp,
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Black,
-                            color = Color(0xFF020959)
-                        )
+                        // Center Text Column (Fixed 2-line layout for all modes)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            when {
+                                isNetworkLost -> {
+                                    Text(
+                                        text = "KONEKSI TERPUTUS",
+                                        fontSize = 10.sp,
+                                        lineHeight = 12.sp,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.6.sp,
+                                        color = Color(0xFFFF8A80),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "Menghubungkan kembali...",
+                                        fontSize = 13.5.sp,
+                                        lineHeight = 16.sp,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                isSuccess -> {
+                                    Text(
+                                        text = "STATUS JARINGAN",
+                                        fontSize = 10.sp,
+                                        lineHeight = 12.sp,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.6.sp,
+                                        color = Color(0xFF86EFAC),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "Berhasil terhubung kembali!",
+                                        fontSize = 13.5.sp,
+                                        lineHeight = 16.sp,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                isAchievementMode -> {
+                                    Text(
+                                        text = "ACHIEVEMENT DIBUKA!",
+                                        fontSize = 10.sp,
+                                        lineHeight = 12.sp,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.6.sp,
+                                        color = Color(0xFFFBBF24),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = lastAchievement?.name ?: "",
+                                        fontSize = 14.sp,
+                                        lineHeight = 17.sp,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+
+                        // Trailing Element (Countdown badge only for Network Lost)
+                        if (isNetworkLost) {
+                            Spacer(Modifier.width(8.dp))
+                            Surface(
+                                color = Color(0xFFEF5350).copy(alpha = 0.25f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, Color(0xFFEF5350).copy(alpha = 0.4f))
+                            ) {
+                                Text(
+                                    text = "${remainingSeconds}s",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontFamily = interFontFamily,
+                                    color = Color(0xFFFF8A80),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

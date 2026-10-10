@@ -455,10 +455,27 @@ class BossQuizViewModel : ViewModel() {
             }
             PowerUpType.REMOVE_TWO_OPTIONS -> {
                 val question = currentQuestion ?: return
-                val incorrectOptions = question.options.filter {
-                    !question.answerKey.contains(it)
+                if (question.questionType == "short_answer") {
+                    return
                 }
-                removedOptions.addAll(incorrectOptions.shuffled().take(2))
+
+                val isMultiAnswer = question.answerKey.size > 1
+                if (isMultiAnswer) {
+                    // Pilihan ganda kompleks: memunculkan centang 1 opsi jawaban yang benar
+                    val unselectedCorrectAnswers = question.answerKey.filter {
+                        !selectedAnswers.contains(it) && question.options.contains(it)
+                    }
+                    val optionToReveal = unselectedCorrectAnswers.randomOrNull()
+                    if (optionToReveal != null) {
+                        selectedAnswers.add(optionToReveal)
+                    }
+                } else {
+                    // Pilihan ganda 1 jawaban: menghapus 2 opsi salah
+                    val incorrectOptions = question.options.filter {
+                        !question.answerKey.contains(it) && !removedOptions.contains(it)
+                    }
+                    removedOptions.addAll(incorrectOptions.shuffled().take(2))
+                }
             }
             PowerUpType.STREAK_PROTECTION -> {
                 isStreakProtected = true
@@ -487,7 +504,8 @@ class BossQuizViewModel : ViewModel() {
 
     fun toggleAnswer(answer: String) {
         if (phase != BossBattlePhase.QUIZ) return
-        if (currentQuestion?.questionType == "multiple_choice") {
+        val isSingleChoice = currentQuestion?.questionType == "multiple_choice" && (currentQuestion?.answerKey?.size ?: 1) <= 1
+        if (isSingleChoice) {
             selectedAnswers.clear()
             selectedAnswers.add(answer)
         } else {

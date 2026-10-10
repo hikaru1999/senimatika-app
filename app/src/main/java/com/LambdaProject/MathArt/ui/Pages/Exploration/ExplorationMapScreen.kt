@@ -74,6 +74,7 @@ fun ExplorationMapScreen(
     var showExtractionAnim by remember { mutableStateOf(false) }
     var mapVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var showMissionTracker by remember { mutableStateOf(false) }
 
     var isInitialLoad by remember { mutableStateOf(true) }
 
@@ -643,6 +644,15 @@ fun ExplorationMapScreen(
                         borderColor = Color(0xFFBDBDBD)
                     )
 
+                    if (viewModel.activeMissions.isNotEmpty()) {
+                        val allMissionsDone = viewModel.activeMissions.all { it.isCompleted }
+                        HUDGameButton(
+                            vectorIcon = Icons.Default.TrackChanges,
+                            onClick = { showMissionTracker = true },
+                            borderColor = if (allMissionsDone) Color(0xFF4CAF50) else Color(0xFFFFD700)
+                        )
+                    }
+
                     if (mapId.contains("tutorial")) {
                         HUDGameButton(
                             vectorIcon = Icons.Default.HelpOutline,
@@ -742,7 +752,17 @@ fun ExplorationMapScreen(
             }
 
             if (viewModel.isStationOpen) {
-                StationModal(sessionCode = viewModel.sessionCode, collectedDigits = viewModel.collectedDigits, onSolve = { viewModel.onStationSolved() }, onClose = { viewModel.isStationOpen = false })
+                StationModal(
+                    sessionCode = viewModel.sessionCode,
+                    collectedDigits = viewModel.collectedDigits,
+                    cooldownEndMillis = viewModel.stationCooldownEnd,
+                    onTriggerCooldown = { duration ->
+                        viewModel.stationCooldownEnd = System.currentTimeMillis() + duration
+                        viewModel.saveToCloud()
+                    },
+                    onSolve = { viewModel.onStationSolved() },
+                    onClose = { viewModel.isStationOpen = false }
+                )
             }
 
             if (viewModel.isStationQuizOpen && viewModel.stationQuestion != null) {
@@ -752,6 +772,7 @@ fun ExplorationMapScreen(
                 StationQuizModal(
                     question = viewModel.stationQuestion!!,
                     cooldownEndMillis = viewModel.stationCooldownEnd,
+                    expReward = viewModel.lastTriggeredStationExp,
                     onAnswer = { viewModel.onStationQuizAnswer(it) },
                     onClose = { viewModel.closeStationQuiz() })
             }
@@ -960,6 +981,13 @@ fun ExplorationMapScreen(
                     onClose = { viewModel.closeArtifactModal() }
                 )
             }
+        }
+
+        if (showMissionTracker && viewModel.activeMissions.isNotEmpty()) {
+            MissionTrackerModal(
+                activeMissions = viewModel.activeMissions,
+                onClose = { showMissionTracker = false }
+            )
         }
     }
 }

@@ -58,6 +58,10 @@ object AppAudioManager {
 
         load(context, "victory", R.raw.sfx_extraction_success)
         load(context, "gameover", R.raw.sfx_fail)
+
+        load(context, "matchmaking_tick", R.raw.match_tick)
+        load(context, "match_found", R.raw.match_found)
+        load(context, "duel_round_start", R.raw.bell_ring_start)
     }
 
     private fun load(context: Context, key: String, resId: Int) {
@@ -66,13 +70,44 @@ object AppAudioManager {
         }
     }
 
-    fun playSfx(key: String) {
-        sounds[key]?.let { id ->
+    private var matchmakingStreamId: Int = 0
+
+    fun playSfx(key: String): Int {
+        return sounds[key]?.let { id ->
             soundPool?.play(id, 1f, 1f, 0, 0, 1f)
+        } ?: 0
+    }
+
+    fun playMatchmakingSearching() {
+        stopMatchmakingSearching()
+        sounds["matchmaking_tick"]?.let { id ->
+            matchmakingStreamId = soundPool?.play(id, 1f, 1f, 1, 0, 1f) ?: 0
         }
     }
 
+    fun stopMatchmakingSearching() {
+        if (matchmakingStreamId != 0) {
+            soundPool?.stop(matchmakingStreamId)
+            matchmakingStreamId = 0
+        }
+    }
+
+    fun playMatchFound() {
+        stopMatchmakingSearching()
+        playSfx("match_found")
+    }
+
+    fun playDuelRoundStart() {
+        playSfx("duel_round_start")
+    }
+
+    private var lastScoreStreamId: Int = 0
+
     fun playScoreSound(type: ScoreType) {
+        if (lastScoreStreamId != 0) {
+            soundPool?.stop(lastScoreStreamId)
+            lastScoreStreamId = 0
+        }
         val key = when (type) {
             ScoreType.GOOD -> "score_good"
             ScoreType.COOL -> "score_cool"
@@ -80,7 +115,7 @@ object AppAudioManager {
             ScoreType.UPS -> "score_ups"
             ScoreType.NOT_FOCUSED, ScoreType.TIME_OUT -> "score_fail"
         }
-        playSfx(key)
+        lastScoreStreamId = playSfx(key)
     }
 
     fun playBGM(context: Context, resId: Int, isAmbient: Boolean = false) {
@@ -150,6 +185,7 @@ object AppAudioManager {
     fun forceStopAll() {
         stopBGM()
         stopIntenseWarning()
+        stopMatchmakingSearching()
         fadeJob?.cancel()
     }
 

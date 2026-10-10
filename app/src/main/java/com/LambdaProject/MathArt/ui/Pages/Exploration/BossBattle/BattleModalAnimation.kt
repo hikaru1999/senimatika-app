@@ -28,10 +28,10 @@ fun BattleIntroAnimation(bossType: String) {
     LaunchedEffect(Unit) { startAnim = true }
 
     val bossName = when (bossType) {
-        "boss_1", "obj_boss_1" -> "Vardos"
-        "boss_2", "obj_boss_2" -> "Grooten"
-        "boss_3", "obj_boss_3" -> "Mortis"
-        "boss_4", "obj_boss_4" -> "Aether"
+        "boss_1", "obj_boss_1" -> "Sigma"
+        "boss_2", "obj_boss_2" -> "Delta"
+        "boss_3", "obj_boss_3" -> "Theta"
+        "boss_4", "obj_boss_4" -> "Omega"
         else -> "BOSS"
     }
 
@@ -93,16 +93,17 @@ fun CountdownAnimation(value: Int) {
 fun QuizSummaryAnimated(
     viewModel: BossQuizViewModel,
     onFinish: (Boolean) -> Unit,
+    expReward: Int = 75
 //    audio: ExplorationAudioManager
 ) {
     val context = LocalContext.current
     var visibleItems by remember { mutableIntStateOf(0) }
     val results = viewModel.questionResults
     val bossName = when (viewModel.currentBossType) {
-        "boss_1", "obj_boss_1" -> "Vardos"
-        "boss_2", "obj_boss_2" -> "Grooten"
-        "boss_3", "obj_boss_3" -> "Mortis"
-        "boss_4", "obj_boss_4" -> "Aether"
+        "boss_1", "obj_boss_1" -> "Sigma"
+        "boss_2", "obj_boss_2" -> "Delta"
+        "boss_3", "obj_boss_3" -> "Theta"
+        "boss_4", "obj_boss_4" -> "Omega"
         else -> "Boss"
     }
 
@@ -122,7 +123,7 @@ fun QuizSummaryAnimated(
         border = BorderStroke(3.dp, Color(0xFF5D4037))
     ) {
         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("SKIRMISH RESULT", color = Color(0xFF3E2723), fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text("HASIL DUEL", color = Color(0xFF3E2723), fontSize = 20.sp, fontWeight = FontWeight.Black)
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier
@@ -139,7 +140,7 @@ fun QuizSummaryAnimated(
 
                 if (visibleItems > results.size) {
                     AnimatedVisibility(visible = true, enter = fadeIn() + scaleIn()) {
-                        BattleHpSummary(viewModel.playerHp, viewModel.bossHp, bossName = bossName)
+                        BattleHpSummary(viewModel.playerHp, viewModel.bossHp, bossName = bossName, expReward = expReward)
                     }
                 }
             }
@@ -161,7 +162,7 @@ fun QuizSummaryAnimated(
                         containerColor = if (isWin) Color(0xFF3E2723) else Color(0xFFA10000)
                     ),
                 ) {
-                    Text("AKHIRI PERTARUNGAN", fontWeight = FontWeight.Bold)
+                    Text("AKHIRI DUEL", fontWeight = FontWeight.Bold)
                 }
             }
         }

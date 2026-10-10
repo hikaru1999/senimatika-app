@@ -16,7 +16,10 @@ import com.LambdaProject.MathArt.data.DataStates
 import com.LambdaProject.MathArt.data.model.LeaderboardEntry
 import com.LambdaProject.MathArt.data.model.OnlineQuizDesc
 import com.LambdaProject.MathArt.data.model.OnlineQuizQuestion
+import com.LambdaProject.MathArt.data.model.QuizQuestionRef
 import com.LambdaProject.MathArt.data.model.QuestionType
+import com.LambdaProject.MathArt.data.model.BotDuelSummary
+import com.LambdaProject.MathArt.data.model.BotOpponent
 import com.LambdaProject.MathArt.data.model.QuizResult
 import com.LambdaProject.MathArt.data.model.ScoreType
 import com.LambdaProject.MathArt.data.model.ScorestreakState
@@ -43,6 +46,42 @@ class OnlineQuizViewModel @Inject constructor(
     private val _materials = MutableStateFlow<List<OnlineQuizDesc>>(emptyList())
     val materials: StateFlow<List<OnlineQuizDesc>> = _materials
 
+    private val _selectedBot = MutableStateFlow<BotOpponent?>(null)
+    val selectedBot: StateFlow<BotOpponent?> = _selectedBot
+
+    fun setSelectedBot(bot: BotOpponent?) {
+        _selectedBot.value = bot
+    }
+
+    private val _userName = MutableStateFlow(FirebaseAuth.getInstance().currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "")
+    val userName: StateFlow<String> = _userName
+
+    private val _userAvatar = MutableStateFlow(com.LambdaProject.MathArt.utils.AvatarHelper.DEFAULT_AVATAR)
+    val userAvatar: StateFlow<String> = _userAvatar
+
+    private val _activeFrame = MutableStateFlow("")
+    val activeFrame: StateFlow<String> = _activeFrame
+
+    fun loadUserAvatar(userId: String) {
+        if (userId.isBlank()) return
+        firestore.collection("users").document(userId).get(Source.DEFAULT)
+            .addOnSuccessListener { doc ->
+                _userAvatar.value = doc.getString("avatar") ?: com.LambdaProject.MathArt.utils.AvatarHelper.DEFAULT_AVATAR
+                _activeFrame.value = doc.getString("activeFrame") ?: ""
+                val name = doc.getString("username") ?: doc.getString("name") ?: FirebaseAuth.getInstance().currentUser?.displayName ?: ""
+                if (name.isNotBlank()) {
+                    _userName.value = name
+                }
+            }
+    }
+
+    private val _botDuelSummary = MutableStateFlow<BotDuelSummary?>(null)
+    val botDuelSummary: StateFlow<BotDuelSummary?> = _botDuelSummary
+
+    fun setBotDuelSummary(summary: BotDuelSummary) {
+        _botDuelSummary.value = summary
+    }
+
     private val _scorestreakState = MutableStateFlow<ScorestreakState?>(null)
     val scorestreakState: StateFlow<ScorestreakState?> = _scorestreakState
 
@@ -67,11 +106,16 @@ class OnlineQuizViewModel @Inject constructor(
     private var correctStreak = 0
     private var wrongStreak = 0
 
+    private var authStateListener: FirebaseAuth.AuthStateListener? = null
+
     private val _challengeStatus = MutableStateFlow<String?>(null)
     val challengeStatus: StateFlow<String?> = _challengeStatus
 
     private val _quizResult = MutableStateFlow<QuizResult?>(null)
     val quizResult: StateFlow<QuizResult?> = _quizResult
+
+    private val _quizExpBreakdown = MutableStateFlow<QuizExpBreakdown?>(null)
+    val quizExpBreakdown: StateFlow<QuizExpBreakdown?> = _quizExpBreakdown
 
     private val _incomingChallenges = MutableStateFlow<List<Challenge>>(emptyList())
     val incomingChallenges: StateFlow<List<Challenge>> = _incomingChallenges
@@ -101,7 +145,15 @@ class OnlineQuizViewModel @Inject constructor(
     private var materialsListener: ListenerRegistration? = null
 
     init {
-        loadAllQuizzes()
+        authStateListener = FirebaseAuth.AuthStateListener { auth ->
+            if (auth.currentUser !== null) {
+                loadAllQuizzes()
+            } else {
+                _materials.value = emptyList()
+            }
+        }
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener!!)
+//        loadAllQuizzes()
     }
 
     private fun loadAllQuizzes() {
@@ -201,7 +253,24 @@ class OnlineQuizViewModel @Inject constructor(
         }
     }
 
+    fun resetQuizState() {
+        _userAnswers.clear()
+        totalPoints = 0
+        totalBasePoints = 0
+        currentBasePoints.value = 0
+        _currentPoints.value = 0
+        totalCoins = 0
+        correctStreak = 0
+        wrongStreak = 0
+        _quizResult.value = null
+        _quizExpBreakdown.value = null
+        _botDuelSummary.value = null
+        _currentQuestionIndex.value = 0
+        _scorestreakState.value = null
+    }
+
     fun loadQuizForSelectedMaterial(userId: String, materialId: String) {
+        resetQuizState()
         viewModelScope.launch {
             try {
                 _isQuizNotFound.value = false
@@ -211,16 +280,29 @@ class OnlineQuizViewModel @Inject constructor(
                     .get(Source.SERVER)
                     .await()
 
-                val isActivated = quizDoc.getBoolean("active") ?: false
                 val quizData = quizDoc.toObject(OnlineQuizDesc::class.java)
+                val isActivated = quizDoc.getBoolean("active") ?: (quizData?.active ?: true)
+                val isRandomized = quizDoc.getBoolean("isRandomized") ?: quizDoc.getBoolean("randomized") ?: (quizData?.isRandomized ?: false)
+                val rawQuestionsList = quizDoc.get("questions") as? List<*>
+                val parsedQuestionRefs = rawQuestionsList?.mapNotNull { item ->
+                    when (item) {
+                        is Map<*, *> -> {
+                            val id = item["id"] as? String ?: return@mapNotNull null
+                            val points = (item["points"] as? Number)?.toInt() ?: 10
+                            val timer = (item["timer"] as? Number)?.toInt() ?: 30
+                            QuizQuestionRef(id = id, points = points, timer = timer)
+                        }
+                        else -> null
+                    }
+                } ?: emptyList()
 
-                if (quizData == null || !isActivated) {
+                if (!isActivated) {
                     _isQuizNotFound.value = true
                     _questions.value = emptyList()
                     return@launch
                 }
 
-                val questionRefs = quizData.questions
+                val questionRefs = if (parsedQuestionRefs.isNotEmpty()) parsedQuestionRefs else (quizData?.questions ?: emptyList())
                 if (questionRefs.isEmpty()) {
                     _questions.value = emptyList()
                     return@launch
@@ -256,6 +338,9 @@ class OnlineQuizViewModel @Inject constructor(
                         (rawAnswerKey as? List<*>)?.forEach { (it as? Number)?.let { num -> correctAnswers.add(it.toInt()) } }
                     }
 
+                    val qPoints = ref.points.takeIf { it > 0 } ?: (qDoc.getLong("points")?.toInt() ?: 10)
+                    val qTimer = ref.timer.takeIf { it > 0 } ?: (qDoc.getLong("timer")?.toInt() ?: 30)
+
                     OnlineQuizQuestion(
                         questionNumber = index + 1,
                         questionText = qDoc.getString("question") ?: "",
@@ -264,41 +349,20 @@ class OnlineQuizViewModel @Inject constructor(
                         correctAnswers = correctAnswers,
                         correctTextAnswers = correctTextAnswers,
                         type = type,
-                        durationSeconds = ref.timer,
-                        basePoints = ref.points
+                        durationSeconds = qTimer,
+                        basePoints = qPoints
                     )
                 }
 
-                /* val fullQuestions = mutableListOf<OnlineQuizQuestion>()
-                
-                questionRefs.forEachIndexed { index, ref ->
-                    val qDoc = firestore.collection("questions").document(ref.id).get().await()
-                    if (qDoc.exists()) {
-                        val choices = qDoc.get("options") as? List<String> ?: emptyList()
-                        val correctAnswers = (qDoc.get("answerKey") as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList()
-                        val qTypeStr = qDoc.getString("questionType") ?: "multiple_choice"
-                        
-                        val type = when(qTypeStr.lowercase()) {
-                            "checkbox" -> QuestionType.CHECKBOX
-                            "short_answer" -> QuestionType.SHORT_ANSWER
-                            else -> QuestionType.MULTIPLE_CHOICE
-                        }
-
-                        fullQuestions.add(OnlineQuizQuestion(
-                            questionNumber = index + 1,
-                            questionText = qDoc.getString("question") ?: "",
-                            imageUrl = qDoc.getString("imageUrl"),
-                            choices = choices,
-                            correctAnswers = correctAnswers,
-                            correctTextAnswers = if (type == QuestionType.SHORT_ANSWER) qDoc.get("answerKey") as? List<String> ?: emptyList() else emptyList(),
-                            type = type,
-                            durationSeconds = ref.timer,
-                            basePoints = ref.points
-                        ))
+                val finalQuestions = if (isRandomized) {
+                    fullQuestions.shuffled().mapIndexed { index, q ->
+                        q.copy(questionNumber = index + 1)
                     }
-                } */
+                } else {
+                    fullQuestions
+                }
 
-                _questions.value = fullQuestions
+                _questions.value = finalQuestions
                 _currentQuestionIndex.value = 0
             } catch (e: Exception) {
                 _isQuizNotFound.value = true
@@ -346,7 +410,10 @@ class OnlineQuizViewModel @Inject constructor(
         }
 
         val basePoint = if (isCorrect) currentQuestion.basePoints else 0
-        val timeBonus = if (isCorrect) (timeLeft.coerceAtMost(25) * 2) else 0
+        val duration = currentQuestion.durationSeconds.coerceAtLeast(1)
+        val speedRatio = (timeLeft.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+        val maxTimeBonus = (currentQuestion.basePoints * 0.5f).toInt().coerceAtLeast(5)
+        val timeBonus = if (isCorrect) (maxTimeBonus * speedRatio).toInt() else 0
 
         val streakBonusPercent = when (correctStreak) {
             1 -> 0.10f
@@ -408,6 +475,7 @@ class OnlineQuizViewModel @Inject constructor(
         val totalBasePoints = _userAnswers.sumOf { it.basePointsEarned }
         val totalTimeBonus = _userAnswers.sumOf { it.timeBonusEarned }
         val totalStreakBonus = _userAnswers.sumOf { it.streakBonusEarned }
+        val calculatedPoints = if (totalPoints > 0) totalPoints else (_currentPoints.value.takeIf { it > 0 } ?: (totalBasePoints + totalTimeBonus + totalStreakBonus))
 
         val result = QuizResult(
             materialId = materialId,
@@ -415,7 +483,7 @@ class OnlineQuizViewModel @Inject constructor(
             totalBasePoints = totalBasePoints,
             totalTimeBonus = totalTimeBonus,
             totalStreakBonus = totalStreakBonus,
-            totalPoints = totalPoints,
+            totalPoints = calculatedPoints,
             answers = _userAnswers.map {
                 it.copy(
                     selectedAnswers = it.selectedAnswers.toList(),
@@ -423,7 +491,68 @@ class OnlineQuizViewModel @Inject constructor(
             }
         )
 
+        _quizResult.value = result
+
+        val totalQuestions = _questions.value.size.coerceAtLeast(1)
+        val correctCount = _userAnswers.count { it.isCorrect }
+        val accuracy = correctCount.toFloat() / totalQuestions.toFloat()
+        val avgSpeedRatio = if (_userAnswers.isNotEmpty()) {
+            _userAnswers.map { ans ->
+                val q = _questions.value.find { it.questionNumber == ans.questionNumber }
+                val dur = (q?.durationSeconds ?: 30).coerceAtLeast(1)
+                ((dur - ans.timeTaken).toFloat() / dur.toFloat()).coerceIn(0f, 1f)
+            }.average().toFloat()
+        } else 0f
+
+        var curStreak = 0
+        var maxStreakCalc = 0
+        for (ans in _userAnswers) {
+            if (ans.isCorrect) {
+                curStreak++
+                if (curStreak > maxStreakCalc) maxStreakCalc = curStreak
+            } else {
+                curStreak = 0
+            }
+        }
+
+        val baseExp = _selectedMaterial.value?.exp ?: 100
+        val bonusExp = com.LambdaProject.MathArt.data.model.calculateQuizBonusExp(
+            baseExp = baseExp,
+            totalQuestions = totalQuestions,
+            correctCount = correctCount,
+            avgSpeedRatio = avgSpeedRatio,
+            maxStreak = maxStreakCalc
+        )
+        val rawExp = baseExp + bonusExp
+
         viewModelScope.launch {
+            try {
+                val userDoc = firestore.collection("users").document(userId).get().await()
+                val quizPlayCounts = (userDoc.get("quizPlayCounts") as? Map<String, Any>)?.toMutableMap() ?: mutableMapOf()
+                val currentPlayCount = (quizPlayCounts[materialId] as? Number)?.toInt() ?: 0
+                val multiplier = com.LambdaProject.MathArt.data.model.getRepeatPlayMultiplier(currentPlayCount)
+                val finalExp = (rawExp * multiplier).toInt()
+                val nextPlayCount = currentPlayCount + 1
+                quizPlayCounts[materialId] = nextPlayCount
+                firestore.collection("users").document(userId).update("quizPlayCounts", quizPlayCounts)
+
+                _quizExpBreakdown.value = QuizExpBreakdown(
+                    baseExp = baseExp,
+                    bonusExp = bonusExp,
+                    totalRawExp = rawExp,
+                    repeatMultiplier = multiplier,
+                    finalExp = finalExp,
+                    accuracy = accuracy,
+                    speedRatio = avgSpeedRatio,
+                    maxStreak = maxStreakCalc,
+                    sessionCount = nextPlayCount
+                )
+
+                com.LambdaProject.MathArt.data.model.grantExpToUser(userId, finalExp)
+            } catch (e: Exception) {
+                Log.e("OnlineQuizViewModel", "Error updating quiz EXP: ${e.message}")
+            }
+
             repository.saveQuizResult(result)
                 .onSuccess {
                     checkAndUnlockQuizAchievements(userId)
@@ -435,13 +564,20 @@ class OnlineQuizViewModel @Inject constructor(
     }
 
     fun fetchQuizResult(userId: String, materialId: String) {
+        if (_quizResult.value != null && _quizResult.value?.materialId == materialId) {
+            return
+        }
         viewModelScope.launch {
             repository.getUserQuizResult(userId, materialId)
                 .onSuccess { result ->
-                    _quizResult.value = result
+                    if (_quizResult.value == null) {
+                        _quizResult.value = result
+                    }
                 }
                 .onFailure { e ->
-                    _quizResult.value = null
+                    if (_quizResult.value == null) {
+                        _quizResult.value = null
+                    }
                 }
         }
     }
@@ -470,15 +606,17 @@ class OnlineQuizViewModel @Inject constructor(
                     Log.d("Leaderboard", "Leaderboard fetched successfully: ${results.size} entries")
 
                     val userIds = results.map { it.userId }.distinct()
-                    val usernameMap = repository.getUsernamesForUserIds(userIds)
+                    val profileMap = repository.getUserProfilesForUserIds(userIds)
 
                     val leaderboardEntries = results.map { result ->
-                        /* val username = usernameMap[result.userId] ?: (result.userId.take(6) + "...") */
-                        val username = usernameMap[result.userId] ?: "Guest_${result.userId.take(4)}"
+                        val profile = profileMap[result.userId]
+                        val username = profile?.first ?: "Guest_${result.userId.take(4)}"
+                        val avatar = profile?.second ?: com.LambdaProject.MathArt.utils.AvatarHelper.DEFAULT_AVATAR
 
                         LeaderboardEntry(
                             username = username,
-                            points = result.totalPoints
+                            points = result.totalPoints,
+                            avatar = avatar
                         )
                     }.sortedByDescending { it.points }
 
@@ -521,6 +659,9 @@ class OnlineQuizViewModel @Inject constructor(
         challengeListener?.remove()
         challengeListener = null
         materialsListener?.remove()
+        authStateListener?.let {
+            FirebaseAuth.getInstance().removeAuthStateListener(it)
+        }
     }
 
     /* fun prevQuestion() {
@@ -529,3 +670,15 @@ class OnlineQuizViewModel @Inject constructor(
         }
     } */
 }
+
+data class QuizExpBreakdown(
+    val baseExp: Int = 100,
+    val bonusExp: Int = 0,
+    val totalRawExp: Int = 100,
+    val repeatMultiplier: Float = 1.0f,
+    val finalExp: Int = 100,
+    val accuracy: Float = 0f,
+    val speedRatio: Float = 0f,
+    val maxStreak: Int = 0,
+    val sessionCount: Int = 1
+)

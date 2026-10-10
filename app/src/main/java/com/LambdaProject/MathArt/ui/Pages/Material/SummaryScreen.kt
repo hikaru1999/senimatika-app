@@ -29,14 +29,24 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun SummaryScreen(viewModel: QuizViewModel, onBackToDashboard: () -> Unit) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
-    val db = remember { FirebaseFirestore.getInstance() }
     val userAnswers = viewModel.userAnswers
+    val db = remember { FirebaseFirestore.getInstance() }
     var showDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         if (userId != null) {
-            viewModel.loadQuizResults(userId, "transformasi_geometri") {}
+            viewModel.loadQuizResults(userId, "transformasi_geometri") {
+                isLoading = false
+            }
+        } else {
+            isLoading = false
         }
+    }
+
+    if (isLoading && userAnswers.isEmpty()) {
+        SummaryScreenSkeleton()
+        return
     }
 
     Column(

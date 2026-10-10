@@ -6,6 +6,9 @@ import com.LambdaProject.MathArt.data.DataAchievements
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 fun unlockGeneralAchievement(userId: String, achievementName: String) {
     if (userId.isEmpty()) return
@@ -39,20 +42,23 @@ fun unlockGeneralAchievement(userId: String, achievementName: String) {
 //                else -> "ic_coin"
 //            }
 
+            val expReward = localData?.exp ?: 100
             val newAchievement = hashMapOf(
                 "name" to achievementName,
                 "imageRes" to (localData?.imageRes ?: R.drawable.obj_sack),
-//                "imageRes" to getAchievementIcon(imageName),
-//                "imageName" to imageName,
                 "timestamp" to Timestamp.now(),
                 "isUnlocked" to true,
                 "isRead" to false,
                 "notified" to false,
+                "exp" to expReward
             )
 
             achievementRef.set(newAchievement)
                 .addOnSuccessListener {
-                    Log.d("Firestore", "Achievement '$achievementName' sukses disimpan")
+                    Log.d("Firestore", "Achievement '$achievementName' sukses disimpan dengan EXP: $expReward")
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                        grantExpToUser(userId, expReward, "Achievement: $achievementName")
+                    }
                 }
                 .addOnFailureListener { e ->
                     Log.e("Firestore", "Gagal simpan achievement", e)

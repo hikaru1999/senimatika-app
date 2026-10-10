@@ -20,6 +20,9 @@ import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.data.model.ScorestreakState
 import com.LambdaProject.MathArt.data.model.ScoreType
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+
 @Composable
 fun ScorestreakSnackbar(
     modifier: Modifier = Modifier,
@@ -28,11 +31,17 @@ fun ScorestreakSnackbar(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter = slideInVertically(
+            initialOffsetY = { -it },
+            animationSpec = tween(400, easing = FastOutSlowInEasing)
+        ) + fadeIn(animationSpec = tween(350)),
+        exit = slideOutVertically(
+            targetOffsetY = { -it },
+            animationSpec = tween(300, easing = FastOutSlowInEasing)
+        ) + fadeOut(animationSpec = tween(250)),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         if (state != null) {
             val accentColor = when (state.type) {

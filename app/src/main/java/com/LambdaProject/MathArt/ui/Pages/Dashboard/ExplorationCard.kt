@@ -1,5 +1,6 @@
 package com.LambdaProject.MathArt.ui.Pages.Dashboard
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.copy
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -28,13 +32,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.LambdaProject.MathArt.interFontFamily
 
 @Composable
-fun ExplorationCard(onClick: () -> Unit) {
+fun ExplorationCard(
+    isLocked: Boolean = false,
+    requiredLevel: Int = 2,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -44,9 +55,9 @@ fun ExplorationCard(onClick: () -> Unit) {
             .shadow(
                 12.dp,
                 RoundedCornerShape(24.dp),
-                spotColor = Color(0xFF1976D2)
+                spotColor = if (isLocked) Color(0xFF64748B) else Color(0xFF1976D2)
             ),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
@@ -62,8 +73,8 @@ fun ExplorationCard(onClick: () -> Unit) {
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.7f)
+                                if (isLocked) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
+                                Color.Black.copy(alpha = if (isLocked) 0.88f else 0.75f)
                             )
                         )
                     )
@@ -77,34 +88,90 @@ fun ExplorationCard(onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Surface(
-                        color = Color(0xFFFFD600),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "MINI GAME",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = interFontFamily,
-                            modifier = Modifier.padding(
-                                horizontal = 8.dp,
-                                vertical = 2.dp
-                            ),
-                            color = Color(0xFF1A237E)
-                        )
+                        Surface(
+                            color = Color(0xFF0F172A).copy(alpha = 0.85f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f))
+                        ) {
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        SpanStyle(
+                                            color = Color.White,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            letterSpacing = (-0.2).sp
+                                        )
+                                    ) {
+                                        append("Math")
+                                    }
+                                    withStyle(
+                                        SpanStyle(
+                                            brush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    Color(0xFF34D399), // Emerald Green
+                                                    Color(0xFF2DD4BF), // Teal
+                                                    Color(0xFFFBBF24)  // Golden Amber
+                                                )
+                                            ),
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = (-0.2).sp
+                                        )
+                                    ) {
+                                        append("venture")
+                                    }
+                                },
+                                fontSize = 11.5.sp,
+                                fontFamily = interFontFamily,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp)
+                            )
+                        }
+
+                        if (isLocked) {
+                            Surface(
+                                color = Color(0xFFDC2626).copy(alpha = 0.85f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+//                                        text = "Buka di Level $requiredLevel",
+                                        text = "Terkunci",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.5.sp,
+                                        fontFamily = interFontFamily
+                                    )
+                                }
+                            }
+                        }
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "JELAJAH SENIMATIKA",
+                        text = "JELAJAHI NUMERIA",
                         color = Color.White,
                         fontWeight = FontWeight.Black,
                         fontSize = 20.sp,
                         fontFamily = interFontFamily,
                         letterSpacing = 1.sp
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Temukan harta karun matematika!",
-                        color = Color.White.copy(alpha = 0.8f),
+                        text = if (isLocked) "Capai Level $requiredLevel (Apprentice) untuk membuka mode ini!" else "Kalahkan boss dan temukan harta karun matematika!",
+                        color = if (isLocked) Color(0xFFFCA5A5) else Color.White.copy(alpha = 0.85f),
                         fontSize = 12.sp,
                         fontFamily = interFontFamily
                     )
@@ -112,17 +179,17 @@ fun ExplorationCard(onClick: () -> Unit) {
 
                 Surface(
                     shape = CircleShape,
-                    color = Color.White,
+                    color = if (isLocked) Color(0xFF334155) else Color.White,
                     modifier = Modifier.size(40.dp),
                     shadowElevation = 4.dp
                 ) {
                     Icon(
-                        painter = painterResource(id = com.LambdaProject.MathArt.R.drawable.ic_play),
+                        imageVector = if (isLocked) androidx.compose.material.icons.Icons.Default.Lock else androidx.compose.material.icons.Icons.Default.PlayArrow,
                         contentDescription = null,
                         modifier = Modifier
                             .padding(10.dp)
                             .size(20.dp),
-                        tint = Color(0xFF1976D2)
+                        tint = if (isLocked) Color(0xFF94A3B8) else Color(0xFF1976D2)
                     )
                 }
             }

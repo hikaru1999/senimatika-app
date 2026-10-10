@@ -2,5 +2,6 @@ package com.LambdaProject.MathArt.data.model
 
 data class LeaderboardEntry(
     val username: String,
-    val points: Int
+    val points: Int,
+    val avatar: String = "avatar_5"
 )

@@ -1,8 +1,12 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.Lobby
 
 import android.util.Log
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Inventory
@@ -14,7 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -37,6 +45,8 @@ import com.google.firebase.firestore.Source
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+
+import com.LambdaProject.MathArt.data.model.Mission
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +74,7 @@ fun ExplorationLobbyScreen(
     var hasFog by remember { mutableStateOf(false) }
     var hasNight by remember { mutableStateOf(false) }
     var hasCombined by remember { mutableStateOf(false) }
+    var mapMissions by remember { mutableStateOf<List<Mission>>(emptyList()) }
     var selectedArtifactForModal by remember { mutableStateOf<MapViewModel.ArtifactData?>(null) }
     var checkComplete by remember { mutableStateOf(false) }
     var mapPlayerHp by remember { mutableFloatStateOf(100f) }
@@ -100,6 +111,9 @@ fun ExplorationLobbyScreen(
                 hasFog = visibility?.get("fogOfWar") as? Boolean ?: false
                 hasNight = visibility?.get("nightMode") as? Boolean ?: false
                 hasCombined = visibility?.get("fogNightCombined") as? Boolean ?: false
+
+                val rawMissions = doc.get("missions") as? List<Map<String, Any>> ?: emptyList()
+                mapMissions = rawMissions.map { Mission.fromMap(it) }
 
                 isVerifying = false
             } else {
@@ -151,9 +165,7 @@ fun ExplorationLobbyScreen(
     }
 
     if (isVerifying) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF1976D2))
-        }
+        ExplorationLobbySkeleton()
     } else if (isNotFound || (mapName == "Memuat..." && checkComplete)) {
         NotFoundScreen(
             title = "Yah, Peta Tidak Tersedia",
@@ -168,48 +180,77 @@ fun ExplorationLobbyScreen(
         )
     } else {
         Scaffold(
-            containerColor = Color(0xFFE7E8EF),
+            containerColor = Color(0xFFF8FAFC),
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
                             "Persiapan Eksplorasi",
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Black,
                             fontFamily = interFontFamily,
-                            color = Color(0xFF1A237E)
+                            fontSize = 18.sp,
+                            color = Color(0xFF0F172A)
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = Color(0xFF0F172A)
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
                 )
             },
         ) { padding ->
-            Column(modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) {
                 TabRow(
                     selectedTabIndex = pagerState.currentPage,
                     containerColor = Color.White,
+                    divider = {
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color(0xFFE2E8F0)
+                        )
+                    },
                     indicator = { tabPositions ->
                         SecondaryIndicator(
                             Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                            height = 3.dp,
                             color = Color(0xFF1976D2)
                         )
                     }
                 ) {
                     tabLabels.forEachIndexed { index, label ->
+                        val isSelected = pagerState.currentPage == index
                         Tab(
-                            selected = pagerState.currentPage == index,
+                            selected = isSelected,
                             onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
                             text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(tabIcons[index], null, modifier = Modifier.size(18.dp), tint = Color(0xFF1A237E))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        tabIcons[index],
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = if (isSelected) Color(0xFF1976D2) else Color(0xFF64748B)
+                                    )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(label, fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFF1A237E))
+                                    Text(
+                                        label,
+                                        fontFamily = interFontFamily,
+                                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = if (isSelected) Color(0xFF1976D2) else Color(0xFF64748B)
+                                    )
                                 }
                             }
                         )
@@ -230,6 +271,7 @@ fun ExplorationLobbyScreen(
                             hasCombined = hasCombined,
                             levelType = levelType,
                             playerHp = mapPlayerHp,
+                            missions = mapMissions,
                             onBack = { navController.popBackStack() },
                             onStartExploration = {
                                 coroutineScope.launch {
@@ -324,5 +366,253 @@ suspend fun fetchScrollDetails(db: FirebaseFirestore, scrollIds: List<String>): 
     } catch (e: Exception) {
         Log.e("Lobby", "Gagal mengambil detail scroll: ${e.message}")
         emptyList()
+    }
+}
+
+@Composable
+private fun Modifier.explorationLobbyShimmer(
+    shape: Shape = RoundedCornerShape(8.dp),
+    baseColor: Color = Color(0xFFE2E8F0),
+    highlightColor: Color = Color(0xFFF1F5F9)
+): Modifier {
+    val transition = rememberInfiniteTransition(label = "explorationLobbyShimmerTransition")
+    val translateAnim by transition.animateFloat(
+        initialValue = -400f,
+        targetValue = 1400f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1100, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "explorationLobbyShimmerTranslate"
+    )
+
+    return this
+        .clip(shape)
+        .background(
+            brush = Brush.linearGradient(
+                colors = listOf(baseColor, highlightColor, baseColor),
+                start = Offset(translateAnim, translateAnim),
+                end = Offset(translateAnim + 350f, translateAnim + 350f)
+            )
+        )
+}
+
+/**
+ * Loading Skeleton untuk ExplorationLobbyScreen
+ */
+@Composable
+fun ExplorationLobbySkeleton() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8FAFC))
+    ) {
+        // Top App Bar Shimmer
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White,
+            shadowElevation = 2.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .explorationLobbyShimmer(CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(160.dp)
+                        .height(20.dp)
+                        .explorationLobbyShimmer(RoundedCornerShape(6.dp))
+                )
+                Spacer(modifier = Modifier.size(36.dp))
+            }
+        }
+
+        // Tab Row Shimmer (Deskripsi / Inventory)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.White
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .explorationLobbyShimmer(RoundedCornerShape(12.dp))
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .explorationLobbyShimmer(RoundedCornerShape(12.dp))
+                )
+            }
+        }
+
+        // Body Content Shimmer
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Map Hero Card Shimmer
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                            .explorationLobbyShimmer(RoundedCornerShape(14.dp))
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(160.dp)
+                                .height(22.dp)
+                                .explorationLobbyShimmer(RoundedCornerShape(6.dp))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(80.dp)
+                                .height(24.dp)
+                                .explorationLobbyShimmer(RoundedCornerShape(8.dp))
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .height(14.dp)
+                            .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(14.dp)
+                            .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+                    )
+                }
+            }
+
+            // Player HP & Status Card Shimmer
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(110.dp)
+                                .height(16.dp)
+                                .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(50.dp)
+                                .height(16.dp)
+                                .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .explorationLobbyShimmer(RoundedCornerShape(5.dp))
+                    )
+                }
+            }
+
+            // Missions Header & List Shimmer
+            Box(
+                modifier = Modifier
+                    .width(130.dp)
+                    .height(20.dp)
+                    .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+            )
+
+            repeat(2) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .explorationLobbyShimmer(CircleShape)
+                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .height(14.dp)
+                                    .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.5f)
+                                    .height(12.dp)
+                                    .explorationLobbyShimmer(RoundedCornerShape(4.dp))
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Start Exploration Button Shimmer
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .explorationLobbyShimmer(RoundedCornerShape(16.dp))
+            )
+        }
     }
 }

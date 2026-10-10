@@ -48,6 +48,7 @@ fun PowerUpDetailDialog(
     onUse: () -> Unit,
     onDrop: () -> Unit,
     isQuizActive: Boolean,
+    isShortAnswerQuiz: Boolean = false,
     isLobby: Boolean = false,
     showDropButton: Boolean = true
 ) {
@@ -64,7 +65,7 @@ fun PowerUpDetailDialog(
     }
     val description = when(pu) {
         PowerUpType.FREEZE_TIMER -> "Hentikan waktu kuis selama 5 detik agar kamu bisa berpikir lebih tenang."
-        PowerUpType.REMOVE_TWO_OPTIONS -> "Menghilangkan 2 pilihan jawaban yang salah secara otomatis."
+        PowerUpType.REMOVE_TWO_OPTIONS -> "Menghilangkan 2 pilihan salah pada pilihan ganda, atau mencentang 1 opsi benar pada pilihan ganda kompleks."
         PowerUpType.STREAK_PROTECTION -> "Memberikan proteksi streak jika kamu menjawab soal yang salah."
         PowerUpType.HEALING_VIAL -> "Ramuan konsentrasi untuk memulihkan +20 HP saat eksplorasi."
         PowerUpType.LEATHER_STRAPS -> "Tali kulit tambahan yang meningkatkan kapasitas maksimal tasmu sebanyak +5 kg secara permanen."
@@ -105,6 +106,9 @@ fun PowerUpDetailDialog(
         isQuizActive -> isBattleItem
         else -> isExplorationItem
     }
+
+    val isTruthFilterOnShortAnswer = isQuizActive && pu == PowerUpType.REMOVE_TWO_OPTIONS && isShortAnswerQuiz
+    val isUseButtonEnabled = !isTruthFilterOnShortAnswer
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -164,14 +168,17 @@ fun PowerUpDetailDialog(
                         lineHeight = 18.sp
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     if (canShowUseButton) {
                         Button(
                             onClick = {
-                                onUse()
-                                onDismiss()
+                                if (isUseButtonEnabled) {
+                                    onUse()
+                                    onDismiss()
+                                }
                             },
+                            enabled = isUseButtonEnabled,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp),
@@ -181,13 +188,29 @@ fun PowerUpDetailDialog(
                                     isQuizActive -> Color(0xFFD32F2F)
                                     isEquipped -> Color.DarkGray
                                     else -> Color(0xFF1976D2)
-                                }
+                                },
+                                disabledContainerColor = Color(0xFF9E9E9E).copy(alpha = 0.35f),
+                                disabledContentColor = Color.White.copy(alpha = 0.7f)
                             )
                         ) {
                             Text(
-                                text = buttonText,
+                                text = if (isTruthFilterOnShortAnswer) "TIDAK DAPAT DIGUNAKAN" else buttonText,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = interFontFamily
+                            )
+                        }
+                        if (isTruthFilterOnShortAnswer) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Truth Filter tidak dapat digunakan pada soal isian singkat.",
+                                color = Color(0xFFD32F2F),
+                                fontSize = 11.sp,
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp)
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))

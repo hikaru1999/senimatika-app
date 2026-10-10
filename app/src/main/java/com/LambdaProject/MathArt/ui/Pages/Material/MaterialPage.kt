@@ -39,6 +39,8 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
     val currentUserId = remember { auth.currentUser?.uid ?: "" }
     val currentMaterialId = materialId.ifBlank { "transformasi_geometri" }
 
+    var isLoadingProgress by remember { mutableStateOf(true) }
+
     LaunchedEffect(currentUserId) {
         if (currentUserId.isNotEmpty()) {
             Firebase.firestore.collection("userProgress").document(currentUserId)
@@ -46,8 +48,19 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                 .addOnSuccessListener { document ->
                     val maxPage = document.getLong("maxPage")?.toInt() ?: 0
                     maxAccessiblePage.intValue = maxPage
+                    isLoadingProgress = false
                 }
+                .addOnFailureListener {
+                    isLoadingProgress = false
+                }
+        } else {
+            isLoadingProgress = false
         }
+    }
+
+    if (isLoadingProgress) {
+        MaterialPageSkeleton()
+        return
     }
 
     Scaffold(
@@ -205,9 +218,7 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                                     materialId = currentMaterialId
                                 )
                             } else {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(strokeWidth = 3.dp, color = Color(0xFF5294FF))
-                                }
+                                QuizScreenSkeleton()
                             }
                         }
                         6 -> SummaryScreen(

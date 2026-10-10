@@ -64,33 +64,42 @@ fun MathText(
                     font-weight: $cssFontWeight;
                     margin: 0;
                     padding: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     overflow: visible;
                     text-align: $textAlign;
-                    line-height: 1.5;
+                    line-height: 1.45;
                 }
                 
-                div, p, ul, li {
-                    margin-top: 5px;
-                    margin-bottom: 10px;
+                div, p {
+                    margin: 0;
+                    padding: 0;
+                }
+
+                p + p, div + p, p + div {
+                    margin-top: 6px;
+                }
+                
+                .justify {
+                    text-align: justify !important;
+                    text-align-last: left;
+                    text-justify: inter-word;
                     display: block;
+                    width: 100%;
                 }
-                
-                .justify { text-align: justify !important; display: block; width: 100%; }
                 .center  { text-align: center !important; display: block; width: 100%; }
                 .right   { text-align: right !important; display: block; width: 100%; }
                 .left    { text-align: left !important; display: block; width: 100%; }
                 
                 #math-wrapper {
                     font-weight: $cssFontWeight;
-                    padding: 2px 10px;
+                    padding: 0;
+                    margin: 0;
                     display: block;
                     word-wrap: break-word;
                     width: 100%;
                     box-sizing: border-box;
-                    min-height: 20px;
+                    min-height: 18px;
                 }
-                
                 
                 img {
                     max-width: 100%;
@@ -99,55 +108,101 @@ fun MathText(
                     margin: 10px auto;
                     border-radius: 10px;
                     cursor: pointer;
-                    box-shadow: 0 4x 8px rgba(0,0,0,0,1);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
                 }
+                
+                ul, ol {
+                    margin: 6px 0 10px 0;
+                    padding-left: 22px;
+                    box-sizing: border-box;
+                }
+                
                 ul {
-                    padding-left: 20px;
-                    margin: 5px 0;
-                    text-align: left;
                     list-style-type: disc !important;
                 }
-                li { margin-bottom: 2px; display: list-item !important; }
+                
+                ol {
+                    list-style-type: decimal !important;
+                }
+                
+                li {
+                    margin-top: 3px;
+                    margin-bottom: 5px;
+                    display: list-item !important;
+                    line-height: 1.45;
+                    text-align: justify;
+                    text-align-last: left;
+                }
+                
+                li .justify, li .left, li .center, li .right, li div, li p {
+                    display: inline;
+                    margin: 0;
+                    padding: 0;
+                    width: auto;
+                }
 
                 .katex-display {
                     margin: 0.5em 0 !important;
                 }
                 .katex {
                     font-weight: $cssFontWeight !important;
-                    ${if (cssFontWeight >= 700) "text-shadow: 0.2px 0 0 $textColor, -0.1px 0 0 $textColor;" else ""}
-                }.katex {
+                    font-size: 1.02em;
                     white-space: normal !important;
+                    ${if (cssFontWeight >= 700) "text-shadow: 0.2px 0 0 $textColor, -0.1px 0 0 $textColor;" else ""}
                 }
             </style>
             <script>
                 function parseContent(text) {
+                    if (!text) return '';
+
                     // Standarisasi baris baru
-                    text = text.replace(/\r\n/g, '\n');
+                    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                    
+                    // Normalisasi tag alignment jika membungkus list marker (*, -, +, •, 1., dsb)
+                    text = text.replace(/\[(justify|center|right|left)\]([\s\S]*?)\[\/\1\]/gi, function(match, tag, content) {
+                        var lines = content.split('\n');
+                        var processedLines = lines.map(function(line) {
+                            var trimmed = line.trim();
+                            if (!trimmed) return '';
+                            
+                            // Deteksi bullet (*, -, +, •)
+                            var bulletMatch = trimmed.match(/^([\*\-\+•])[ \t]+([\s\S]*)$/);
+                            if (bulletMatch) {
+                                return bulletMatch[1] + ' [' + tag + ']' + bulletMatch[2] + '[/' + tag + ']';
+                            }
+                            
+                            // Deteksi nomor (1., 1), dsb)
+                            var numMatch = trimmed.match(/^(\d+[\.\)])[ \t]+([\s\S]*)$/);
+                            if (numMatch) {
+                                return numMatch[1] + ' [' + tag + ']' + numMatch[2] + '[/' + tag + ']';
+                            }
+                            
+                            return '[' + tag + ']' + line + '[/' + tag + ']';
+                        });
+                        return processedLines.join('\n');
+                    });
                     
                     // Bold & Italic
                     text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                     text = text.replace(/(^|[^a-zA-Z0-9])_([^_]+)_(?![a-zA-Z0-9])/g, '$1<i>$2</i>');
                     
-                    // ALignment Tags
-                    text = text.replace(/\[justify\]([\s\S]*?)\[\/justify\]/g, function(m, p1) {
+                    // Alignment Tags
+                    text = text.replace(/\[justify\]([\s\S]*?)\[\/justify\]/gi, function(m, p1) {
                         return '<div class="justify">' + p1.trim() + '</div>';
                     });
-                    text = text.replace(/\[center\]([\s\S]*?)\[\/center\]/g, function(m, p1) {
+                    text = text.replace(/\[center\]([\s\S]*?)\[\/center\]/gi, function(m, p1) {
                         return '<div class="center">' + p1.trim() + '</div>';
                     });
-                    text = text.replace(/\[right\]([\s\S]*?)\[\/right\]/g, function(m, p1) {
+                    text = text.replace(/\[right\]([\s\S]*?)\[\/right\]/gi, function(m, p1) {
                         return '<div class="right">' + p1.trim() + '</div>';
                     });
-                    text = text.replace(/\[left\]([\s\S]*?)\[\/left\]/g, function(m, p1) {
+                    text = text.replace(/\[left\]([\s\S]*?)\[\/left\]/gi, function(m, p1) {
                         return '<div class="left">' + p1.trim() + '</div>';
                     });
                     
                     // Numbered & Bullet List
-//                    text = text.replace(/(^|\n|[ \t]*)(\d+)\.[ \t]+(.*?)(?=\n|$)/g, '$1<li class="num-item">$3</li>');
-//                    text = text.replace(/(^|\n|[ \t]*)\*[ \t]+(.*?)(?=\n|$)/g, '$1<li class="bullet-item">$2</li>');
-
-                    text = text.replace(/(?:^|\n)\*[ \t]+(.*?)(?=\n|$)/g, '\n<li class="bullet-item">$1</li>');
-                    text = text.replace(/(^|\n)(\d+)\.[ \t]+(.*?)(?=\n|$)/g, '$1<li class="num-item">$3</li>');
+                    text = text.replace(/(?:^|\n)[ \t]*[\*\-\+•][ \t]+(.*?)(?=\n|$)/g, '\n<li class="bullet-item">$1</li>');
+                    text = text.replace(/(?:^|\n)[ \t]*\d+[\.\)][ \t]+(.*?)(?=\n|$)/g, '\n<li class="num-item">$1</li>');
                     
                     text = text.replace(/(?:<li class="bullet-item">[\s\S]*?<\/li>\s*)+/g, function(match) {
                         return '<ul>' + match.trim() + '</ul>';
@@ -166,8 +221,8 @@ fun MathText(
                     });
                     
                     // Others
-                    text = text.replace(/>\n/g, '>');
-                    text = text.replace(/\n</g, '<');
+                    text = text.replace(/>\s*\n+/g, '>');
+                    text = text.replace(/\n+\s*</g, '<');
                     text = text.replace(/\n/g, '<br>');
                     
                     return text;

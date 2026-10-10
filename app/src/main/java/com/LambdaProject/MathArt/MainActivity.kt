@@ -49,14 +49,20 @@ import com.LambdaProject.MathArt.ui.Pages.Material.MaterialScreen
 import com.LambdaProject.MathArt.ui.Pages.Dashboard.NotificationScreen
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizLobby
 import com.LambdaProject.MathArt.ui.Pages.Profile.ProfileScreen
+import com.LambdaProject.MathArt.ui.Pages.Profile.LearningReportScreen
 import com.LambdaProject.MathArt.ui.Pages.Register.RegisterScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.SenimatikaScreen
 import com.LambdaProject.MathArt.ui.Pages.Register.ProfileForm
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizPage
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizMaster
+import com.LambdaProject.MathArt.ui.Pages.Multiplayer.ScorestreakSnackbar
 import com.LambdaProject.MathArt.ui.Pages.SplashScreen
 import com.LambdaProject.MathArt.ui.Pages.Register.SuccessPage
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizResult
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import com.LambdaProject.MathArt.ViewModels.AchievementViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -176,6 +182,10 @@ class MainActivity : ComponentActivity() {
                         NavHost(
                             navController = navController,
                             startDestination = "splash",
+                            enterTransition = { fadeIn(animationSpec = tween(180)) },
+                            exitTransition = { fadeOut(animationSpec = tween(180)) },
+                            popEnterTransition = { fadeIn(animationSpec = tween(180)) },
+                            popExitTransition = { fadeOut(animationSpec = tween(180)) }
                         ) {
                             composable("splash") { SplashScreen(navController) }
                             composable("intro") { IntroScreen(navController, userPreferences) }
@@ -363,54 +373,76 @@ class MainActivity : ComponentActivity() {
                             }
 
                             composable(
-                                route = "StartQuiz/{materialId}/{userId}",
+                                route = "StartQuiz/{materialId}/{userId}?isDuel={isDuel}&botId={botId}",
                                 arguments = listOf(
                                     navArgument("materialId") { type = NavType.StringType },
-                                    navArgument("userId") { type = NavType.StringType }
+                                    navArgument("userId") { type = NavType.StringType },
+                                    navArgument("isDuel") {
+                                        type = NavType.BoolType
+                                        defaultValue = false
+                                    },
+                                    navArgument("botId") {
+                                        type = NavType.StringType
+                                        defaultValue = ""
+                                    }
                                 )
                             ) { backStackEntry ->
                                 val materialId = backStackEntry.arguments?.getString("materialId") ?: return@composable
                                 val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
-                                val questions by viewModel.questions.collectAsState()
-                                val currentIndex by viewModel.currentQuestionIndex.collectAsState()
-                                val viewModel: OnlineQuizViewModel = hiltViewModel()
-                                var showScoreSnackbar by remember { mutableStateOf(false) }
-                                var scoreState by remember { mutableStateOf<ScorestreakState?>(null) }
+                                val isDuel = backStackEntry.arguments?.getBoolean("isDuel") ?: false
+                                val botId = backStackEntry.arguments?.getString("botId") ?: ""
 
                                 OnlineQuizMaster(
                                     navController = navController,
                                     materialId = materialId,
                                     userId = userId,
-                                    onFinishQuiz = {
-                                        navController.navigate("OnlineQuizResult/${materialId}/${userId}") {
-                                            popUpTo("OnlineQuizMaster") {
+                                    isDuel = isDuel,
+                                    initialBotId = botId,
+                                    onFinishQuiz = { finalBotId, isSurrendered ->
+                                        val route = if (isDuel) {
+                                            "OnlineQuizResult/${materialId}/${userId}?isDuel=true&botId=${finalBotId}&isSurrendered=${isSurrendered}"
+                                        } else {
+                                            "OnlineQuizResult/${materialId}/${userId}"
+                                        }
+                                        navController.navigate(route) {
+                                            popUpTo("StartQuiz") {
                                                 inclusive = true
                                             }
                                         }
                                     },
                                     viewModel = viewModel,
                                     onNextClick = {
-                                        if (currentIndex < questions.lastIndex) {
-                                            viewModel.nextQuestion()
-                                        }
+                                        viewModel.nextQuestion()
                                     },
-                                    onTriggerScorestreak = { streakState ->
-                                        scoreState = streakState
-                                        showScoreSnackbar = true
-                                    },
+                                    onTriggerScorestreak = {},
                                     onBackPressed = { navController.popBackStack() }
                                 )
                             }
 
                             composable(
-                                route = "OnlineQuizResult/{materialId}/{userId}",
+                                route = "OnlineQuizResult/{materialId}/{userId}?isDuel={isDuel}&botId={botId}&isSurrendered={isSurrendered}",
                                 arguments = listOf(
                                     navArgument("materialId") { type = NavType.StringType },
-                                    navArgument("userId") { type = NavType.StringType}
+                                    navArgument("userId") { type = NavType.StringType },
+                                    navArgument("isDuel") {
+                                        type = NavType.BoolType
+                                        defaultValue = false
+                                    },
+                                    navArgument("botId") {
+                                        type = NavType.StringType
+                                        defaultValue = ""
+                                    },
+                                    navArgument("isSurrendered") {
+                                        type = NavType.BoolType
+                                        defaultValue = false
+                                    }
                                 )
                             ) { backStackEntry ->
                                 val materialId = backStackEntry.arguments?.getString("materialId") ?: ""
                                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                                val isDuel = backStackEntry.arguments?.getBoolean("isDuel") ?: false
+                                val botId = backStackEntry.arguments?.getString("botId") ?: ""
+                                val isSurrendered = backStackEntry.arguments?.getBoolean("isSurrendered") ?: false
 
                                 OnlineQuizResult(
                                     onClickLeaderboard = {
@@ -429,9 +461,20 @@ class MainActivity : ComponentActivity() {
                                             launchSingleTop = true
                                         }
                                     },
+                                    onClickRematch = {
+                                        navController.navigate("StartQuiz/$materialId/$userId?isDuel=true&botId=$botId") {
+                                            popUpTo("OnlineQuizLobby/$userId/description") {
+                                                inclusive = false
+                                            }
+                                        }
+                                    },
                                     materialId = materialId,
                                     userId = userId,
-                                    quizList = quizList
+                                    quizList = quizList,
+                                    isDuel = isDuel,
+                                    botId = botId,
+                                    isSurrendered = isSurrendered,
+                                    viewModel = viewModel
                                 )
                             }
 
@@ -455,6 +498,10 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                     onBack = { navController.popBackStack()}
                                 )
+                            }
+
+                            composable("learning_report") {
+                                LearningReportScreen(navController = navController)
                             }
                         }
 

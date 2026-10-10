@@ -65,9 +65,7 @@ fun QuizScreen(
     val isQuizReady by viewModel.isQuizReady
 
     if (!isQuizReady) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF5294FF), strokeWidth = 3.dp)
-        }
+        QuizScreenSkeleton()
         return
     }
 

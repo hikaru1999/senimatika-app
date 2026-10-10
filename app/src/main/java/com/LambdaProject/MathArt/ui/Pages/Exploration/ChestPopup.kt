@@ -100,7 +100,7 @@ fun ChestPopup(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Replay Mode: No Reward Will Be Extracted",
+                        text = "Replay Mode: Hadiah Tidak Akan Dibawa",
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,

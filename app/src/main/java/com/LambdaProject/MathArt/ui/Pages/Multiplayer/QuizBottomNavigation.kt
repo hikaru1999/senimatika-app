@@ -38,7 +38,8 @@ fun BottomQuizNav(
     onFinishQuiz: () -> Unit,
     onPowerUpClicked: () -> Unit,
     viewModel: OnlineQuizViewModel,
-    materialId: String
+    materialId: String,
+    isDuel: Boolean = false
 ) {
     var isLoading by remember { mutableStateOf(false) }
 //    var isAnswered by remember { mutableStateOf(false) }
@@ -137,7 +138,7 @@ fun BottomQuizNav(
                             }
                         )
 
-                        if (currentIndex == totalQuestions - 1) {
+                        if (!isDuel && currentIndex == totalQuestions - 1) {
                             delay(1250)
 
                             val userId = viewModel.getCurrentUserId() ?: return@launch
@@ -148,14 +149,15 @@ fun BottomQuizNav(
                         isLoading = false
                     }
                 },
-                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E60DD)),
                 enabled = selectedAnswers.isNotEmpty() || !userTextAnswer.isNullOrBlank()
             ) {
                 Box(
                     modifier = Modifier
-                        .height(24.dp)
-                        .widthIn(min = 120.dp),
+                        .fillMaxWidth()
+                        .height(28.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isLoading) {
@@ -166,7 +168,7 @@ fun BottomQuizNav(
                         )
                     } else {
                         Text(
-                            text = if (currentIndex < totalQuestions - 1) "Cek Jawabanmu" else "Selesai & Lihat Hasil",
+                            text = if (isDuel) "Jawab" else if (currentIndex < totalQuestions - 1) "Cek Jawabanmu" else "Selesai & Lihat Hasil",
                             fontFamily = interFontFamily,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
