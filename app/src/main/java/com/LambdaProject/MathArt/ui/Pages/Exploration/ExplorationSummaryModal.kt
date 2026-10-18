@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.HistoryEdu
@@ -33,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.R
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.data.model.ExplorationStats
 import com.LambdaProject.MathArt.interFontFamily
 import kotlinx.coroutines.CoroutineScope
@@ -46,24 +47,25 @@ fun ExplorationSummaryModal(
     stats: ExplorationStats,
     isTutorialReplay: Boolean = false,
     onClose: () -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
     var isProcessing by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val scale = remember { Animatable(0.8f) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         scale.animateTo(
             targetValue = 1f,
             animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
+                dampingRatio =DampingRatioMediumBouncy,
+                stiffness = StiffnessLow
             )
         )
         if (!stats.isSuccess) {
-            audio.playSfx("gameover")
+            AppAudioManager.playSfx("gameover")
         } else {
-            audio.playSfx("victory")
+            AppAudioManager.playSfx("victory")
         }
     }
 
@@ -89,107 +91,246 @@ fun ExplorationSummaryModal(
                 )
             )
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 32.dp, horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .background(
-                                if (stats.isSuccess) Color(0xFFFFD600).copy(0.1f)
-                                else Color.Red.copy(0.1f),
-                                CircleShape
-                            )
-                    )
-                    Icon(
-                        imageVector = if (stats.isSuccess) Icons.Default.EmojiEvents
-                        else Icons.Default.SentimentVeryDissatisfied,
-                        contentDescription = null,
-                        tint = if (stats.isSuccess) Color(0xFFFFD600) else Color(0xFFF44336),
-                        modifier = Modifier.size(72.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = if (stats.isSuccess) "EXTRACTION SUCCESS!" else "MISSION FAILED",
-                    color = if (stats.isSuccess) Color(0xFFFFD600) else Color(0xFFF44336),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = interFontFamily,
-                    letterSpacing = 1.sp,
-                    textAlign = TextAlign.Center
-                )
-
-                if (isTutorialReplay && stats.isSuccess) {
-                    Surface(
-                        color = Color(0xFFFFC107).copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.padding(top = 12.dp),
-                        border = BorderStroke(1.dp, Color(0xFFFFC107).copy(alpha = 0.4f))
-                    ) {
-                        Text(
-                            text = "Mode Replay: Loot tidak disimpan",
-                            color = Color(0xFFFFC107),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
-                    }
-                } else {
-                    Text(
-                        text = if (stats.isSuccess) "Hasil temuan berhasil diamankan"
-                        else "Kamu kehilangan barang yang ditemukan",
-                        color = Color.White.copy(alpha = 0.5f),
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SummaryStatCard("Boss Dikalahkan", "${stats.bossesDefeated}", Icons.Default.Gavel, Color(0xFFFF5252))
-                    SummaryStatCard("Koin Terkumpul", "+${stats.coinsCollected}", Icons.Default.MonetizationOn, Color(0xFFFFD740))
-                    SummaryStatCard("Scroll Ditemukan", "${stats.scrollsCollected.size}", Icons.Default.HistoryEdu, Color(0xFF40C4FF))
-                    SummaryStatCard("Power-Up Dibawa", "${stats.powerUpsCollected.size}", Icons.Default.Inventory2, Color(0xFFE040FB))
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = {
-                        if (!isProcessing) {
-                            isProcessing = true
-                            isLoading = true
-                            audio.stopBGM()
-                            CoroutineScope(Dispatchers.Main).launch {
-                                delay(2000)
-                                onClose()
-                                isLoading = false
-                            }
-                        }
-                    },
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    enabled = !isProcessing,
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (stats.isSuccess) Color(0xFF2E7D32) else Color(0xFFC62828)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(8.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = 32.dp, horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (isLoading || isProcessing) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                    Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .background(
+                                    if (stats.isSuccess) Color(0xFFFFD600).copy(0.1f)
+                                    else Color.Red.copy(0.1f),
+                                    CircleShape
+                                )
+                        )
+                        Icon(
+                            imageVector = if (stats.isSuccess) Icons.Default.EmojiEvents
+                            else Icons.Default.SentimentVeryDissatisfied,
+                            contentDescription = null,
+                            tint = if (stats.isSuccess) Color(0xFFFFD600) else Color(0xFFF44336),
+                            modifier = Modifier.size(72.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = if (stats.isSuccess) "EXTRACTION SUCCESS!" else "MISSION FAILED",
+                        color = if (stats.isSuccess) Color(0xFFFFD600) else Color(0xFFF44336),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = interFontFamily,
+                        letterSpacing = 1.sp,
+                        textAlign = TextAlign.Center
+                    )
+
+                    if (isTutorialReplay && stats.isSuccess) {
+                        Surface(
+                            color = Color(0xFFFFC107).copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.padding(top = 12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFFFC107).copy(alpha = 0.4f))
+                        ) {
+                            Text(
+                                text = "Mode Replay: Hadiah tidak dibawa",
+                                color = Color(0xFFFFC107),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
                     } else {
-                        Text("KEMBALI KE LOBBY", fontWeight = FontWeight.Black, fontFamily = interFontFamily)
+                        Text(
+                            text = if (stats.isSuccess) "Hasil temuan berhasil diamankan"
+                            else "Kamu kehilangan barang yang ditemukan",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (stats.isSuccess) {
+                            ExpSummaryStatCard(stats)
+                        }
+                        SummaryStatCard("Boss Dikalahkan", "${stats.bossesDefeated}", Icons.Default.Gavel, Color(0xFFFF5252))
+                        CoinSummaryStatCard(stats)
+                        SummaryStatCard("Scroll Ditemukan", "${stats.scrollsCollected.size}", Icons.Default.HistoryEdu, Color(0xFF40C4FF))
+                        SummaryStatCard("Power-Up Dibawa", "${stats.powerUpsCollected.size}", Icons.Default.Inventory2, Color(0xFFE040FB))
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = {
+                            if (!isProcessing) {
+                                isProcessing = true
+                                isLoading = true
+                                AppAudioManager.stopBGM()
+
+                                scope.launch {
+                                    delay(2000)
+                                    onClose()
+                                    isLoading = false
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        enabled = !isProcessing,
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (stats.isSuccess) Color(0xFF2E7D32) else Color(0xFFC62828)
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(8.dp)
+                    ) {
+                        if (isLoading || isProcessing) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                        } else {
+                            Text("KEMBALI KE LOBBY", fontWeight = FontWeight.Black, fontFamily = interFontFamily)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+@Composable
+fun CoinSummaryStatCard(stats: ExplorationStats) {
+    val hasMissionBonus = stats.isSuccess && stats.missionBonusCoins > 0
+    val missionsWithBonus = stats.completedMissions.filter { it.mission.bonusCoins > 0 }
+
+    Surface(
+        color = Color(0xFF2C2C2E),
+        shape = RoundedCornerShape(16.dp),
+        border = if (hasMissionBonus) BorderStroke(1.dp, Color(0xFFFFD740).copy(alpha = 0.35f)) else null,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFFD740).copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.MonetizationOn,
+                        contentDescription = null,
+                        tint = Color(0xFFFFD740),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = "Koin Terkumpul",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "+${stats.coinsCollected}",
+                    color = Color(0xFFFFD740),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+
+            if (hasMissionBonus) {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.08f),
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
+
+                // Rincian Koin Dasar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 52.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Eksplorasi",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                    Text(
+                        text = "+${stats.baseCoins}",
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // Rincian Bonus Misi Total
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 52.dp, bottom = if (missionsWithBonus.isNotEmpty()) 6.dp else 0.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Bonus Misi",
+                        color = Color(0xFFFFD740).copy(alpha = 0.9f),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "+${stats.missionBonusCoins}",
+                        color = Color(0xFFFFD740),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Rincian Per Misi yang Selesai
+                if (missionsWithBonus.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 58.dp, top = 2.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        missionsWithBonus.forEach { progress ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "✓ ${progress.mission.title}",
+                                    color = Color(0xFF81C784),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "+${progress.mission.bonusCoins}",
+                                    color = Color(0xFF81C784),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -232,5 +373,100 @@ fun SummaryStatCard(label: String, value: String, icon: ImageVector, accentColor
                 fontWeight = FontWeight.Black
             )
         }
+    }
+}
+
+@Composable
+fun ExpSummaryStatCard(stats: ExplorationStats) {
+    Surface(
+        color = Color(0xFF2C2C2E),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFA855F7).copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFA855F7).copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Bolt,
+                        contentDescription = null,
+                        tint = Color(0xFFC084FC),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Experience (EXP)",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Multiplier: ${((stats.repeatMultiplier) * 100).toInt()}%",
+                        color = Color(0xFFC084FC),
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Text(
+                    text = "+${stats.expEarned} EXP",
+                    color = Color(0xFFC084FC),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+
+            HorizontalDivider(
+                color = Color.White.copy(alpha = 0.08f),
+                thickness = 1.dp,
+                modifier = Modifier.padding(vertical = 10.dp)
+            )
+
+            // Rincian Dasar
+            ExpBreakdownSubRow(label = "Eksplorasi Selesai", value = "+${stats.explorationExp}")
+            ExpBreakdownSubRow(label = "Misi Diselesaikan", value = "+${stats.missionExp}")
+            if (stats.missionBonusExp > 0) {
+                ExpBreakdownSubRow(label = "Bonus Tugas Misi", value = "+${stats.missionBonusExp}")
+            }
+            if (stats.bossExp > 0) {
+                ExpBreakdownSubRow(label = "Boss Dikalahkan", value = "+${stats.bossExp}")
+            }
+            if (stats.stationExp > 0) {
+                ExpBreakdownSubRow(label = "Station Dipecahkan", value = "+${stats.stationExp}")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpBreakdownSubRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 52.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = Color.White.copy(alpha = 0.6f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Normal
+        )
+        Text(
+            text = value,
+            color = Color.White.copy(alpha = 0.85f),
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }

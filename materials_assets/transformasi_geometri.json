@@ -1,0 +1,224 @@
+{
+  "id": "transformasi_geometri",
+  "title": "Transformasi Geometri",
+  "coverUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_geo.jpg?alt=media",
+  "classLevel": "11",
+  "order": 1,
+  "description": "Materi ini membahas transformasi geometri menggunakan pendekatan etnomatematika. Misalnya, bagaimana refleksi muncul dalam motif ukiran tradisional, atau translasi dalam pola batik.",
+  "learningGoals": [
+    "Menemukan konsep matematika dalam motif batik yang akan dipelajari. Pada sesi ini, konsep matematika yang akan ditemukan berkaitan dengan transformasi geometri."
+  ],
+  "learningSteps": [
+    "Translasi: Bangun tidak berubah bentuk/ukuran, hanya posisi.",
+    "Refleksi: Jarak ke cermin sama dengan jarak bayangan ke cermin.",
+    "Rotasi: Berputar terhadap titik pusat.",
+    "Dilatasi: Perubahan ukuran bangun."
+  ],
+  "sections": [
+    {
+      "id": "pengantar",
+      "title": "Pengantar",
+      "blocks": [
+        {
+          "type": "HEADER",
+          "text": "Pengantar Etnomatematika"
+        },
+        {
+          "type": "YOUTUBE",
+          "url": "https://youtu.be/1M86rKgqdzo"
+        },
+        {
+          "type": "PARAGRAPH",
+          "text": "Etnomatematika adalah sebuah ilmu yang mempelajari tentang budaya suatu bangsa dan mengaitkannya dengan Matematika.\n\nPada kesempatan ini, akan dibahas kaitan salah satu budaya Indonesia yaitu batik yang dihubungkan dengan materi Matematika. Batik merupakan salah satu kekayaan budaya Indonesia yang dimiliki oleh seluruh daerah yang tersebar di Indonesia."
+        },
+        {
+          "type": "IN_ARTICLE_QUIZ",
+          "badge": "KUIS",
+          "prompt": "Cek Pemahamanmu!",
+          "question": "Tentukan nama dari motif Batik ini:",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_parang.jpg?alt=media",
+          "options": [
+            "Kawung",
+            "Parang"
+          ],
+          "correctAnswer": "Parang",
+          "explanation": "Tepat sekali! Motif Parang adalah salah satu motif batik tertua di Indonesia dengan ornamen khas lereng miring menyerupai ombak."
+        }
+      ]
+    },
+    {
+      "id": "translasi",
+      "title": "Translasi",
+      "blocks": [
+        {
+          "type": "BANNER_IMAGE",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_translation.png?alt=media"
+        },
+        {
+          "type": "HEADER",
+          "text": "Translasi (Pergeseran)"
+        },
+        {
+          "type": "PARAGRAPH",
+          "text": "Translasi merupakan perpindahan geometri yang menggeser setiap titik suatu objek atau ruang dengan jarak yang sama dengan arah tertentu."
+        },
+        {
+          "type": "INDICATOR_LIST",
+          "title": "Sifat-sifat Translasi",
+          "items": [
+            "Bangun geometri yang digeser (ditranslasikan) tidak mengalami perubahan bentuk dan ukuran.",
+            "Bangun geometri yang digeser (ditranslasikan) mengalami perubahan posisi."
+          ]
+        },
+        {
+          "type": "CULTURE_SECTION",
+          "title": "Penerapan pada Batik Parang",
+          "description": "Perhatikan motif batik Parang berikut! Kita dapat menemukan pola yang dihasilkan dari proses translasi.",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_parang_ann.jpg?alt=media",
+          "caption": "Motif yang ditandai dengan warna merah menunjukkan bahwa terdapat bentuk hasil translasi pada motif batik Parang di atas."
+        },
+        {
+          "type": "YOUTUBE",
+          "title": "Mari Menyimak",
+          "url": "https://youtu.be/baskAXQZxAc"
+        },
+        {
+          "type": "CANVAS_ANNOTATION",
+          "title": "Waktunya Mencoret!",
+          "instruction": "Tandai bagian dari motif batik berikut yang berhubungan dengan hasil translasi",
+          "baseImageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_crop.jpg?alt=media",
+          "solutionImageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_ans.jpg?alt=media",
+          "explanationText": "Motif batik di atas merupakan motif Gajah Oling dari Banyuwangi, Jawa Timur. Contoh hasil translasi dapat dilihat pada gambar berikut."
+        }
+      ]
+    },
+    {
+      "id": "refleksi",
+      "title": "Refleksi",
+      "blocks": [
+        {
+          "type": "BANNER_IMAGE",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_reflection.png?alt=media"
+        },
+        {
+          "type": "HEADER",
+          "text": "Refleksi (Pencerminan)"
+        },
+        {
+          "type": "PARAGRAPH",
+          "text": "Refleksi merupakan perpindahan geometri yang memindahkan setiap titik suatu objek dengan menggunakan sifat bayangan cermin."
+        },
+        {
+          "type": "INDICATOR_LIST",
+          "title": "Sifat-sifat Refleksi",
+          "items": [
+            "Bangun geometri yang dicerminkan (direfleksikan) tidak mengalami perubahan bentuk dan ukuran.",
+            "Bangun geometri yang dicerminkan (direfleksikan) mengalami perubahan posisi dengan jarak objek ke cermin sama dengan jarak bayangan ke cermin."
+          ]
+        },
+        {
+          "type": "CULTURE_SECTION",
+          "title": "Eksplorasi Budaya",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_refleksi.jpg?alt=media",
+          "caption": "Motif yang ditandai dengan warna merah menunjukkan adanya bentuk hasil refleksi pada motif batik di atas."
+        },
+        {
+          "type": "IN_ARTICLE_QUIZ",
+          "title": "Kuis Cepat",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_parang_sido.png?alt=media",
+          "question": "Berdasarkan ilustrasi di atas, apa nama dari motif batik tersebut?",
+          "options": [
+            "Sido Mulyo",
+            "Sido Luhur"
+          ],
+          "correctAnswer": "Sido Mulyo",
+          "explanation": "Tepat sekali! Ini adalah Batik Sido Mulyo."
+        }
+      ]
+    },
+    {
+      "id": "rotasi",
+      "title": "Rotasi",
+      "blocks": [
+        {
+          "type": "BANNER_IMAGE",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_rotation.png?alt=media"
+        },
+        {
+          "type": "HEADER",
+          "text": "Rotasi (Perputaran)"
+        },
+        {
+          "type": "PARAGRAPH",
+          "text": "Rotasi merupakan perpindahan geometri dengan cara diputar lewat suatu pusat dan sudut tertentu. Besarnya sudut pada rotasi berlawanan arah dengan jarum jam."
+        },
+        {
+          "type": "INDICATOR_LIST",
+          "title": "Sifat-sifat Rotasi",
+          "items": [
+            "Bangun geometri yang diputar (dirotasikan) tidak mengalami perubahan bentuk dan ukuran.",
+            "Bangun geometri yang diputar (dirotasikan) mengalami perubahan posisi."
+          ]
+        },
+        {
+          "type": "CULTURE_SECTION",
+          "title": "Simetri pada Batik Simbut",
+          "description": "Penerapan rotasi suatu objek dapat dilihat pada motif Simbut berikut. Perhatikan pola perputaran yang dihasilkan.",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_simbut.jpg?alt=media",
+          "caption": "Batik Simbut memiliki pola simetri putar pada bagian ornamen daun dan bunganya."
+        },
+        {
+          "type": "YOUTUBE",
+          "title": "Video Pembelajaran",
+          "url": "https://youtu.be/iUt_Clfri4w"
+        }
+      ]
+    },
+    {
+      "id": "dilatasi",
+      "title": "Dilatasi",
+      "blocks": [
+        {
+          "type": "BANNER_IMAGE",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_reflection.png?alt=media"
+        },
+        {
+          "type": "HEADER",
+          "text": "Dilatasi (Perkalian)"
+        },
+        {
+          "type": "PARAGRAPH",
+          "text": "Dilatasi adalah transformasi yang mengubah bentuk bangun geometri dengan memperkecil atau memperbesar tanpa mengubah bentuk asli. Perubahan disebabkan karena adanya faktor skala dan titik pusat dilatasi."
+        },
+        {
+          "type": "INDICATOR_LIST",
+          "title": "Sifat-sifat Dilatasi",
+          "items": [
+            "Bangun geometri yang diperbesar (didilatasi) akan mengalami perubahan ukuran tetapi tidak mengalami peruabah bentuk jika faktor skala yang ditentukan bernilai positif.",
+            "Bangun geometri yang diperbesar (didilatasi) akan mengalami perubahan ukuran dan bentuk jika faktor skala yang ditentukan bernilai negatif."
+          ]
+        },
+        {
+          "type": "CULTURE_SECTION",
+          "title": "Penerapan pada Motif Batik",
+          "description": "Pada motif batik, kita dapat menemukan pola yang dihasilkan dari proses dilatasi. Perhatikan motif batik di bawah ini:",
+          "imageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_dilatasi.jpg?alt=media",
+          "caption": "Motif yang ditandai dengan warna putih menunjukkan bahwa terdapat hasil dilatasi pada motif batik tersebut."
+        },
+        {
+          "type": "YOUTUBE",
+          "url": "https://youtu.be/yaBqwLIK2H8"
+        },
+        {
+          "type": "CANVAS_ANNOTATION",
+          "title": "Waktunya Mencoret!",
+          "instruction": "Temukan contoh bagian dilatasi pada motif batik Sekar Jagad berikut:",
+          "baseImageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_sekar_draw.jpg?alt=media",
+          "solutionImageUrl": "https://firebasestorage.googleapis.com/v0/b/senimatika-eduapp.firebasestorage.app/o/materials%2Ftransformasi_geometri%2Fimg_batik_sekar_ans.jpg?alt=media",
+          "explanationText": "Motif batik di atas merupakan motif Sekar Jagad yang berasal dari Solo dan Yogyakarta. Contoh hasil dilatasi dapat dilihat pada gambar berikut."
+        }
+      ]
+    }
+  ],
+  "quizId": "transformasi_geometri"
+}

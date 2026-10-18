@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -48,10 +49,11 @@ fun BottomNavigationMenu(navController: NavController) {
                 iconRes = R.drawable.ic_home_blue,
                 isSelected = currentRoute?.startsWith("dashboard") == true,
                 onClick = {
-                    val targetRoute = "dashboard/{userName}"
-                    if (currentRoute != targetRoute) {
-                        navController.navigate(targetRoute) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                    if (currentRoute?.startsWith("dashboard") != true) {
+                        navController.navigate("dashboard/User") {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -60,13 +62,15 @@ fun BottomNavigationMenu(navController: NavController) {
             )
 
             CustomNavItem(
-                label = "Quiz",
+                label = "Math Arena",
                 iconRes = R.drawable.ic_quiz_icon,
-                isSelected = currentRoute == "OnlineQuizPage",
+                isSelected = currentRoute == "OnlineQuizPage" || currentRoute?.startsWith("OnlineQuizLobby") == true,
                 onClick = {
-                    if (currentRoute != "OnlineQuizPage") {
+                    if (currentRoute != "OnlineQuizPage" && currentRoute?.startsWith("OnlineQuizLobby") != true) {
                         navController.navigate("OnlineQuizPage") {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -77,9 +81,19 @@ fun BottomNavigationMenu(navController: NavController) {
             CustomNavItem(
                 label = "Belajarku",
                 iconRes = R.drawable.ic_book_blue,
-                isSelected = false,
-                isLocked = true,
-                onClick = { /* Locked */ }
+                isSelected = currentRoute == "learning_report",
+                isLocked = false,
+                onClick = {
+                    if (currentRoute != "learning_report") {
+                        navController.navigate("learning_report") {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                }
             )
 
             CustomNavItem(
@@ -89,7 +103,9 @@ fun BottomNavigationMenu(navController: NavController) {
                 onClick = {
                     if (currentRoute != "profile") {
                         navController.navigate("profile") {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }

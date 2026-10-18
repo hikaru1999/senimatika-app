@@ -3,34 +3,40 @@ package com.LambdaProject.MathArt.data.model
 import androidx.annotation.Keep
 import com.google.firebase.firestore.PropertyName
 
-@Keep
-data class OnlineQuizData (
-    val id: String = "",
-    val title: String = "",
-    val description: String = "",
-    val questions: List<OnlineQuizQuestion> = emptyList(),
-    val totalPoints: Int = 0
-)
+//@Keep
+//data class OnlineQuizData (
+//    val id: String = "",
+//    val title: String = "",
+//    val description: String = "",
+//    val questions: List<OnlineQuizQuestion> = emptyList(),
+//    val totalPoints: Int = 0
+//)
 
 @Keep
 data class OnlineQuizDesc (
     val id: String = "",
     val title: String = "",
+    val materi: String = "",
+    val active: Boolean = true,
     val description: String = "",
     val questions: List<QuizQuestionRef> = emptyList(),
     val durationMinutes: Int = 0,
     val rewardCoin: Int = 0,
+    val exp: Int = 100,
     val imageRes: Int = 0,
     val imageUrl: String? = null,
     val classLevel: String = "Umum",
-    val numberQuestion: Int = 0
+    val numberQuestion: Int = 0,
+    val isRandomized: Boolean = false,
+    val isLearningMode: Boolean = false
 )
 
 @Keep
 data class QuizQuestionRef(
     val id: String = "",
-    val points: Int = 100,
-    val timer: Int = 60
+    val points: Int = 10,
+    val timer: Int = 30,
+    val pembahasan: String? = null
 )
 
 @Keep
@@ -43,8 +49,9 @@ data class OnlineQuizQuestion (
     val correctAnswers: List<Int> = emptyList(),
     val correctTextAnswers: List<String> = emptyList(),
     val type: QuestionType = QuestionType.MULTIPLE_CHOICE,
-    val durationSeconds: Int = 60,
-    val basePoints: Int = 100
+    val durationSeconds: Int = 30,
+    val basePoints: Int = 10,
+    val pembahasan: String? = null
 )
 
 @Keep

@@ -1,19 +1,11 @@
 package com.LambdaProject.MathArt.ui.Pages.Material
 
 import android.annotation.SuppressLint
-import android.view.ViewGroup
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
 import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -33,10 +25,31 @@ fun YouTubePlayer(
     val videoId = remember(youtubeUrl) { extractVideoId(youtubeUrl) }
     val packageName = "com.LambdaProject.MathArt"
 
+    var playerRef by remember { mutableStateOf<YouTubePlayer?>(null) }
+    var playerViewRef by remember { mutableStateOf<YouTubePlayerView?>(null) }
+    var lastCuedVideoId by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(lifecycleOwner, videoId) {
+        onDispose {
+            playerRef?.let { player ->
+                try {
+                    player.pause()
+                    YouTubePlayerManager.unregister(player)
+                } catch (_: Exception) {}
+            }
+            playerViewRef?.let { view ->
+                try {
+                    lifecycleOwner.lifecycle.removeObserver(view)
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     AndroidView(
         modifier = modifier.clip(RoundedCornerShape(12.dp)),
         factory = { context ->
             YouTubePlayerView(context).apply {
+                playerViewRef = this
                 enableAutomaticInitialization = false
                 lifecycleOwner.lifecycle.addObserver(this)
                 val internalWebView = this.getChildAt(0) as? WebView
@@ -53,7 +66,10 @@ fun YouTubePlayer(
 
                 initialize(object : AbstractYouTubePlayerListener() {
                     override fun onReady(youTubePlayer: YouTubePlayer) {
+                        playerRef = youTubePlayer
+                        YouTubePlayerManager.register(youTubePlayer)
                         youTubePlayer.cueVideo(videoId, 0f)
+                        lastCuedVideoId = videoId
                     }
 
                     override fun onError(youTubePlayer: YouTubePlayer, error: com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError) {
@@ -62,8 +78,30 @@ fun YouTubePlayer(
                 }, options)
             }
         },
-        onRelease = {
-            it.release()
+        update = {
+            if (lastCuedVideoId != videoId) {
+                playerRef?.cueVideo(videoId, 0f)
+                lastCuedVideoId = videoId
+            }
+        },
+        onRelease = { view ->
+            playerRef?.let { player ->
+                try {
+                    player.pause()
+                    YouTubePlayerManager.unregister(player)
+                } catch (_: Exception) {}
+            }
+            try {
+                lifecycleOwner.lifecycle.removeObserver(view)
+            } catch (_: Exception) {}
+
+            view.post {
+                try {
+                    view.release()
+                } catch (e: Exception) {
+                    android.util.Log.e("YouTubePlayer", "Error releasing YouTubePlayerView: ${e.message}")
+                }
+            }
         }
     )
-}
+}

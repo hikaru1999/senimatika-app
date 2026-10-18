@@ -7,5 +7,6 @@ data class AchievementItem(
     val imageName: String = "obj_sack",
     val isUnlocked: Boolean = false,
     val notified: Boolean = false,
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val exp: Int = 500
 )

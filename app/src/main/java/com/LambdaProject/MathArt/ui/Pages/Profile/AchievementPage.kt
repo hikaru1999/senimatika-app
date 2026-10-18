@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -49,11 +50,24 @@ fun AchievementPage(navController: NavController) {
         }
     }
 
+    val unlockedCount by remember(unlockedAchievements) {
+        derivedStateOf {
+            DataAchievements.count { it.name in unlockedAchievements }
+        }
+    }
+
     val sortedDataAchievements by remember(unlockedAchievements) {
         derivedStateOf {
             DataAchievements.sortedWith(
-                compareByDescending<AchievementItem> { it.name in unlockedAchievements }
-                    .thenBy { DataAchievements.indexOf(it) }
+                compareBy<AchievementItem> { item ->
+                    val isUnlocked = item.name in unlockedAchievements
+                    val isComingSoon = item.description.contains("Akan ditambahkan", ignoreCase = true)
+                    when {
+                        isUnlocked -> 0
+                        !isComingSoon -> 1
+                        else -> 2
+                    }
+                }.thenBy { DataAchievements.indexOf(it) }
             )
         }
     }
@@ -111,7 +125,7 @@ fun AchievementPage(navController: NavController) {
             item {
                 AchievementHeaderSummary(
                     total = DataAchievements.size,
-                    unlocked = unlockedAchievements.size
+                    unlocked = unlockedCount
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -192,13 +206,19 @@ fun AchievementRowItem(achievement: AchievementItem, isUnlocked: Boolean) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = if (isUnlocked) 6.dp else 2.dp, 
-                shape = RoundedCornerShape(20.dp)
+            .then(
+                if (isUnlocked) {
+                    Modifier.shadow(
+                        elevation = 6.dp, 
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                } else {
+                    Modifier
+                }
             ),
-        color = if (isUnlocked) Color.White else Color.White.copy(alpha = 0.7f),
+        color = if (isUnlocked) Color.White else Color(0xFFF1F5F9),
         shape = RoundedCornerShape(20.dp),
-        border = if (isUnlocked) null else BorderStroke(1.dp, Color(0xFFEEEEEE))
+        border = if (isUnlocked) null else BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Row(
             modifier = Modifier
@@ -210,7 +230,7 @@ fun AchievementRowItem(achievement: AchievementItem, isUnlocked: Boolean) {
                 modifier = Modifier
                     .size(70.dp)
                     .background(
-                        color = if (isUnlocked) Color(0xFFE3F2FD) else Color(0xFFF5F5F5),
+                        color = if (isUnlocked) Color(0xFFE3F2FD) else Color(0xFFE2E8F0),
                         shape = RoundedCornerShape(16.dp)
                     ),
                 contentAlignment = Alignment.Center
@@ -260,23 +280,61 @@ fun AchievementRowItem(achievement: AchievementItem, isUnlocked: Boolean) {
                     fontFamily = interFontFamily,
                     fontWeight = FontWeight.Medium,
                     lineHeight = 16.sp,
-                    color = if (isUnlocked) Color.DarkGray else Color.LightGray
+                    color = if (isUnlocked) Color.DarkGray else Color(0xFF64748B)
                 )
                 
-                if (isUnlocked) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Badge EXP
                     Surface(
-                        color = Color(0xFF81C784).copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = "DIBUKA",
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color(0xFF2E7D32),
-                            letterSpacing = 1.sp
+                        color = if (isUnlocked) Color(0xFFFEF3C7) else Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isUnlocked) Color(0xFFFDE68A) else Color(0xFFCBD5E1)
                         )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = if (isUnlocked) Color(0xFFD97706) else Color(0xFF94A3B8),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "+${achievement.exp} EXP",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interFontFamily,
+                                color = if (isUnlocked) Color(0xFFB45309) else Color(0xFF64748B)
+                            )
+                        }
+                    }
+
+                    // Badge Status DIBUKA jika unlocked
+                    if (isUnlocked) {
+                        Surface(
+                            color = Color(0xFFDCFCE7),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(1.dp, Color(0xFF86EFAC))
+                        ) {
+                            Text(
+                                text = "DIBUKA",
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black,
+                                fontFamily = interFontFamily,
+                                color = Color(0xFF15803D),
+                                letterSpacing = 0.5.sp
+                            )
+                        }
                     }
                 }
             }

@@ -18,7 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.data.*
 import com.LambdaProject.MathArt.R
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.components.MathText
 
@@ -27,16 +27,16 @@ fun ChestPopup(
     reward: Reward,
     isReplay: Boolean,
     onCollect: () -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         visible = true
         when (reward.type) {
-            RewardType.COIN -> audio.playSfx("coin")
-            RewardType.SCROLL -> audio.playSfx("scroll")
-            RewardType.POWER_UP -> audio.playSfx("powerup")
+            RewardType.COIN -> AppAudioManager.playSfx("coin")
+            RewardType.SCROLL -> AppAudioManager.playSfx("scroll")
+            RewardType.POWER_UP -> AppAudioManager.playSfx("powerup")
         }
     }
 
@@ -100,7 +100,7 @@ fun ChestPopup(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "Replay Mode: No Reward Will Be Extracted",
+                        text = "Replay Mode: Hadiah Tidak Akan Dibawa",
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,

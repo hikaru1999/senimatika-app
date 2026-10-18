@@ -13,11 +13,13 @@ import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.ViewModels.BossQuizViewModel
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
+import com.LambdaProject.MathArt.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -26,10 +28,10 @@ fun BattleIntroAnimation(bossType: String) {
     LaunchedEffect(Unit) { startAnim = true }
 
     val bossName = when (bossType) {
-        "boss_1", "obj_boss_1" -> "Vardos"
-        "boss_2", "obj_boss_2" -> "Grooten"
-        "boss_3", "obj_boss_3" -> "Mortis"
-        "boss_4", "obj_boss_4" -> "Aether"
+        "boss_1", "obj_boss_1" -> "Sigma"
+        "boss_2", "obj_boss_2" -> "Delta"
+        "boss_3", "obj_boss_3" -> "Theta"
+        "boss_4", "obj_boss_4" -> "Omega"
         else -> "BOSS"
     }
 
@@ -91,17 +93,17 @@ fun CountdownAnimation(value: Int) {
 fun QuizSummaryAnimated(
     viewModel: BossQuizViewModel,
     onFinish: (Boolean) -> Unit,
-    audio: ExplorationAudioManager
+    expReward: Int = 75
+//    audio: ExplorationAudioManager
 ) {
+    val context = LocalContext.current
     var visibleItems by remember { mutableIntStateOf(0) }
-
     val results = viewModel.questionResults
-
     val bossName = when (viewModel.currentBossType) {
-        "boss_1", "obj_boss_1" -> "Vardos"
-        "boss_2", "obj_boss_2" -> "Grooten"
-        "boss_3", "obj_boss_3" -> "Mortis"
-        "boss_4", "obj_boss_4" -> "Aether"
+        "boss_1", "obj_boss_1" -> "Sigma"
+        "boss_2", "obj_boss_2" -> "Delta"
+        "boss_3", "obj_boss_3" -> "Theta"
+        "boss_4", "obj_boss_4" -> "Omega"
         else -> "Boss"
     }
 
@@ -121,7 +123,7 @@ fun QuizSummaryAnimated(
         border = BorderStroke(3.dp, Color(0xFF5D4037))
     ) {
         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("SKIRMISH RESULT", color = Color(0xFF3E2723), fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text("HASIL DUEL", color = Color(0xFF3E2723), fontSize = 20.sp, fontWeight = FontWeight.Black)
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier
@@ -138,7 +140,7 @@ fun QuizSummaryAnimated(
 
                 if (visibleItems > results.size) {
                     AnimatedVisibility(visible = true, enter = fadeIn() + scaleIn()) {
-                        BattleHpSummary(viewModel.playerHp, viewModel.bossHp, bossName = bossName)
+                        BattleHpSummary(viewModel.playerHp, viewModel.bossHp, bossName = bossName, expReward = expReward)
                     }
                 }
             }
@@ -149,7 +151,8 @@ fun QuizSummaryAnimated(
                     onClick = {
                         onFinish(isWin)
                         viewModel.closeQuiz()
-                        audio.resumeAmbient()
+                        AppAudioManager.resumeAmbient(context)
+//                        AppAudioManager.playBGM(context, R.raw.bgm_master, isAmbient = true)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -159,7 +162,7 @@ fun QuizSummaryAnimated(
                         containerColor = if (isWin) Color(0xFF3E2723) else Color(0xFFA10000)
                     ),
                 ) {
-                    Text("AKHIRI PERTARUNGAN", fontWeight = FontWeight.Bold)
+                    Text("AKHIRI DUEL", fontWeight = FontWeight.Bold)
                 }
             }
         }

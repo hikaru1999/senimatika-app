@@ -94,8 +94,9 @@ object StudyDurationManager {
         }
     }
 
-    fun observeStudyDuration(userId: String, onUpdate: (Long) -> Unit) {
-        firestore.collection("durations").document(userId)
+    fun observeStudyDuration(userId: String, onUpdate: (Long) -> Unit): com.google.firebase.firestore.ListenerRegistration? {
+        if (userId.isEmpty()) return null
+        return firestore.collection("durations").document(userId)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null && snapshot.exists()) {
                     val duration = snapshot.getLong("duration") ?: 0L

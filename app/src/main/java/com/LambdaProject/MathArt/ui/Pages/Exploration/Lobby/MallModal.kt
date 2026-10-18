@@ -1,28 +1,30 @@
 package com.LambdaProject.MathArt.ui.Pages.Exploration.Lobby
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import com.LambdaProject.MathArt.data.PowerUpType
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.LambdaProject.MathArt.R
+import com.LambdaProject.MathArt.data.PowerUpType
 import com.LambdaProject.MathArt.data.mallItems
 import com.LambdaProject.MathArt.data.model.MallItem
 import com.LambdaProject.MathArt.interFontFamily
@@ -30,6 +32,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun MallModal(
@@ -38,13 +42,9 @@ fun MallModal(
 ) {
     val db = FirebaseFirestore.getInstance()
     val userId = FirebaseAuth.getInstance().currentUser?.uid
-    var userCoins by remember { mutableStateOf(0) }
+    var userCoins by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
-//    val primaryDark = Color(0xFF1A237E)
-//    val accentGold = Color(0xFFFBC02D)
-//    val bgCanvas = Color(0xFFF5F7FA)
 
     LaunchedEffect(userId) {
         userId?.let {
@@ -54,128 +54,171 @@ fun MallModal(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f))
-                .clickable(
-                    onClick = onClose,
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                )
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
         )
-
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.90f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(32.dp),
-            color = Color.White,
-            shadowElevation = 16.dp
+                .fillMaxWidth(0.92f)
+                .fillMaxHeight(0.86f)
+                .shadow(24.dp, RoundedCornerShape(28.dp)),
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White
         ) {
-            Box {
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp)
-                        .size(32.dp)
-                        .zIndex(1f)
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Close",
-                        tint = Color.Gray.copy(alpha = 0.6f)
-                    )
-                }
-
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Exchange Center",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp,
-                        color = Color(0xFF000B3A),
-                        fontFamily = interFontFamily,
-                    )
-                    Text(
-                        text = "Tukarkan koin dengan pilihan PowerUp ",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontSize = 14.sp,
-                        color = Color.Black,
-                        fontFamily = interFontFamily,
-                    )
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    Surface(
+                    // 1. Header Banner
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        color = Color(0xFF1A237E),
-                        shape = RoundedCornerShape(5.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Koin Terkumpul",
-                                fontWeight = FontWeight.Black,
-                                fontSize = 18.sp,
-                                color = Color.White,
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF0F172A), // Slate 900
+                                        Color(0xFF1E3A8A)  // Blue 900
+                                    )
+                                )
                             )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Surface(
-                                color = Color.White,
-                                shape = RoundedCornerShape(5.dp),
-                                border = BorderStroke(1.dp, Color.LightGray.copy(0.3f)),
-
+                            .padding(horizontal = 20.dp, vertical = 18.dp)
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Image(painterResource(R.drawable.ic_coin), null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                     Text(
-                                        text = userCoins.toString(),
+                                        text = "Exchange Center",
                                         fontWeight = FontWeight.Black,
-                                        fontSize = 15.sp,
-                                        color = Color.DarkGray,
+                                        fontSize = 20.sp,
+                                        color = Color.White,
                                         fontFamily = interFontFamily
                                     )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Tukarkan koin belajarmu dengan Power-Up dan Item",
+                                        fontSize = 11.5.sp,
+                                        color = Color(0xFFBAE6FD),
+                                        fontFamily = interFontFamily,
+                                        lineHeight = 15.sp
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = onClose,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .background(Color.White.copy(alpha = 0.15f), CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Tutup",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(17.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // User Coin Balance Card
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color.White.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(14.dp),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_coin),
+                                            contentDescription = "Koin",
+                                            modifier = Modifier.size(26.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            text = "Koin Kamu",
+                                            fontFamily = interFontFamily,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.sp,
+                                            color = Color(0xFFF1F5F9)
+                                        )
+                                    }
+
+                                    Surface(
+                                        color = Color(0xFF0F172A).copy(alpha = 0.6f),
+                                        shape = RoundedCornerShape(10.dp),
+                                        border = BorderStroke(1.dp, Color(0xFFFBBF24).copy(alpha = 0.4f))
+                                    ) {
+                                        Text(
+                                            text = NumberFormat.getNumberInstance(Locale.GERMAN).format(userCoins),
+                                            fontFamily = interFontFamily,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFFFDE047),
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                    // 2. Disabled Warning if any
                     if (isDisabled) {
-                        Text(
-                            "EXCHANGE CENTER NOT AVAILABLE",
-                            color = Color.Red.copy(0.7f),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                        )
+                        Surface(
+                            color = Color(0xFFFFF1F2),
+                            border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = Color(0xFFE11D48),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Exchange Center sedang tidak tersedia saat ini",
+                                    color = Color(0xFFE11D48),
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interFontFamily
+                                )
+                            }
+                        }
                     }
 
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(1),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    // 3. Power-Up Items List
+                    LazyColumn(
                         modifier = Modifier
-                            .graphicsLayer { alpha = if (isDisabled) 0.4f else 1f }
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(horizontal = 16.dp),
+                        contentPadding = PaddingValues(vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(mallItems) { item ->
                             var isBuying by remember { mutableStateOf(false) }
 
-                            MinimalItemCard(
+                            ModernMallItemCard(
                                 item = item,
                                 canAfford = userCoins >= item.price && !isDisabled,
                                 isBuying = isBuying,
@@ -183,7 +226,7 @@ fun MallModal(
                                     if (!isDisabled && !isBuying) {
                                         isBuying = true
                                         scope.launch {
-                                            delay(2500)
+                                            delay(1000)
                                             userId?.let { uid ->
                                                 val userRef = db.collection("users").document(uid)
                                                 db.runTransaction { transaction ->
@@ -192,7 +235,7 @@ fun MallModal(
                                                     if (currentCoins >= item.price) {
                                                         transaction.update(userRef, "coins", currentCoins - item.price)
                                                         if (item.type is PowerUpType) {
-                                                            val currentPUs = snapshot.get("powerUps") as? List<String> ?: emptyList()
+                                                            val currentPUs = (snapshot.get("powerUps") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
                                                             transaction.update(userRef, "powerUps", currentPUs + item.type.name)
                                                         }
                                                     } else {
@@ -214,74 +257,96 @@ fun MallModal(
                         }
                     }
                 }
-            }
-        }
 
-        Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 50.dp)) {
-            SnackbarHost(hostState = snackbarHostState)
+                // 4. Snackbar Host
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                ) {
+                    SnackbarHost(hostState = snackbarHostState)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun MinimalItemCard(
+fun ModernMallItemCard(
     item: MallItem,
     canAfford: Boolean,
     isBuying: Boolean,
     onBuy: () -> Unit
 ) {
     Surface(
-        color = Color(0xFFFAFAFA),
-        shape = RoundedCornerShape(16.dp),
-        shadowElevation = 1.dp,
-        border = if (canAfford) null else BorderStroke(1.dp, Color.Black.copy(0.05f))
+        color = if (canAfford) Color(0xFFF8FAFC) else Color(0xFFFDFDFD),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (canAfford) Color(0xFFE2E8F0) else Color(0xFFF1F5F9)
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icon Container
             Surface(
-                color = Color(0xFFE8EAF6),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.size(50.dp)
+                color = Color.White,
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier.size(52.dp)
             ) {
-                Image(
-                    painter = painterResource(item.icon),
-                    contentDescription = null,
-                    modifier = Modifier.padding(10.dp)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(item.icon),
+                        contentDescription = item.name,
+                        modifier = Modifier.size(34.dp)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
+            // Item Details
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.name,
+                    fontFamily = interFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = Color(0xFF212121)
+                    color = Color(0xFF0F172A)
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = item.description,
-                    fontSize = 11.sp,
-                    color = Color.Gray,
-                    lineHeight = 14.sp
+                    fontFamily = interFontFamily,
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF64748B),
+                    lineHeight = 15.sp
                 )
             }
 
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Purchase Button
             Button(
                 onClick = onBuy,
                 enabled = canAfford && !isBuying,
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (canAfford) Color(0xFF1A237E) else Color(0xFFF5F5F5),
-                    contentColor = if (canAfford) Color.White else Color.Gray,
-                    disabledContainerColor = if (isBuying) Color(0xFF1A237E) else Color(0xFFF5F5F5)
+                    containerColor = Color(0xFF2563EB),
+                    disabledContainerColor = Color(0xFFF1F5F9)
                 ),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                modifier = Modifier.height(38.dp).widthIn(min = 80.dp)
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier
+                    .height(38.dp)
+                    .widthIn(min = 78.dp)
             ) {
                 if (isBuying) {
                     CircularProgressIndicator(
@@ -290,11 +355,21 @@ fun MinimalItemCard(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_coin),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
                         Text(
-                            text = item.price.toString(),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            text = NumberFormat.getNumberInstance(Locale.GERMAN).format(item.price),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = interFontFamily,
+                            color = if (canAfford) Color.White else Color(0xFF94A3B8)
                         )
                     }
                 }

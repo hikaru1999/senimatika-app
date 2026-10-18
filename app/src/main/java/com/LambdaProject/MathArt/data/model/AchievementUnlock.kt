@@ -6,56 +6,60 @@ import com.LambdaProject.MathArt.data.DataAchievements
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+import kotlinx.coroutines.tasks.await
+import java.util.concurrent.ConcurrentHashMap
+
+private val inFlightUnlocks = ConcurrentHashMap.newKeySet<String>()
 
 fun unlockGeneralAchievement(userId: String, achievementName: String) {
-    if (userId.isEmpty()) return
+    if (userId.isEmpty() || achievementName.isEmpty()) return
+    val lockKey = "$userId-$achievementName"
+    if (!inFlightUnlocks.add(lockKey)) {
+        // Mencegah duplicate call yang bersamaan (race condition)
+        return
+    }
 
     val db = Firebase.firestore
     val achievementRef = db.collection("users").document(userId)
         .collection("achievements").document(achievementName)
 
-    achievementRef.get().addOnSuccessListener { document ->
-        if (!document.exists()) {
-            val localData = DataAchievements.find { it.name == achievementName }
-            val imageName = when(achievementName) {
-                "Penjelajah" -> "ic_explorer"
-                "Pemula" -> "img_rocket_pemula"
-                "Profesional" -> "img_pros"
-                "Ilmuwan" -> "ic_scientist"
-                "Math Magician" -> "ic_magician"
-                "Master Aljabar" -> "ic_algebra_master"
-                "Master Geometri" -> "ic_geometry_master"
-                "Ahli Ramalan" -> "ic_statistic_master"
-                "Ahli Matematika" -> "ic_expert"
-                "Ahli Kalkulus" -> "ic_calculus_master"
-                "Jenius Matematika" -> "ic_genius"
-                "Apprentice No More" -> "ic_beginner_exploration"
-                "The Fortune Finder" -> "ic_treasure_hunter_1"
-                "No More Lessons" -> "ic_boss_hunter_1"
-                "Indiana Jones’ Grocery List" -> "ic_treasure_hunter_2"
-                "Who is the Boss Now?" -> "ic_boss_hunter_2"
-                "Beyond the Guided Path" -> "ic_master_exploration"
-                "Lone Wolf Archivist" -> "ic_wolf"
-                else -> "ic_coin"
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val shouldGrantExp = db.runTransaction { transaction ->
+                val snapshot = transaction.get(achievementRef)
+                if (snapshot.exists()) {
+                    return@runTransaction false
+                }
+
+                val localData = DataAchievements.find { it.name == achievementName }
+                val expReward = localData?.exp ?: 100
+                val newAchievement = hashMapOf(
+                    "name" to achievementName,
+                    "imageRes" to (localData?.imageRes ?: R.drawable.obj_sack),
+                    "timestamp" to Timestamp.now(),
+                    "isUnlocked" to true,
+                    "isRead" to false,
+                    "notified" to false,
+                    "exp" to expReward
+                )
+
+                transaction.set(achievementRef, newAchievement)
+                true
+            }.await()
+
+            if (shouldGrantExp) {
+                val localData = DataAchievements.find { it.name == achievementName }
+                val expReward = localData?.exp ?: 100
+                Log.d("Firestore", "Achievement '$achievementName' sukses disimpan dengan EXP: $expReward")
+                grantExpToUser(userId, expReward, "Achievement: $achievementName")
             }
-
-            val newAchievement = hashMapOf(
-                "name" to achievementName,
-                "imageRes" to getAchievementIcon(imageName),
-                "imageName" to imageName,
-                "timestamp" to Timestamp.now(),
-                "isUnlocked" to true,
-                "isRead" to false,
-                "notified" to false,
-            )
-
-            achievementRef.set(newAchievement)
-                .addOnSuccessListener {
-                    Log.d("Firestore", "Achievement '$achievementName' sukses disimpan")
-                }
-                .addOnFailureListener { e ->
-                    Log.e("Firestore", "Gagal simpan achievement", e)
-                }
+        } catch (e: Exception) {
+            Log.e("Firestore", "Gagal simpan achievement $achievementName", e)
+            inFlightUnlocks.remove(lockKey)
         }
     }
 }

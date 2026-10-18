@@ -2,6 +2,7 @@ package com.LambdaProject.MathArt.ui.Pages.Exploration.BossBattle
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
@@ -15,7 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +33,8 @@ import com.LambdaProject.MathArt.ViewModels.QuestionResult
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.LambdaProject.MathArt.data.MAX_BAG_WEIGHT
-import com.LambdaProject.MathArt.data.model.ExplorationAudioManager
+import com.LambdaProject.MathArt.data.model.AppAudioManager
+import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.Pages.Exploration.BagModal
 import com.LambdaProject.MathArt.ui.components.MathText
 import com.LambdaProject.MathArt.utils.ZoomableImageOverlay
@@ -41,8 +47,9 @@ fun BossQuizModal(
     inventory: Inventory,
     onUpdateInventory: (Inventory) -> Unit,
     onFinish: (Boolean) -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
+    val context = LocalContext.current
     var isFinishingByAttack by remember { mutableStateOf(false) }
 
     LaunchedEffect(
@@ -58,24 +65,24 @@ fun BossQuizModal(
             !viewModel.isChronoFreezeActive &&
             !isFinishingByAttack
         ) {
-            audio.playIntenseWarning(R.raw.timer_intense)
+            AppAudioManager.playIntenseWarning(context,R.raw.timer_intense)
         } else {
-            audio.stopIntenseWarning()
+            AppAudioManager.stopIntenseWarning()
         }
 
         when (viewModel.phase) {
             BossBattlePhase.INTRO -> {
                 delay(2200)
-                audio.playBGM(R.raw.sfx_quiz_bgm)
+                AppAudioManager.playBGM(context,R.raw.sfx_quiz_bgm)
             }
             BossBattlePhase.SUMMARY -> {
-                audio.stopBGMWithFade(duration = 1500)
+                AppAudioManager.stopBGMWithFade(duration = 1500)
                 val isWin = viewModel.bossHp <= 0f || (viewModel.playerHp > viewModel.bossHp && viewModel.playerHp > 0)
                 if (isWin) {
                     delay(500)
-                    audio.playSfx("quizVictory")
+                    AppAudioManager.playSfx("quizVictory")
                 } else {
-                    audio.playSfx("quizFailed")
+                    AppAudioManager.playSfx("quizFailed")
                 }
             }
             else -> {}
@@ -84,7 +91,7 @@ fun BossQuizModal(
 
     LaunchedEffect(Unit) {
         viewModel.onFinalAttackTrigger = {
-            audio.stopBGMWithFade(duration = 2000)
+            AppAudioManager.stopBGMWithFade(duration = 2000)
         }
     }
 
@@ -92,20 +99,21 @@ fun BossQuizModal(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.85f))
+            .systemBarsPadding()
             .clickable(enabled = false) { },
         contentAlignment = Alignment.Center
     ) {
         when (viewModel.phase) {
             BossBattlePhase.INTRO -> BattleIntroAnimation(bossType = viewModel.currentBossType)
             BossBattlePhase.COUNTDOWN -> CountdownAnimation(viewModel.countdownValue)
-            BossBattlePhase.QUIZ -> QuizContent(viewModel,  viewModelMAP, maxBagWeight = viewModelMAP.maxBagWeight, inventory, onUpdateInventory, audio)
+            BossBattlePhase.QUIZ -> QuizContent(viewModel,  viewModelMAP, maxBagWeight = viewModelMAP.maxBagWeight, inventory, onUpdateInventory)
             BossBattlePhase.BATTLE_ANIMATION -> {
                 BattleActionOverlay(
                     text = viewModel.battleAnimationText,
                     subText = viewModel.battleAnimationSubText
                 )
             }
-            BossBattlePhase.SUMMARY -> QuizSummaryAnimated(viewModel, onFinish, audio)
+            BossBattlePhase.SUMMARY -> QuizSummaryAnimated(viewModel, onFinish, expReward = viewModelMAP.lastTriggeredBossExp)
         }
     }
 }
@@ -117,8 +125,9 @@ fun QuizContent(
     maxBagWeight: Float = MAX_BAG_WEIGHT,
     inventory: Inventory,
     onUpdateInventory: (Inventory) -> Unit,
-    audio: ExplorationAudioManager
+//    audio: ExplorationAudioManager
 ) {
+    val context = LocalContext.current
     val question = viewModel.currentQuestion ?: return
     var isMathReady by remember(question.question) { mutableStateOf(false) }
     var typedAnswer by remember(question) { mutableStateOf("") }
@@ -126,6 +135,9 @@ fun QuizContent(
     var isInventoryModalVisible by remember { mutableStateOf(false) }
     var isFinishingByAttack by remember { mutableStateOf(false) }
     var zoomImageUrl by remember { mutableStateOf<String?>(null) }
+
+    val questionScrollState = rememberScrollState()
+    val optionsScrollState = rememberScrollState()
 
     BackHandler(enabled = zoomImageUrl != null) {
         zoomImageUrl = null
@@ -135,15 +147,17 @@ fun QuizContent(
         val isTimeCritical = viewModel.bossTimeLeftMillis in 1..4000
 
         if (viewModel.phase == BossBattlePhase.QUIZ && isTimeCritical && !viewModel.isChronoFreezeActive) {
-            audio.playIntenseWarning(R.raw.timer_intense)
+            AppAudioManager.playIntenseWarning(context,R.raw.timer_intense)
         } else {
-            audio.stopIntenseWarning()
+            AppAudioManager.stopIntenseWarning()
         }
     }
 
     LaunchedEffect(viewModel.currentQuestionIndex) {
-        audio.stopIntenseWarning()
+        AppAudioManager.stopIntenseWarning()
         isSubmitting = false
+        questionScrollState.scrollTo(0)
+        optionsScrollState.scrollTo(0)
     }
 
     Surface(
@@ -166,195 +180,338 @@ fun QuizContent(
                 )
 
                 // SOAL
-                Column(modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .weight(1f)
+                ) {
+                    // Question Card with scroll indicator
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 240.dp)
+                            .heightIn(max = 220.dp)
                             .wrapContentHeight(),
                         color = Color(0xFFE5DCC3),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.5.dp, Color(0xFF5D4037).copy(alpha = 0.3f))
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center, 
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            val hasFormatting = question.question.contains("$") ||
-                                    question.question.contains("**") ||
-                                    question.question.contains("_") ||
-                                    question.question.contains("![") ||
-                                    question.question.contains("[") ||
-                                    question.question.contains("* ")
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                contentAlignment = Alignment.TopStart, 
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp)
+                                    .verticalScroll(questionScrollState)
+                            ) {
+                                val hasFormatting = question.question.contains("$") ||
+                                        question.question.contains("**") ||
+                                        question.question.contains("_") ||
+                                        question.question.contains("![") ||
+                                        question.question.contains("[") ||
+                                        question.question.contains("* ") ||
+                                        question.question.contains("- ") ||
+                                        question.question.contains("+ ") ||
+                                        question.question.contains("•") ||
+                                        question.question.contains(Regex("""\d+[\.\)]\s"""))
 
-                            if (hasFormatting) {
-                                if (!isMathReady) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = Color(0xFF5D4037).copy(alpha = 0.4f),
-                                        strokeWidth = 2.dp
+                                if (hasFormatting) {
+                                    if (!isMathReady) {
+                                        BossQuestionSkeleton()
+                                    }
+                                    MathText(
+                                        text = question.question,
+                                        color = Color(0xFF3E2723),
+                                        fontSize = 14,
+                                        textAlign = "left",
+                                        onRenderComplete = { isMathReady = true },
+                                        onImageClick = { url -> zoomImageUrl = url }
+                                    )
+                                } else {
+                                    Text(
+                                        text = question.question,
+                                        color = Color(0xFF3E2723),
+                                        fontSize = 13.5.sp,
+                                        fontFamily = interFontFamily,
+                                        lineHeight = 19.sp,
+                                        textAlign = TextAlign.Left
                                     )
                                 }
-                                MathText(
-                                    text = question.question,
-                                    color = Color(0xFF3E2723),
-                                    fontSize = 14,
-                                    textAlign = "left",
-                                    onRenderComplete = { isMathReady = true },
-                                    onImageClick = { url -> zoomImageUrl = url }
+                            }
+
+                            // Subtle bottom gradient fade when content can scroll down
+                            if (questionScrollState.canScrollForward) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(28.dp)
+                                        .align(Alignment.BottomCenter)
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    Color(0xFFE5DCC3).copy(alpha = 0.95f)
+                                                )
+                                            )
+                                        )
                                 )
-                            } else {
-                                Text(
-                                    text = question.question,
-                                    color = Color(0xFF3E2723),
-                                    fontSize = 13.sp,
-                                    textAlign = TextAlign.Left
-                                )
+                            }
+
+                            // Floating Scroll Indicator Hint
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = questionScrollState.canScrollForward,
+                                enter = fadeIn(tween(200)),
+                                exit = fadeOut(tween(200)),
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 6.dp)
+                            ) {
+                                Surface(
+                                    color = Color(0xFF5D4037).copy(alpha = 0.92f),
+                                    shape = RoundedCornerShape(16.dp),
+                                    shadowElevation = 3.dp,
+                                    border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.4f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = "Gulir untuk melihat soal lengkap ↓",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = interFontFamily,
+                                            color = Color(0xFFFFD700)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     val isMultiAnswer = question.answerKey.size > 1
                     if (isMultiAnswer) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 6.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Info,
                                 contentDescription = null,
-                                tint = Color(0xFF3E2723).copy(alpha = 0.6f),
+                                tint = Color(0xFF5D4037).copy(alpha = 0.8f),
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "Pilih semua jawaban yang benar",
-                                color = Color(0xFF3E2723).copy(alpha = 0.7f),
+                                color = Color(0xFF5D4037).copy(alpha = 0.85f),
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = interFontFamily
                             )
                         }
                     }
 
                     // OPSI JAWABAN
-                    Column(modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())) {
-                        if (question.questionType == "short_answer") {
-                            OutlinedTextField(
-                                value = typedAnswer,
-                                onValueChange = {
-                                    typedAnswer = it
-                                    viewModel.selectedAnswers.clear()
-                                    if (it.isNotBlank()) {
-                                        viewModel.selectedAnswers.add(it)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                placeholder = { Text("Ketik jawabanmu di sini...", color = Color(0xFF5D4037).copy(alpha = 0.5f)) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF5D4037),
-                                    unfocusedBorderColor = Color(0xFF5D4037).copy(alpha = 0.3f),
-                                    focusedContainerColor = Color(0xFFFDF8E1),
-                                    unfocusedContainerColor = Color(0xFFFDF8E1)
-                                ),
-                                singleLine = true
-                            )
-                        } else {
-                            question.options.forEach { option ->
-                                if (!viewModel.removedOptions.contains(option)) {
-                                    val isSelected = viewModel.selectedAnswers.contains(option)
+                    val optionLetters = listOf("A", "B", "C", "D", "E", "F")
 
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                    ) {
-                                        Surface(
-                                            modifier = Modifier
-                                                .fillMaxWidth(),
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = if (isSelected) Color(0xFFD3C5B9) else Color(0xFFFDF8E1),
-                                            border = BorderStroke(2.dp, if (isSelected) Color(0xFF3D0404) else Color(0xFF3E2723).copy(alpha = 0.2f))
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(optionsScrollState),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (question.questionType == "short_answer") {
+                                OutlinedTextField(
+                                    value = typedAnswer,
+                                    onValueChange = {
+                                        typedAnswer = it
+                                        viewModel.selectedAnswers.clear()
+                                        if (it.isNotBlank()) {
+                                            viewModel.selectedAnswers.add(it)
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    placeholder = { Text("Ketik jawabanmu di sini...", color = Color(0xFF5D4037).copy(alpha = 0.5f), fontFamily = interFontFamily) },
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Color(0xFF5D4037),
+                                        unfocusedBorderColor = Color(0xFF5D4037).copy(alpha = 0.35f),
+                                        focusedContainerColor = Color(0xFFFDF8E1),
+                                        unfocusedContainerColor = Color(0xFFFDF8E1)
+                                    ),
+                                    singleLine = true
+                                )
+                            } else {
+                                val validOptions = remember(question.options) {
+                                    question.options.filter { it.isNotBlank() }
+                                }
+                                validOptions.forEachIndexed { index, option ->
+                                    if (!viewModel.removedOptions.contains(option)) {
+                                        val isSelected = viewModel.selectedAnswers.contains(option)
+                                        val letter = optionLetters.getOrElse(index) { "${index + 1}" }
+
+                                        val cardBg by animateColorAsState(
+                                            targetValue = if (isSelected) Color(0xFFEADBCE) else Color(0xFFFDF8E1),
+                                            animationSpec = tween(durationMillis = 200),
+                                            label = "bossOptionBg"
+                                        )
+                                        val cardBorder by animateColorAsState(
+                                            targetValue = if (isSelected) Color(0xFF5D4037) else Color(0xFF5D4037).copy(alpha = 0.22f),
+                                            animationSpec = tween(durationMillis = 200),
+                                            label = "bossOptionBorder"
+                                        )
+
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                                verticalAlignment = Alignment.CenterVertically
+                                            Surface(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(14.dp),
+                                                color = cardBg,
+                                                border = BorderStroke(if (isSelected) 2.dp else 1.dp, cardBorder),
+                                                shadowElevation = if (isSelected) 2.dp else 0.dp
                                             ) {
-                                                if (isMultiAnswer) {
-                                                    Surface(
-                                                        modifier = Modifier.size(20.dp),
-                                                        shape = RoundedCornerShape(4.dp),
-                                                        color = if (isSelected) Color(0xFF3D0404) else Color.Transparent,
-                                                        border = BorderStroke(1.5.dp, Color(0xFF3E2723).copy(alpha = 0.5f))
-                                                    ) {
-                                                        if (isSelected) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.Check,
-                                                                contentDescription = null,
-                                                                tint = Color.White,
-                                                                modifier = Modifier.padding(2.dp)
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    if (isMultiAnswer) {
+                                                        // Multi Answer Checkbox
+                                                        Surface(
+                                                            modifier = Modifier.size(24.dp),
+                                                            shape = RoundedCornerShape(6.dp),
+                                                            color = if (isSelected) Color(0xFF5D4037) else Color.Transparent,
+                                                            border = BorderStroke(
+                                                                1.8.dp,
+                                                                if (isSelected) Color(0xFF5D4037) else Color(0xFF5D4037).copy(alpha = 0.5f)
                                                             )
+                                                        ) {
+                                                            Box(contentAlignment = Alignment.Center) {
+                                                                if (isSelected) {
+                                                                    Icon(
+                                                                        imageVector = Icons.Default.Check,
+                                                                        contentDescription = null,
+                                                                        tint = Color(0xFFFFD700),
+                                                                        modifier = Modifier.size(16.dp)
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // Single Choice Option Letter Badge (A, B, C, D)
+                                                        Surface(
+                                                            shape = CircleShape,
+                                                            color = if (isSelected) Color(0xFF5D4037) else Color(0xFF5D4037).copy(alpha = 0.12f),
+                                                            modifier = Modifier.size(28.dp)
+                                                        ) {
+                                                            Box(contentAlignment = Alignment.Center) {
+                                                                Text(
+                                                                    text = letter,
+                                                                    fontSize = 12.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    fontFamily = interFontFamily,
+                                                                    color = if (isSelected) Color(0xFFFFD700) else Color(0xFF5D4037)
+                                                                )
+                                                            }
                                                         }
                                                     }
-                                                    Spacer(modifier = Modifier.width(12.dp))
-                                                }
 
-                                                Box(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
-                                                    val hasFormatting = option.contains("$") ||
-                                                            option.contains("**") ||
-                                                            option.contains("_") ||
-                                                            option.contains("![") ||
-                                                            option.contains("[") ||
-                                                            option.contains("* ")
-                                                    if (hasFormatting) {
-                                                        if (!isMathReady) {
-                                                            CircularProgressIndicator(
-                                                                modifier = Modifier.size(24.dp),
-                                                                color = Color(0xFF5D4037).copy(alpha = 0.4f),
-                                                                strokeWidth = 2.dp
+                                                    // Option Content
+                                                    Box(
+                                                        modifier = Modifier.weight(1f),
+                                                        contentAlignment = Alignment.CenterStart
+                                                    ) {
+                                                        var isOptionMathReady by remember(option) { mutableStateOf(false) }
+                                                        val hasFormatting = option.contains("$") ||
+                                                                option.contains("**") ||
+                                                                option.contains("_") ||
+                                                                option.contains("![") ||
+                                                                option.contains("[") ||
+                                                                option.contains("* ") ||
+                                                                option.contains("- ") ||
+                                                                option.contains("+ ") ||
+                                                                option.contains("•") ||
+                                                                option.contains(Regex("""\d+[\.\)]\s"""))
+                                                        if (hasFormatting) {
+                                                            if (!isOptionMathReady) {
+                                                                BossOptionSkeleton()
+                                                            }
+
+                                                            MathText(
+                                                                text = option,
+                                                                color = Color(0xFF3E2723),
+                                                                fontSize = 13,
+                                                                textAlign = "left",
+                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                onRenderComplete = { isOptionMathReady = true }
+                                                            )
+                                                        } else {
+                                                            Text(
+                                                                text = option,
+                                                                color = Color(0xFF3E2723),
+                                                                fontSize = 13.sp,
+                                                                fontFamily = interFontFamily,
+                                                                lineHeight = 18.sp,
+                                                                textAlign = TextAlign.Left,
+                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                                modifier = Modifier.fillMaxWidth()
                                                             )
                                                         }
-
-                                                        MathText(
-                                                            text = option,
-                                                            color = /* if (isSelected) Color(0xFF3E2723) else */ Color(0xFF3E2723),
-                                                            fontSize = 13,
-                                                            textAlign = "left",
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                            onRenderComplete = { isMathReady = true }
-                                                        )
-                                                    } else {
-                                                        Text(
-                                                            text = option,
-                                                            color = /* if (isSelected) Color(0xFF3E2723) else */ Color(0xFF3E2723),
-                                                            fontSize = 14.sp,
-                                                            textAlign = TextAlign.Left,
-                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                                        )
                                                     }
                                                 }
                                             }
-                                        }
 
-                                        Box(
-                                            modifier = Modifier
-                                                .matchParentSize()
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .clickable {
-                                                    viewModel.toggleAnswer(option)
-                                                }
-                                        )
+                                            // Transparent touch interceptor overlay
+                                            Box(
+                                                modifier = Modifier
+                                                    .matchParentSize()
+                                                    .clip(RoundedCornerShape(14.dp))
+                                                    .clickable {
+                                                        viewModel.toggleAnswer(option)
+                                                    }
+                                            )
+                                        }
                                     }
                                 }
+                            }
+                        }
+
+                        // Floating Scroll Indicator for options if scrollable
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = optionsScrollState.canScrollForward,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 2.dp)
+                        ) {
+                            Surface(
+                                color = Color(0xFF5D4037).copy(alpha = 0.9f),
+                                shape = RoundedCornerShape(14.dp),
+                                shadowElevation = 2.dp
+                            ) {
+                                Text(
+                                    text = "Opsi lainnya di bawah ↓",
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = interFontFamily,
+                                    color = Color(0xFFFFD700),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
                             }
                         }
                     }
@@ -427,12 +584,12 @@ fun QuizContent(
                                 if (isSubmitting) return@Button
                                 isSubmitting = true
 
-                                audio.stopIntenseWarning()
-                                audio.playSfx("attack")
+                                AppAudioManager.stopIntenseWarning()
+                                AppAudioManager.playSfx("attack")
 
                                 viewModel.submitAnswer(
                                     onFinalAttack = {
-                                        audio.stopBGMWithFade(duration = 1500)
+                                        AppAudioManager.stopBGMWithFade(duration = 1500)
                                     }
                                 )
                             },
@@ -480,6 +637,7 @@ fun QuizContent(
             isLeatherStrapsActive = viewModelMAP.isLeatherStrapsActive,
             isDropping = viewModelMAP.isDropping,
             isQuizActive = true,
+            isShortAnswerQuiz = viewModel.currentQuestion?.questionType == "short_answer",
             onClose = { isInventoryModalVisible = false },
             onUsePowerUp = { pu: PowerUpType ->
 
@@ -495,7 +653,7 @@ fun QuizContent(
                     PowerUpType.TORCH -> ""
                 }
 
-                audio.playSfx(sfxKey)
+                AppAudioManager.playSfx(sfxKey)
 
                 viewModel.usePowerUp(
                     type = pu,
@@ -536,7 +694,7 @@ fun ResultBattleItem(index: Int, result: QuestionResult) {
 }
 
 @Composable
-fun BattleHpSummary(playerHp: Float, bossHp: Float, bossName: String) {
+fun BattleHpSummary(playerHp: Float, bossHp: Float, bossName: String, expReward: Int = 75) {
     val bossDefeated = bossHp <= 0f
     val bossSurrendered = playerHp > bossHp && bossHp > 0f
     
@@ -558,6 +716,23 @@ fun BattleHpSummary(playerHp: Float, bossHp: Float, bossName: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(statusText, color = statusColor, fontSize = 28.sp, fontWeight = FontWeight.Black)
+        if (bossDefeated || bossSurrendered) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = RoundedCornerShape(100.dp),
+                color = Color(0xFF7C3AED).copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.4f))
+            ) {
+                Text(
+                    text = "+$expReward EXP (Pending)",
+                    color = Color(0xFF5B21B6),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = interFontFamily,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             ScoreColumn("SISA HP PLAYER", playerHp.toInt(), Color(0xFF000849))
@@ -573,3 +748,71 @@ fun ScoreColumn(title: String, score: Int, color: Color) {
         Text(score.toString(), color = color, fontSize = 36.sp, fontWeight = FontWeight.Black)
     }
 }
+
+@Composable
+fun Modifier.bossShimmer(shape: Shape = RoundedCornerShape(4.dp)): Modifier {
+    val transition = rememberInfiniteTransition(label = "bossShimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "bossShimmerTranslate"
+    )
+
+    return this
+        .clip(shape)
+        .background(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    Color(0xFF5D4037).copy(alpha = 0.08f),
+                    Color(0xFF5D4037).copy(alpha = 0.22f),
+                    Color(0xFF5D4037).copy(alpha = 0.08f)
+                ),
+                start = Offset(translateAnim, translateAnim),
+                end = Offset(translateAnim + 300f, translateAnim + 300f)
+            )
+        )
+}
+
+@Composable
+fun BossQuestionSkeleton() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .height(14.dp)
+                .bossShimmer(RoundedCornerShape(4.dp))
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.97f)
+                .height(14.dp)
+                .bossShimmer(RoundedCornerShape(4.dp))
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.62f)
+                .height(14.dp)
+                .bossShimmer(RoundedCornerShape(4.dp))
+        )
+    }
+}
+
+@Composable
+fun BossOptionSkeleton(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth(0.7f)
+            .height(14.dp)
+            .bossShimmer(RoundedCornerShape(4.dp))
+    )
+}
+

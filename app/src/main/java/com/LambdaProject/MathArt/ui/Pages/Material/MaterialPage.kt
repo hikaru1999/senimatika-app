@@ -21,41 +21,83 @@ import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.*
 import com.LambdaProject.MathArt.ViewModels.QuizViewModel
 import kotlinx.coroutines.launch
+import com.LambdaProject.MathArt.data.repository.MaterialRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
+import com.LambdaProject.MathArt.data.model.MaterialDocument
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaterialScreen(userId: String, materialId: String, navController: NavController) {
 
-    val tabs = listOf("Pengantar", "Translasi", "Refleksi", "Rotasi", "Dilatasi", "Kuis", "Hasil Belajar")
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
-    val coroutineScope = rememberCoroutineScope()
-    val quizViewModel = remember { QuizViewModel() }
-    val maxAccessiblePage = remember { mutableIntStateOf(0) }
-
     val auth = remember { FirebaseAuth.getInstance() }
     val currentUserId = remember { auth.currentUser?.uid ?: "" }
     val currentMaterialId = materialId.ifBlank { "transformasi_geometri" }
 
-    LaunchedEffect(currentUserId) {
+    var isLoadingProgress by remember { mutableStateOf(true) }
+    var isLoadingMaterial by remember { mutableStateOf(true) }
+    var materialDoc by remember { mutableStateOf<MaterialDocument?>(null) }
+    val maxAccessiblePage = remember { mutableIntStateOf(0) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val quizViewModel = remember { QuizViewModel() }
+
+    LaunchedEffect(currentMaterialId) {
+        isLoadingMaterial = true
+        MaterialRepository.getMaterial(
+            materialId = currentMaterialId,
+            onSuccess = { doc ->
+                materialDoc = doc
+                isLoadingMaterial = false
+            },
+            onError = {
+                isLoadingMaterial = false
+            }
+        )
+    }
+
+    LaunchedEffect(currentUserId, currentMaterialId) {
         if (currentUserId.isNotEmpty()) {
-            Firebase.firestore.collection("userProgress").document(currentUserId)
-                .get()
-                .addOnSuccessListener { document ->
-                    val maxPage = document.getLong("maxPage")?.toInt() ?: 0
-                    maxAccessiblePage.intValue = maxPage
-                }
+            MaterialRepository.getUserMaxPage(currentUserId, currentMaterialId) { maxPage ->
+                maxAccessiblePage.intValue = maxPage
+                isLoadingProgress = false
+            }
+        } else {
+            isLoadingProgress = false
         }
     }
+
+    if (isLoadingProgress || isLoadingMaterial) {
+        MaterialPageSkeleton()
+        return
+    }
+
+    val sections = materialDoc?.sections ?: emptyList()
+    val hasQuiz = !materialDoc?.quizId.isNullOrBlank() || materialDoc?.quiz != null
+
+    val tabs = remember(sections, hasQuiz) {
+        val list = mutableListOf<String>()
+        if (sections.isNotEmpty()) {
+            list.addAll(sections.map { it.title })
+        } else {
+            list.add("Materi")
+        }
+        if (hasQuiz) {
+            list.add("Kuis")
+        }
+        list.add("Hasil Belajar")
+        list
+    }
+
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Transformasi Geometri",
+                        text = materialDoc?.title?.ifBlank { "Transformasi Geometri" } ?: "Transformasi Geometri",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.ExtraBold,
                             fontFamily = interFontFamily,
@@ -64,7 +106,10 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        YouTubePlayerManager.pauseAll()
+                        navController.popBackStack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 },
@@ -167,28 +212,59 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                 ) { page ->
                     fun goToNextPage(nextPage: Int) {
                         if (currentUserId.isNotEmpty() && nextPage > maxAccessiblePage.intValue) {
-                            updateAccessiblePage(currentUserId, nextPage)
+                            MaterialRepository.updateAccessiblePage(currentUserId, currentMaterialId, nextPage)
                             maxAccessiblePage.intValue = nextPage
                         }
                         coroutineScope.launch { pagerState.animateScrollToPage(nextPage) }
                     }
 
-                    when (page) {
-                        0 -> MateriPengantar(currentPage = pagerState.currentPage, myPage = 0, onNext = { goToNextPage(1) })
-                        1 -> MateriTranslasi(currentPage = pagerState.currentPage, myPage = 1, onNext = { goToNextPage(2) })
-                        2 -> MateriRefleksi(currentPage = pagerState.currentPage, myPage = 2, onNext = { goToNextPage(3) })
-                        3 -> MateriRotasi(currentPage = pagerState.currentPage, myPage = 3, onNext = { goToNextPage(4) })
-                        4 -> MateriDilatasi(
-                            currentPage = pagerState.currentPage,
-                            myPage = 4,
-                            onNext = { goToNextPage(5) },
-                            onQuizNavigate = { goToNextPage(5) }
-                        )
-                        5 -> {
+                    val totalSections = if (sections.isNotEmpty()) sections.size else 1
+                    val quizPageIndex = if (hasQuiz) totalSections else -1
+                    val summaryPageIndex = if (hasQuiz) totalSections + 1 else totalSections
+
+                    when {
+                        page < totalSections -> {
+                            if (sections.isNotEmpty()) {
+                                val currentSection = sections[page]
+                                val isLast = page == totalSections - 1
+                                DynamicSectionScreen(
+                                    section = currentSection,
+                                    currentPage = pagerState.currentPage,
+                                    myPage = page,
+                                    isLastSection = isLast,
+                                    nextSectionTitle = if (!isLast) sections.getOrNull(page + 1)?.title else null,
+                                    hasQuiz = hasQuiz,
+                                    onNext = { goToNextPage(page + 1) },
+                                    onQuizNavigate = {
+                                        if (hasQuiz) {
+                                            goToNextPage(quizPageIndex)
+                                        } else {
+                                            goToNextPage(summaryPageIndex)
+                                        }
+                                    }
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Konten materi belum tersedia.",
+                                        fontFamily = interFontFamily,
+                                        fontSize = 15.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        }
+                        hasQuiz && page == quizPageIndex -> {
                             val isQuizReady by quizViewModel.isQuizReady
+                            val targetQuizId = materialDoc?.quizId?.ifBlank { currentMaterialId } ?: currentMaterialId
                             LaunchedEffect(page, currentUserId) {
                                 if (currentUserId.isNotEmpty() && !isQuizReady) {
-                                    quizViewModel.prepareQuiz(currentUserId, currentMaterialId)
+                                    quizViewModel.prepareQuiz(currentUserId, targetQuizId)
                                 }
                             }
 
@@ -196,28 +272,34 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
                                 QuizScreen(
                                     currentPage = pagerState.currentPage,
                                     userId = currentUserId,
-                                    myPage = 5,
+                                    myPage = quizPageIndex,
                                     viewModel = quizViewModel,
                                     onQuizFinished = {
                                         quizViewModel.resetQuizReadyState()
-                                        goToNextPage(6)
+                                        goToNextPage(summaryPageIndex)
                                     },
-                                    materialId = currentMaterialId
+                                    materialId = targetQuizId
                                 )
                             } else {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(strokeWidth = 3.dp, color = Color(0xFF5294FF))
-                                }
+                                QuizScreenSkeleton()
                             }
                         }
-                        6 -> SummaryScreen(
-                            viewModel = quizViewModel,
-                            onBackToDashboard = {
-                                navController.navigate("dashboard/{userName}") {
-                                    popUpTo(0) { inclusive = true }
+                        page == summaryPageIndex -> {
+                            SummaryScreen(
+                                viewModel = quizViewModel,
+                                materialDoc = materialDoc,
+                                materialId = currentMaterialId,
+                                onRepeatMaterial = {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                                },
+                                onBackToDashboard = {
+                                    val currentUserName = auth.currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "User"
+                                    navController.navigate("dashboard/$currentUserName") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -226,30 +308,9 @@ fun MaterialScreen(userId: String, materialId: String, navController: NavControl
 }
 
 fun updateAccessiblePage(userId: String, newMaxPage: Int) {
-    val db = Firebase.firestore
-    val docRef = db.collection("userProgress").document(userId)
-
-    docRef.get()
-        .addOnSuccessListener { document ->
-            val currentMaxPage = document.getLong("maxPage")?.toInt() ?: 0
-
-            if (newMaxPage > currentMaxPage) {
-                docRef.set(mapOf("maxPage" to newMaxPage), SetOptions.merge())
-            }
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Firestore", "Failed to get maxPage", exception)
-        }
+    MaterialRepository.updateAccessiblePage(userId, "", newMaxPage)
 }
 
 fun resetAccessiblePage(userId: String) {
-    val db = Firebase.firestore
-    db.collection("userProgress").document(userId)
-        .set(mapOf("maxPage" to 0), SetOptions.merge())
-        .addOnSuccessListener {
-            Log.d("Firestore", "maxPage reset to 0")
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Firestore", "Failed to reset maxPage", exception)
-        }
+    MaterialRepository.resetAccessiblePage(userId)
 }

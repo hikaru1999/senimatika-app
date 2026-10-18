@@ -29,91 +29,45 @@ fun QuizTopBar(
     currentIndex: Int,
     totalQuestions: Int,
     currentBasePoints: Int,
+    isDuel: Boolean = false,
     onBackPressed: () -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { 
-                Text(
-                    "Keluar dari Kuis?", 
-                    fontFamily = interFontFamily, 
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFF1A237E)
-                ) 
-            },
-            text = { 
-                Text(
-                    "Jika kamu keluar kuis maka progresmu akan hilang. Yakin ingin keluar?", 
-                    fontFamily = interFontFamily, 
-                    textAlign = TextAlign.Center,
-                    color = Color.DarkGray
-                ) 
-            },
-            confirmButton = {
-                Button(
-                    onClick = onBackPressed,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF5350)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Ya, Keluar", fontFamily = interFontFamily, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Batal", fontFamily = interFontFamily, color = Color.Gray, fontWeight = FontWeight.Bold)
-                }
-            },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(28.dp)
-        )
-    }
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
         color = Color.White,
-        shadowElevation = 1.dp
+        shadowElevation = 0.5.dp,
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .height(64.dp)
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
+            // Back Button
+            Surface(
                 onClick = onBackPressed,
-                modifier = Modifier.size(40.dp).background(Color(0xFFF5F5F5), CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    modifier = Modifier.size(20.dp),
-                    tint = Color(0xFF1A237E)
-                )
-            }
-            /* Surface(
-                onClick = { showDialog = true },
-                color = Color(0xFFF5F5F5),
                 shape = CircleShape,
-                modifier = Modifier.size(40.dp)
+                color = Color(0xFFF8FAFC),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier.size(38.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        modifier = Modifier.size(20.dp),
-                        tint = Color(0xFF1A237E)
+                        modifier = Modifier.size(18.dp),
+                        tint = Color(0xFF1E293B)
                     )
                 }
-            } */
+            }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
+            // Progress Section
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -123,39 +77,39 @@ fun QuizTopBar(
                     modifier = Modifier.padding(bottom = 6.dp)
                 ) {
                     Text(
-                        text = "Pertanyaan ",
-                        fontSize = 11.sp,
+                        text = "Soal ",
+                        fontSize = 11.5.sp,
                         fontFamily = interFontFamily,
                         fontWeight = FontWeight.Medium,
-                        color = Color.Gray
+                        color = Color(0xFF64748B)
                     )
                     Text(
                         text = "${currentIndex + 1}",
                         fontSize = 13.sp,
                         fontFamily = interFontFamily,
-                        fontWeight = FontWeight.Black,
-                        color = Color(0xFF1A237E)
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
                     )
                     Text(
                         text = " dari $totalQuestions",
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontFamily = interFontFamily,
                         fontWeight = FontWeight.Medium,
-                        color = Color.Gray
+                        color = Color(0xFF64748B)
                     )
                 }
 
                 val progress by animateFloatAsState(
                     targetValue = (currentIndex + 1).toFloat() / totalQuestions.coerceAtLeast(1),
-                    animationSpec = tween(durationMillis = 400 /* ,easing = LinearOutSlowInEasing */),
+                    animationSpec = tween(durationMillis = 400),
                     label = "quizProgress"
                 )
 
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(8.dp)
-                        .background(Color(0xFFF0F0F0), CircleShape)
+                        .fillMaxWidth(0.85f)
+                        .height(5.dp)
+                        .background(Color(0xFFF1F5F9), CircleShape)
                         .clip(CircleShape)
                 ) {
                     Box(
@@ -163,8 +117,8 @@ fun QuizTopBar(
                             .fillMaxHeight()
                             .fillMaxWidth(progress)
                             .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(Color(0xFF42A5F5), Color(0xFF1976D2))
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF3B82F6), Color(0xFF2563EB))
                                 ),
                                 shape = CircleShape
                             )
@@ -172,15 +126,16 @@ fun QuizTopBar(
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
+            // Base Points Badge
             Surface(
-                color = Color(0xFFE3F2FD),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, Color(0xFFBBDEFB).copy(alpha = 0.5f))
+                color = Color(0xFFEFF6FF),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0xFFDBEAFE))
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
@@ -188,7 +143,7 @@ fun QuizTopBar(
                         contentDescription = null,
                         modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     AnimatedBasePts(value = currentBasePoints)
                 }
             }
@@ -197,7 +152,7 @@ fun QuizTopBar(
 }
 
 @Composable
-private fun AnimatedBasePts(value: Int) {
+fun AnimatedBasePts(value: Int) {
     val animatedValue = remember { Animatable(0f) }
 
     LaunchedEffect(value) {
@@ -210,10 +165,10 @@ private fun AnimatedBasePts(value: Int) {
     Text(
         text = "${animatedValue.value.toInt()}",
         style = MaterialTheme.typography.bodyMedium.copy(
-            fontWeight = FontWeight.Black
+            fontWeight = FontWeight.Bold
         ),
         fontFamily = interFontFamily,
-        fontSize = 14.sp,
-        color = Color(0xFF1976D2)
+        fontSize = 13.sp,
+        color = Color(0xFF1E40AF)
     )
 }

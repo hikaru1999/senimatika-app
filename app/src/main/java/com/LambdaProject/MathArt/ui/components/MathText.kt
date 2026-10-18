@@ -13,8 +13,25 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import java.util.concurrent.ConcurrentHashMap
+
+// Global height cache for instant render without layout shift
+private val mathTextHeightCache = ConcurrentHashMap<String, Dp>()
+
+@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
+private class MathWebView(context: android.content.Context) : WebView(context) {
+    var hasInteractiveElements: Boolean = false
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        if (!hasInteractiveElements) {
+            return false
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+}
 
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility", "RememberReturnType")
 @Composable
@@ -29,9 +46,18 @@ fun MathText(
     fontWeight: FontWeight = FontWeight.Normal,
 ) {
     val density = LocalDensity.current
-    var isReady by remember(text) { mutableStateOf(false) }
-//    var webViewHeight by remember { mutableStateOf(100.dp) }
-    var webViewHeight by remember(text) { mutableStateOf(1.dp) }
+    val cacheKey = remember(text, fontSize, textAlign) { "$text-$fontSize-$textAlign" }
+    val cachedHeight = mathTextHeightCache[cacheKey]
+
+    var isReady by remember(cacheKey) { mutableStateOf(false) }
+    var webViewHeight by remember(cacheKey) {
+        mutableStateOf(
+            cachedHeight ?: run {
+                val estimatedLines = text.split("\n").sumOf { (it.length / 45) + 1 }.coerceAtLeast(1)
+                (estimatedLines * (fontSize * 1.6f) + 12f).coerceIn(24f, 600f).dp
+            }
+        )
+    }
 
     val textColor = String.format("#%06X", 0xFFFFFF and color.toArgb())
     val cssFontWeight = fontWeight.weight
@@ -64,33 +90,42 @@ fun MathText(
                     font-weight: $cssFontWeight;
                     margin: 0;
                     padding: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     overflow: visible;
                     text-align: $textAlign;
-                    line-height: 1.5;
+                    line-height: 1.45;
                 }
                 
-                div, p, ul, li {
-                    margin-top: 5px;
-                    margin-bottom: 10px;
+                div, p {
+                    margin: 0;
+                    padding: 0;
+                }
+
+                p + p, div + p, p + div {
+                    margin-top: 6px;
+                }
+                
+                .justify {
+                    text-align: justify !important;
+                    text-align-last: left;
+                    text-justify: inter-word;
                     display: block;
+                    width: 100%;
                 }
-                
-                .justify { text-align: justify !important; display: block; width: 100%; }
                 .center  { text-align: center !important; display: block; width: 100%; }
                 .right   { text-align: right !important; display: block; width: 100%; }
                 .left    { text-align: left !important; display: block; width: 100%; }
                 
                 #math-wrapper {
                     font-weight: $cssFontWeight;
-                    padding: 2px 10px;
+                    padding: 0;
+                    margin: 0;
                     display: block;
                     word-wrap: break-word;
                     width: 100%;
                     box-sizing: border-box;
-                    min-height: 20px;
+                    min-height: 18px;
                 }
-                
                 
                 img {
                     max-width: 100%;
@@ -99,55 +134,101 @@ fun MathText(
                     margin: 10px auto;
                     border-radius: 10px;
                     cursor: pointer;
-                    box-shadow: 0 4x 8px rgba(0,0,0,0,1);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
                 }
+                
+                ul, ol {
+                    margin: 6px 0 10px 0;
+                    padding-left: 22px;
+                    box-sizing: border-box;
+                }
+                
                 ul {
-                    padding-left: 20px;
-                    margin: 5px 0;
-                    text-align: left;
                     list-style-type: disc !important;
                 }
-                li { margin-bottom: 2px; display: list-item !important; }
+                
+                ol {
+                    list-style-type: decimal !important;
+                }
+                
+                li {
+                    margin-top: 3px;
+                    margin-bottom: 5px;
+                    display: list-item !important;
+                    line-height: 1.45;
+                    text-align: justify;
+                    text-align-last: left;
+                }
+                
+                li .justify, li .left, li .center, li .right, li div, li p {
+                    display: inline;
+                    margin: 0;
+                    padding: 0;
+                    width: auto;
+                }
 
                 .katex-display {
                     margin: 0.5em 0 !important;
                 }
                 .katex {
                     font-weight: $cssFontWeight !important;
-                    ${if (cssFontWeight >= 700) "text-shadow: 0.2px 0 0 $textColor, -0.1px 0 0 $textColor;" else ""}
-                }.katex {
+                    font-size: 1.02em;
                     white-space: normal !important;
+                    ${if (cssFontWeight >= 700) "text-shadow: 0.2px 0 0 $textColor, -0.1px 0 0 $textColor;" else ""}
                 }
             </style>
             <script>
                 function parseContent(text) {
+                    if (!text) return '';
+
                     // Standarisasi baris baru
-                    text = text.replace(/\r\n/g, '\n');
+                    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                    
+                    // Normalisasi tag alignment jika membungkus list marker (*, -, +, •, 1., dsb)
+                    text = text.replace(/\[(justify|center|right|left)\]([\s\S]*?)\[\/\1\]/gi, function(match, tag, content) {
+                        var lines = content.split('\n');
+                        var processedLines = lines.map(function(line) {
+                            var trimmed = line.trim();
+                            if (!trimmed) return '';
+                            
+                            // Deteksi bullet (*, -, +, •)
+                            var bulletMatch = trimmed.match(/^([\*\-\+•])[ \t]+([\s\S]*)$/);
+                            if (bulletMatch) {
+                                return bulletMatch[1] + ' [' + tag + ']' + bulletMatch[2] + '[/' + tag + ']';
+                            }
+                            
+                            // Deteksi nomor (1., 1), dsb)
+                            var numMatch = trimmed.match(/^(\d+[\.\)])[ \t]+([\s\S]*)$/);
+                            if (numMatch) {
+                                return numMatch[1] + ' [' + tag + ']' + numMatch[2] + '[/' + tag + ']';
+                            }
+                            
+                            return '[' + tag + ']' + line + '[/' + tag + ']';
+                        });
+                        return processedLines.join('\n');
+                    });
                     
                     // Bold & Italic
                     text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
                     text = text.replace(/(^|[^a-zA-Z0-9])_([^_]+)_(?![a-zA-Z0-9])/g, '$1<i>$2</i>');
                     
-                    // ALignment Tags
-                    text = text.replace(/\[justify\]([\s\S]*?)\[\/justify\]/g, function(m, p1) {
+                    // Alignment Tags
+                    text = text.replace(/\[justify\]([\s\S]*?)\[\/justify\]/gi, function(m, p1) {
                         return '<div class="justify">' + p1.trim() + '</div>';
                     });
-                    text = text.replace(/\[center\]([\s\S]*?)\[\/center\]/g, function(m, p1) {
+                    text = text.replace(/\[center\]([\s\S]*?)\[\/center\]/gi, function(m, p1) {
                         return '<div class="center">' + p1.trim() + '</div>';
                     });
-                    text = text.replace(/\[right\]([\s\S]*?)\[\/right\]/g, function(m, p1) {
+                    text = text.replace(/\[right\]([\s\S]*?)\[\/right\]/gi, function(m, p1) {
                         return '<div class="right">' + p1.trim() + '</div>';
                     });
-                    text = text.replace(/\[left\]([\s\S]*?)\[\/left\]/g, function(m, p1) {
+                    text = text.replace(/\[left\]([\s\S]*?)\[\/left\]/gi, function(m, p1) {
                         return '<div class="left">' + p1.trim() + '</div>';
                     });
                     
                     // Numbered & Bullet List
-//                    text = text.replace(/(^|\n|[ \t]*)(\d+)\.[ \t]+(.*?)(?=\n|$)/g, '$1<li class="num-item">$3</li>');
-//                    text = text.replace(/(^|\n|[ \t]*)\*[ \t]+(.*?)(?=\n|$)/g, '$1<li class="bullet-item">$2</li>');
-
-                    text = text.replace(/(?:^|\n)\*[ \t]+(.*?)(?=\n|$)/g, '\n<li class="bullet-item">$1</li>');
-                    text = text.replace(/(^|\n)(\d+)\.[ \t]+(.*?)(?=\n|$)/g, '$1<li class="num-item">$3</li>');
+                    text = text.replace(/(?:^|\n)[ \t]*[\*\-\+•][ \t]+(.*?)(?=\n|$)/g, '\n<li class="bullet-item">$1</li>');
+                    text = text.replace(/(?:^|\n)[ \t]*\d+[\.\)][ \t]+(.*?)(?=\n|$)/g, '\n<li class="num-item">$1</li>');
                     
                     text = text.replace(/(?:<li class="bullet-item">[\s\S]*?<\/li>\s*)+/g, function(match) {
                         return '<ul>' + match.trim() + '</ul>';
@@ -166,8 +247,8 @@ fun MathText(
                     });
                     
                     // Others
-                    text = text.replace(/>\n/g, '>');
-                    text = text.replace(/\n</g, '<');
+                    text = text.replace(/>\s*\n+/g, '>');
+                    text = text.replace(/\n+\s*</g, '<');
                     text = text.replace(/\n/g, '<br>');
                     
                     return text;
@@ -181,7 +262,6 @@ fun MathText(
                     window.requestAnimationFrame(function() {
                         var wrapper = document.getElementById('math-wrapper');
                         if (wrapper) {
-                            // getBoundingClientRect lebih akurat untuk konten yang di-skew/render
                             var height = wrapper.getBoundingClientRect().height;
                             Android.updateHeight(height);
                         }
@@ -209,22 +289,7 @@ fun MathText(
                     }
                     
                     updateHeight();
-                    setTimeout(updateHeight, 100);
-                    setTimeout(updateHeight, 500);
-                    setTimeout(updateHeight, 2500);
-                }
-                
-                function observeChanges() {
-                    const wrapper = document.getElementById('math-wrapper');
-                    const observer = new MutationObserver(function() {
-                        updateHeight();
-                    });
-
-                    observer.observe(wrapper, {
-                        childList: true,
-                        subtree: true,
-                        characterData: true
-                    });
+                    setTimeout(updateHeight, 150);
                 }
                 
                 window.onload = updateHeight;
@@ -239,20 +304,31 @@ fun MathText(
     AndroidView(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(webViewHeight)
+            .heightIn(min = webViewHeight)
             .graphicsLayer {
                 alpha = if (isReady && webViewHeight > 10.dp) 1f else 0f
-//                alpha = if (isReady) 1f else 0f
             },
         factory = { context ->
-            WebView(context).apply {
-                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            MathWebView(context).apply {
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                this.hasInteractiveElements = text.contains("![")
 
-                settings.javaScriptEnabled = true
-                settings.allowFileAccess = true
-                settings.domStorageEnabled = true
+                isClickable = false
+                isFocusable = false
+                isFocusableInTouchMode = false
+                isVerticalScrollBarEnabled = false
+                isHorizontalScrollBarEnabled = false
+                overScrollMode = View.OVER_SCROLL_NEVER
 
-                settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+                settings.apply {
+                    javaScriptEnabled = true
+                    allowFileAccess = true
+                    domStorageEnabled = false
+                    cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                    setSupportZoom(false)
+                    builtInZoomControls = false
+                    displayZoomControls = false
+                }
 
                 setBackgroundColor(0)
 
@@ -260,18 +336,21 @@ fun MathText(
                     @JavascriptInterface
                     fun updateHeight(height: Float) {
                         val heightInDp = (height / context.resources.displayMetrics.density).dp
-                        if (heightInDp != webViewHeight) {
+                        val diff = kotlin.math.abs(heightInDp.value - webViewHeight.value)
+                        if (diff > 1.5f || !isReady) {
                             post {
-                                webViewHeight = heightInDp + 4.dp
+                                val finalHeight = heightInDp + 2.dp
+                                webViewHeight = finalHeight
+                                mathTextHeightCache[cacheKey] = finalHeight
+                                isReady = true
+                                onRenderComplete()
+                            }
+                        } else if (!isReady) {
+                            post {
                                 isReady = true
                                 onRenderComplete()
                             }
                         }
-//                        if (heightInDp > 1.dp) {
-//                            webViewHeight = heightInDp + 12.dp
-//                            isReady = true
-//                            onRenderComplete()
-//                        }
                     }
 
                     @JavascriptInterface
@@ -279,16 +358,6 @@ fun MathText(
                         post { onImageClick(url) }
                     }
                 }, "Android")
-//                webViewClient = WebViewClient()
-
-                isClickable = true
-                isFocusable = true
-                isEnabled = true
-
-                setOnTouchListener { v, event ->
-                    v.onTouchEvent(event)
-                    false
-                }
 
                 webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView?, url: String?) {
@@ -298,10 +367,30 @@ fun MathText(
             }
         },
         update = { webView ->
-            if (webView.tag != text) {
-                webView.loadDataWithBaseURL(baseUrl, htmlData, "text/html", "utf-8", null)
-                webView.tag = text
+            (webView as? MathWebView)?.hasInteractiveElements = text.contains("![")
+            val tagKey = "$cacheKey-$textColor"
+            if (webView.tag != tagKey) {
+                val oldTag = webView.tag as? String
+                if (oldTag != null && oldTag.startsWith(cacheKey)) {
+                    webView.evaluateJavascript("document.body.style.color = '$textColor';", null)
+                    webView.tag = tagKey
+                } else {
+                    webView.loadDataWithBaseURL(baseUrl, htmlData, "text/html", "utf-8", null)
+                    webView.tag = tagKey
+                }
             }
+        },
+        onRelease = { webView ->
+            try {
+                webView.stopLoading()
+                webView.loadUrl("about:blank")
+                webView.post {
+                    try {
+                        webView.removeAllViews()
+                        webView.destroy()
+                    } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
         }
     )
 }

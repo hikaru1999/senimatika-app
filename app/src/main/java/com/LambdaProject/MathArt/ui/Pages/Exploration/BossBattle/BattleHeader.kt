@@ -29,11 +29,11 @@ fun BattleHeader(
     val leatherColor = Color(0xFF5D4037)
 
     val bossName = when (bossType) {
-        "boss_1", "obj_boss_1" -> "Vardos"
-        "boss_2", "obj_boss_2" -> "Grooten"
-        "boss_3", "obj_boss_3" -> "Mortis"
-        "boss_4", "obj_boss_4" -> "Aether"
-        else -> "Boss"
+        "boss_1", "obj_boss_1" -> "Sigma"
+        "boss_2", "obj_boss_2" -> "Delta"
+        "boss_3", "obj_boss_3" -> "Theta"
+        "boss_4", "obj_boss_4" -> "Omega"
+        else -> "BOSS"
     }
 
     val bossFrameRes = when (bossType) {

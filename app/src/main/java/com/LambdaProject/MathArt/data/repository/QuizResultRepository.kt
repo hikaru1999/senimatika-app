@@ -18,12 +18,20 @@ class QuizResultRepository(
     suspend fun saveQuizResult(result: QuizResult): Result<Unit> {
         return try {
             val documentId = "${result.userId}_${result.materialId}"
-            firestore.collection("online_quiz_results")
-                .document(documentId)
-                .set(result)
-                .await()
+            val docRef = firestore.collection("online_quiz_results").document(documentId)
+            
+            val existingDoc = docRef.get(Source.DEFAULT).await()
+            val existingScore = existingDoc.getLong("totalPoints")?.toInt() ?: 0
+            
+            if (!existingDoc.exists() || result.totalPoints >= existingScore) {
+                docRef.set(result).await()
+                Log.d("QuizResultRepository", "Saved new high score for ${result.userId}: ${result.totalPoints}")
+            } else {
+                Log.d("QuizResultRepository", "Retained higher existing score ($existingScore) over current (${result.totalPoints})")
+            }
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("QuizResultRepository", "Error saving quiz result: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -73,9 +81,13 @@ class QuizResultRepository(
     }
 
     suspend fun getUsernamesForUserIds(userIds: List<String>): Map<String, String> {
+        return getUserProfilesForUserIds(userIds).mapValues { it.value.first }
+    }
+
+    suspend fun getUserProfilesForUserIds(userIds: List<String>): Map<String, Pair<String, String>> {
         return try {
             val chunks = userIds.chunked(30)
-            val results = mutableMapOf<String, String>()
+            val results = mutableMapOf<String, Pair<String, String>>()
 
             for (chunk in chunks) {
                 val snapshot = firestore.collection("users")
@@ -84,29 +96,45 @@ class QuizResultRepository(
                     .await()
 
                 for (doc in snapshot.documents) {
-                    doc.getString("username")?.let {
-                        results[doc.id] = it
-                    }
+                    val username = doc.getString("username")
+                        ?: doc.getString("name")
+                        ?: doc.getString("displayName")
+                        ?: doc.getString("email")?.substringBefore("@")
+                        ?: "Guest_${doc.id.take(4)}"
+                    val avatar = doc.getString("avatar") ?: "avatar_5"
+                    results[doc.id] = Pair(username, avatar)
                 }
             }
 
             results
         } catch (e: Exception) {
+            Log.e("QuizResultRepository", "Error getting user profiles: ${e.message}", e)
             emptyMap()
         }
     }
 
     suspend fun getLeaderBoardForMaterial(materialId: String, limit: Long = 50): Result<List<QuizResult>> {
         return try {
-            val snapshot = firestore.collection("online_quiz_results")
-                .whereEqualTo("materialId", materialId)
-                .orderBy("totalPoints", Query.Direction.DESCENDING)
-                .limit(limit)
-                .get(Source.DEFAULT)
-                .await()
+            val snapshot = try {
+                firestore.collection("online_quiz_results")
+                    .whereEqualTo("materialId", materialId)
+                    .orderBy("totalPoints", Query.Direction.DESCENDING)
+                    .limit(limit)
+                    .get(Source.DEFAULT)
+                    .await()
+            } catch (indexEx: Exception) {
+                Log.w("LeaderboardRepository", "Direct index query failed, using in-memory sort fallback: ${indexEx.message}")
+                firestore.collection("online_quiz_results")
+                    .whereEqualTo("materialId", materialId)
+                    .get(Source.DEFAULT)
+                    .await()
+            }
 
             val results = snapshot.toObjects(QuizResult::class.java)
+                .sortedByDescending { it.totalPoints }
+                .take(limit.toInt())
 
+            Log.d("LeaderboardRepository", "Loaded ${results.size} leaderboard entries for material: $materialId")
             Result.success(results)
         } catch (e: Exception) {
             Log.e("LeaderboardRepository", "Error fetching leaderboard: ${e.message}", e)

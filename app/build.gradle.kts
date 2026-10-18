@@ -16,8 +16,8 @@ android {
         applicationId = "com.LambdaProject.MathArt"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7
-        versionName = "4.3.1"
+        versionCode = 9
+        versionName = "5.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

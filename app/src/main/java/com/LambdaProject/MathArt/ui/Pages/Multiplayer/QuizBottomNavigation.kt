@@ -38,7 +38,10 @@ fun BottomQuizNav(
     onFinishQuiz: () -> Unit,
     onPowerUpClicked: () -> Unit,
     viewModel: OnlineQuizViewModel,
-    materialId: String
+    materialId: String,
+    isDuel: Boolean = false,
+    isLearningMode: Boolean = false,
+    onShowExplanation: (Boolean) -> Unit = {}
 ) {
     var isLoading by remember { mutableStateOf(false) }
 //    var isAnswered by remember { mutableStateOf(false) }
@@ -57,105 +60,63 @@ fun BottomQuizNav(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            /* Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(3) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .shadow(4.dp, CircleShape)
-                            .background(powerUpColors[index], CircleShape)
-                            .clickable { onPowerUpClicked() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = powerUpIcons[index]),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            } */
-            // Power-up
-//            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-//                repeat(3) { index ->
-//                    Box(
-//                        modifier = Modifier
-//                            .size(40.dp)
-//                            .clickable { onPowerUpClicked() },
-//                        contentAlignment = Alignment.Center
-//                    ) {
-//                        Box(
-//                            modifier = Modifier
-//                                .size(32.dp)
-//                                .shadow(4.dp, CircleShape)
-//                                .background(powerUpColors[index], CircleShape),
-//                            contentAlignment = Alignment.Center
-//                        ) {
-//                            Image(
-//                                painter = painterResource(id = powerUpIcons[index]),
-//                                contentDescription = null,
-//                                modifier = Modifier.size(18.dp)
-//                            )
-//                        }
-//
-//                        Box(
-//                            modifier = Modifier
-//                                .size(14.dp)
-//                                .align(Alignment.TopEnd)
-//                                .offset(x = 4.dp, y = (-4).dp)
-//                                .background(Color.DarkGray, shape = CircleShape),
-//                            contentAlignment = Alignment.Center
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Default.Lock,
-//                                contentDescription = "Terkunci",
-//                                tint = Color.White,
-//                                modifier = Modifier.size(8.dp)
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-
             Button(
                 onClick = {
                     isLoading = true
                     onAnsweredChange(true)
 
                     CoroutineScope(Dispatchers.Main).launch {
-                        delay(2000)
-                        viewModel.checkAnswer(
-                            selectedAnswers = selectedAnswers,
-                            userTextAnswer = userTextAnswer,
-                            timeLeft = timeLeft,
-                            onScoreUpdated = { points, coins ->
+                        if (isLearningMode) {
+                            viewModel.checkAnswer(
+                                selectedAnswers = selectedAnswers,
+                                userTextAnswer = userTextAnswer,
+                                timeLeft = timeLeft,
+                                onScoreUpdated = { _, _ -> },
+                                onStreakUpdate = { streakState ->
+                                    onTriggerScorestreak(streakState)
+                                }
+                            )
+                            delay(1500)
+                            isLoading = false
+                            val currentQ = viewModel.questions.value.getOrNull(currentIndex)
+                            val lastAns = viewModel.userAnswers.lastOrNull { it.questionNumber == currentQ?.questionNumber }
+                            val isCorrect = lastAns?.isCorrect ?: false
+                            onShowExplanation(isCorrect)
+                        } else {
+                            delay(2000)
+                            viewModel.checkAnswer(
+                                selectedAnswers = selectedAnswers,
+                                userTextAnswer = userTextAnswer,
+                                timeLeft = timeLeft,
+                                onScoreUpdated = { points, coins -> },
+                                onStreakUpdate = { streakState ->
+                                    onTriggerScorestreak(streakState)
+                                }
+                            )
 
-                            },
-                            onStreakUpdate = { streakState ->
-                                onTriggerScorestreak(streakState)
+                            if (!isDuel && currentIndex == totalQuestions - 1) {
+                                delay(1250)
+
+                                val userId = viewModel.getCurrentUserId() ?: return@launch
+                                viewModel.saveQuizResult(userId, materialId)
+                                onFinishQuiz()
                             }
-                        )
-
-                        if (currentIndex == totalQuestions - 1) {
-                            delay(1250)
-
-                            val userId = viewModel.getCurrentUserId() ?: return@launch
-                            viewModel.saveQuizResult(userId, materialId)
-                            onFinishQuiz()
+                            onNextClick()
+                            isLoading = false
                         }
-                        onNextClick()
-                        isLoading = false
                     }
                 },
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0E60DD)),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isLearningMode) Color(0xFF059669) else Color(0xFF0E60DD)
+                ),
                 enabled = selectedAnswers.isNotEmpty() || !userTextAnswer.isNullOrBlank()
             ) {
                 Box(
                     modifier = Modifier
-                        .height(24.dp)
-                        .widthIn(min = 120.dp),
+                        .fillMaxWidth()
+                        .height(28.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isLoading) {
@@ -166,7 +127,7 @@ fun BottomQuizNav(
                         )
                     } else {
                         Text(
-                            text = if (currentIndex < totalQuestions - 1) "Cek Jawabanmu" else "Selesai & Lihat Hasil",
+                            text = if (isDuel) "Jawab" else if (isLearningMode) "Periksa Jawaban" else if (currentIndex < totalQuestions - 1) "Cek Jawabanmu" else "Selesai & Lihat Hasil",
                             fontFamily = interFontFamily,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
