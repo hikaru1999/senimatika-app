@@ -262,7 +262,7 @@ fun LevelRoadModal(
                                             border = BorderStroke(0.5.dp, Color(0x6638BDF8))
                                         ) {
                                             Text(
-                                                text = if (currentLevel < 15) "🎯 Menuju Level ${currentLevel + 1}" else "Max. Level",
+                                                text = if (currentLevel < 15) "Menuju Level ${currentLevel + 1}" else "Max. Level",
                                                 fontFamily = interFontFamily,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF7DD3FC),
@@ -461,17 +461,21 @@ private fun LevelRoadItem(
         color = when {
             isCurrent -> Color(0xFFF0F7FF)
             isReached -> Color.White
-            else -> Color(0xFFF8FAFC).copy(alpha = 0.8f)
+            else -> Color(0xFFF1F5F9)
         },
         border = BorderStroke(
             width = if (isCurrent) 2.dp else 1.dp,
             color = when {
                 isCurrent -> Color(0xFF3B82F6)
                 isReached -> Color(0xFFE2E8F0)
-                else -> Color(0xFFF1F5F9)
+                else -> Color(0xFFE2E8F0)
             }
         ),
-        shadowElevation = if (isCurrent) 4.dp else 1.dp
+        shadowElevation = when {
+            isCurrent -> 4.dp
+            isReached -> 1.dp
+            else -> 0.dp
+        }
     ) {
         Row(
             modifier = Modifier
@@ -618,7 +622,7 @@ private fun LevelRoadItem(
                         RewardBadge(
                             icon = puIcon,
                             label = "${count}x ${puType.name.replace("_", " ").lowercase().capitalize()}",
-                            bgColor = Color(0xFFF1F5F9),
+                            bgColor = Color.White,
                             textColor = Color(0xFF334155),
                             borderColor = Color(0xFFE2E8F0)
                         )

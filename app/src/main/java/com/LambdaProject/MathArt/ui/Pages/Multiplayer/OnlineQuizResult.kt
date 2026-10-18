@@ -367,9 +367,9 @@ fun OnlineQuizResult(
                                 icon = Icons.Default.Timer,
                                 iconTint = Color(0xFFF59E0B),
                                 iconBg = Color(0xFFFEF3C7),
-                                label = "Total Durasi",
+                                label = "Durasi Pengerjaan",
                                 value = formatDuration(totalTimeSeconds),
-                                subtext = "$avgTimePerQuestion dtk/soal rata-rata",
+                                subtext = "rerata: $avgTimePerQuestion dtk/soal",
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -416,7 +416,7 @@ fun OnlineQuizResult(
                             BreakdownRow(
                                 icon = Icons.Default.Star,
                                 iconTint = Color(0xFF3B82F6),
-                                label = "Poin Dasar Soal",
+                                label = "Base Point Soal",
                                 value = "$basePoints",
                                 valueColor = Color(0xFF1E293B)
                             )
@@ -644,35 +644,40 @@ fun OnlineQuizResult(
                             },
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                isLoading = true
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    delay(500)
-                                    onClickLeaderboard()
-                                    isLoading = false
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp)
-                                .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF2563EB).copy(alpha = 0.4f)),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp)
-                            } else {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.AutoMirrored.Filled.List, null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        "LIHAT LEADERBOARD",
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = interFontFamily,
-                                        fontSize = 13.5.sp,
-                                        letterSpacing = 0.5.sp
-                                    )
+                        val currentQuiz = quizList.find { it.id == materialId }
+                        val isLearningMode = currentQuiz?.isLearningMode ?: false
+
+                        if (!isLearningMode) {
+                            Button(
+                                onClick = {
+                                    isLoading = true
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        delay(500)
+                                        onClickLeaderboard()
+                                        isLoading = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                                    .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFF2563EB).copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                            ) {
+                                if (isLoading) {
+                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp)
+                                } else {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.AutoMirrored.Filled.List, null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            "LIHAT LEADERBOARD",
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = interFontFamily,
+                                            fontSize = 13.5.sp,
+                                            letterSpacing = 0.5.sp
+                                        )
+                                    }
                                 }
                             }
                         }

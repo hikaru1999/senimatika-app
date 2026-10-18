@@ -4,17 +4,64 @@
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Version](https://img.shields.io/badge/Version-4.3.3-success)](#)
+[![Version](https://img.shields.io/badge/Version-4.4.0-success)](#)
 
 Selamat datang di **Senimatika** (Seni & Matematika), aplikasi pembelajaran matematika interaktif berbasis petualangan (*gamified learning*) yang memadukan konsep logika berhitung, eksplorasi dunia (*Mathventure*), serta pertarungan kuis kompetitif (*Math Arena*).
 
-Dokumen ini memuat rangkuman pembaruan fitur, arsitektur progresi level, sistem reward, dan penyegaran tampilan visual (*UI Refreshment*) terbaru.
+Dokumen ini memuat rangkuman pembaruan fitur, arsitektur sistem keamanan akun, mode belajar Math Arena, pengelolaan materi berbasis server (*Server-Driven Content*), sistem progresi level, dan penyegaran antarmuka visual (*UI Refreshment*).
 
 ---
 
 ## 🌟 Sorotan Pembaruan Terbaru (What's New)
 
-### 1. 🗺️ Peta Wilayah Interaktif untuk Mode Eksplorasi (Mathventure)
+### 1. 🔐 Manajemen Autentikasi & Keamanan Akun Terintegrasi
+*Implementasi File:* [`AuthRepository.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/data/repository/AuthRepository.kt), [`EmailVerificationModal.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Profile/EmailVerificationModal.kt), [`EmailVerificationResultScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/EmailVerificationResultScreen.kt), [`ForgotPasswordScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/ForgotPasswordScreen.kt), [`ResetPasswordScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/ResetPasswordScreen.kt), [`EditProfileModal.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Profile/EditProfileModal.kt)
+
+Untuk memastikan integritas data siswa dan keamanan profil pembelajaran, Senimatika kini dilengkapi alur autentikasi dan manajemen akun end-to-end:
+- **Ganti Email dengan Re-Autentikasi Aman:** Pengguna dapat mengganti alamat email terdaftar melalui [`EditProfileModal.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Profile/EditProfileModal.kt). Sistem mewajibkan verifikasi kata sandi aktif sebelum mengirimkan verifikasi email baru dan menyinkronkan data profil di Firestore.
+- **Verifikasi Email Pengguna:**
+  - Pengiriman tautan verifikasi otomatis menggunakan Firebase Action Code Settings.
+  - Penanganan Deep Link via [`EmailVerificationResultScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/EmailVerificationResultScreen.kt) untuk memverifikasi `oobCode` secara instan dari aplikasi.
+  - Modal interaktif [`EmailVerificationModal.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Profile/EmailVerificationModal.kt) dengan fitur kirim ulang tautan (*resend*) dan pemeriksaan status *real-time*.
+- **Ganti Password (In-App Password Change):** Fitur pembaruan kata sandi berkala di dalam aplikasi yang memvalidasi kata sandi lama sebelum menerima kombinasi kata sandi baru yang memenuhi kriteria keamanan (minimal 6 karakter, kombinasi huruf dan angka).
+- **Lupa Password & Pemulihan Kata Sandi Fleksibel:**
+  - Layar [`ForgotPasswordScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/ForgotPasswordScreen.kt) mendukung pemulihan akun melalui tautan email resmi maupun kode OTP 6 digit.
+  - Layar [`ResetPasswordScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/ResetPasswordScreen.kt) memfasilitasi penggantian kata sandi langsung dengan validasi kode `oobCode` secara aman di perangkat.
+
+---
+
+### 2. 🧠 Mode Belajar (Learning Mode) di Math Arena
+*Implementasi File:* [`LearningExplanationOverlay.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Multiplayer/LearningExplanationOverlay.kt), [`OnlineQuizMaster.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Multiplayer/OnlineQuizMaster.kt), [`OnlineQuizLanding.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Multiplayer/OnlineQuizLanding.kt), [`OnlineQuizLobby.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Multiplayer/OnlineQuizLobby.kt)
+
+Sebagai pelengkap dari kuis bertempo cepat dan mode duel kompetitif, kini hadir **Mode Belajar** yang dirancang murni untuk penguasaan konsep matematika tanpa tekanan persaingan:
+- **Pengalaman Belajar Tanpa Tekanan Waktu (*Stress-Free Learning*):** Siswa dapat membaca dan menganalisis soal dengan tenang tanpa hitung mundur timer yang menghukum nilai.
+- **Kartu Pembahasan Instan (*Interactive Explanation Overlay*):**
+  - Setiap kali siswa menjawab dan mengetuk *"Periksa Jawaban"*, layar langsung memunculkan [`LearningExplanationOverlay.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Multiplayer/LearningExplanationOverlay.kt).
+  - Menyajikan ulasan detail: status jawaban (tepat/belum tepat), kunci jawaban sesungguhnya, rumus matematis yang berlaku, dan uraian langkah kerja komprehensif.
+- **Identitas Visual Berbeda (Tema Hijau Zamrud):** Kartu dan navigasi kuis mode belajar ditandai secara visual dengan palet warna hijau zamrud (*emerald green*) dan lencana khusus *"Mode Belajar"*, membedakannya dari kuis kompetitif reguler (*sky blue*) dan duel (*purple/rose*).
+- **Lobi Belajar Terfokus:** Menyembunyikan papan peringkat (*leaderboard*) kompetisi saat kuis mode belajar dipilih, mengarahkan fokus siswa sepenuhnya pada deskripsi materi dan latihan pemahaman.
+
+---
+
+### 3. ☁️ Arsitektur Konten Materi Berbasis Server (Server-Driven Content)
+*Implementasi File:* [`MaterialContentModel.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/data/model/MaterialContentModel.kt), [`MaterialRepository.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/data/repository/MaterialRepository.kt), [`MaterialPage.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Material/MaterialPage.kt), [`DynamicSectionScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Material/DynamicSectionScreen.kt), [`SummaryScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Material/SummaryScreen.kt)
+
+Seluruh kurikulum, teks penjelasan, studi kasus budaya Nusantara, rumus matematika, hingga soal evaluasi kini dipisahkan dari kode biner aplikasi (*zero-code content delivery*):
+- **Streaming Konten Dinamis via Firestore:** Materi dimuat langsung dari koleksi `materials`. Pendidik dan pengembang dapat menambah materi baru, memperbaiki tipografi, atau mengubah soal kuis tanpa perlu mengompilasi ulang atau merilis pembaruan APK di Play Store.
+- **Koleksi Blok Konten Modular (*Rich Content Blocks*):**
+  - 📐 **`FORMULA`**: Blok persamaan matematika interaktif lengkap dengan simbol dan penjelasan variabel.
+  - 📝 **`WORKED_EXAMPLE`**: Pembahasan soal bertahap langkah demi langkah (*step-by-step problem walkthrough*) disertai tips pemecahan.
+  - 🔄 **`FLIP_CARD`**: Kartu bolak-balik interaktif untuk menghafal konsep dan definisi penting secara menyenangkan.
+  - 🔍 **`TRANSFORMATION_DEMO`**: Demonstrasi visual interaktif transformasi geometri pada motif batik/seni tradisional dengan perbandingan gambar sebelum dan sesudah.
+  - 💡 **`CALLOUT` & `INTERACTIVE_CHECK`**: Kotak sorotan informasi penting (*Info/Tip/Warning*) dan mini kuis pemantik pemahaman di sela-sela bab.
+  - 🎥 **`VIDEO` & `IMAGE`**: Pemutar video pembelajaran YouTube terintegrasi dan gambar aset beresolusi tinggi.
+- **Efisiensi Kuota & Cache Cerdas:** Menggunakan strategi `Source.CACHE` di memori perangkat, sehingga pembacaan ulang materi tidak menghabiskan kuota data (*read quota*) Firestore.
+- **Pelacakan Kemajuan & Proteksi EXP:** Progres bacaan bab dicatat per pengguna di `userProgress/{userId}`. Hadiah EXP materi terlindungi transaksi atomik sehingga hanya dapat diklaim 1 kali (*anti-farming*).
+- **Layar Rangkuman Belajar Cerdas ([`SummaryScreen.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Material/SummaryScreen.kt)):** Menampilkan metrik nilai, akurasi, dan status evaluasi (*Tuntas* vs *Perlu Ulang*) dengan judul motivasi yang adaptif dan bebas dari kontradiksi teks.
+
+---
+
+### 4. 🗺️ Peta Wilayah Interaktif untuk Mode Eksplorasi (Mathventure)
 *Implementasi File:* [`DynamicMapModal.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Exploration/DynamicMapModal.kt)
 - **Visualisasi Peta Penuh:** Pemain kini dapat membuka modal peta interaktif untuk melihat seluruh tata letak dunia penjelajahan.
 - **Pin Lokasi & Animasi Real-Time:** Menampilkan posisi pemain saat ini secara presisi dengan animasi detak (*pulsing radar*).
@@ -23,7 +70,7 @@ Dokumen ini memuat rangkuman pembaruan fitur, arsitektur progresi level, sistem 
 
 ---
 
-### 2. ⚔️ Mode Duel Math Arena (Multiplayer 1v1 Real-Time)
+### 5. ⚔️ Mode Duel Math Arena (Multiplayer 1v1 Real-Time)
 *Implementasi File:* [`DuelMatchmakingOverlay.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Multiplayer/DuelMatchmakingOverlay.kt)
 - **Pertarungan Adu Ketangkasan Cepat:** Tantang lawan dalam duel kuis matematika waktu nyata satu lawan satu.
 - **Matchmaking Radar Interaktif:** Animasi radar pemindaian lawan dengan efek audio dinamis saat mencari musuh.
@@ -32,7 +79,7 @@ Dokumen ini memuat rangkuman pembaruan fitur, arsitektur progresi level, sistem 
 
 ---
 
-### 3. 🎯 Sistem Misi Terstruktur di Mathventure
+### 6. 🎯 Sistem Misi Terstruktur di Mathventure
 *Implementasi File:* [`Mission.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/data/model/Mission.kt)
 - Menghadirkan ragam tujuan spesifik di setiap rute petualangan untuk memicu strategi bermain yang variatif.
 - **Tipe Misi yang Tersedia:**
@@ -45,22 +92,11 @@ Dokumen ini memuat rangkuman pembaruan fitur, arsitektur progresi level, sistem 
 
 ---
 
-### 4. 📈 Laporan Belajarku / Analitik Performa Siswa *(Eksperimental)*
-*Implementasi File:* [`LearningReportPage.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Profile/LearningReportPage.kt)
-- **Pelacakan Waktu Belajar Aktif:** Kartu hero interaktif yang mencatat akumulasi durasi belajar pengguna dalam hitungan jam dan menit.
-- **Ringkasan Statistik Pembelajaran:**
-  - Jumlah kuis online & skor tertinggi yang diraih.
-  - Akumulasi poin kuis arena dan kuis mandiri yang dikerjakan.
-  - Jumlah pencapaian (*Achievements*) yang sudah dibuka dan saldo koin terkumpul.
-- **Riwayat Belajar Terperinci:** Memantau progres penyelesaian materi pelajaran matematika untuk evaluasi belajar mandiri maupun guru.
-
----
-
-### 5. 🎭 Kustomisasi Profil: Avatar Picker & Bingkai Avatar Kosmetik
+### 7. 🎭 Kustomisasi Profil: Avatar Picker & Bingkai Avatar Kosmetik
 *Implementasi File:* [`AvatarPickerModal.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/ui/Pages/Profile/AvatarPickerModal.kt), [`AvatarFrameHelper.kt`](file:///c:/Users/Helvetica/Documents/Android%20Project/LearnApplication/app/src/main/java/com/LambdaProject/MathArt/utils/AvatarFrameHelper.kt)
 - **Modal Pemilih Dua Tab:** Kemudahan berpindah antara tab **Pilih Avatar** dan tab **Pilih Bingkai**.
 - **Koleksi Avatar Beragam:** Pemain bebas memilih karakter ilustrasi yang mewakili identitas diri mereka.
-- **Bingkai Avatar Kosmetik Eksklusif:** Dilengkapi kalibrasi presisi posisi mahkota/ornamen kosmetik pada avatar:
+- **Bingkai Avatar Kosmetik Eksklusif:** Dilengkapi kalibrasi presisi posisi ornamen kosmetik pada avatar:
   - 🥉 **Bronze Rune** *(Unlocks Level 3)*: Bingkai perunggu bertatahkan batu safir.
   - 🌌 **Celestial Ring** *(Unlocks Level 6)*: Lingkaran kosmis astral dengan pendaran cahaya cyan.
   - 👑 **Sun Crown** *(Unlocks Level 10)*: Mahkota surya emas bercahaya dengan sayap suci.
@@ -102,29 +138,18 @@ Pemain mengumpulkan saldo EXP kumulatif untuk meniti 15 jenjang kemahiran, membu
 
 Sistem progresi dirancang adil dan seimbang agar mendorong pemahaman materi secara konsisten:
 
-1. **Math Arena:**
+1. **Materi Pembelajaran (First-Time Clear Reward):**
+   - Menuntaskan seluruh bab bacaan materi memberikan hadiah EXP substansial (misal +150 EXP) yang hanya dapat diklaim satu kali (*anti-farming*).
+2. **Math Arena:**
+   - **Mode Belajar:** Menjawab soal dan membaca ulasan pembahasan tanpa timer.
    - **Mode Mandiri:** Menuntaskan kuis per topik matematika dengan bonus evaluasi kecepatan dan ketelitian.
-   - **Mode Duel:** Memenangkan duel kuis matematika 1v1 melawan kompetitor.
-   - *Formula Cerdas:* Dilengkapi bonus akurasi (50%), kecepatan menjawab (25%), dan streak jawaban benar (25%).
-2. **Mathventure (Mode Eksplorasi):**
-   - Menjelajahi ubin wilayah baru di peta.
-   - Menyelesaikan tantangan kuis di stasiun pos matematika.
-   - Menemukan dan membuka peti harta karun (*chests*).
-   - Mengalahkan monster dan boss matematika.
-   - Menuntaskan target misi objektif (*Missions*).
-3. **Pencapaian (Achievements):**
+   - **Mode Duel:** Memenangkan duel kuis matematika 1v1 melawan kompetitor (formula akurasi 50%, kecepatan 25%, streak 25%).
+3. **Mathventure (Mode Eksplorasi):**
+   - Menjelajahi ubin wilayah baru di peta, menuntaskan tantangan pos stasiun, membuka peti harta karun, dan menaklukkan bos matematika.
+4. **Pencapaian (Achievements):**
    - Meraih milestone belajar tertentu, rekor streak kuis, dan penyelesaian seluruh materi bab.
-4. **Mekanisme Anti-Grinding (*Repeat-Play Multiplier*):**
-   - Pengulangan sesi materi/kuis yang sama menggunakan sistem reduksi perolehan EXP secara bertahap (1.0x → 0.8x → 0.6x → 0.4x → 0.3x) guna memotivasi siswa mempelajari topik-topik baru.
-
----
-
-## 🎁 Variasi Hadiah & Kosmetik Profil
-
-- 🎖️ **Emblem:** Lencana kehormatan visual yang disematkan pada profil. Mengaktifkan emblem juga memicu efek gaya tipografi **WordArt** berwarna gradien khusus pada nama pengguna.
-- 🏷️ **Tag Gelar (Title Badges):** Label status tingkat kemahiran (mulai dari *Novice* hingga *Scholar*) dengan palet warna dan ornamen gradien khusus.
-- 🖼️ **Avatar Frame:** Bingkai kosmetik berornamen yang membungkus foto profil pengguna di seluruh tampilan aplikasi.
-- 🧪 **Power-Up Tempur & Penjelajahan:** *Chrono Freeze*, *Battle Shield*, *Torch*, *Lantern*, *Healing Vial*, dan *Magic Key* yang disimpan di dalam tas (*Inventory Bag*) untuk membantu menyelesaikan rute-rute menantang.
+5. **Mekanisme Anti-Grinding (*Repeat-Play Multiplier*):**
+   - Pengulangan sesi materi/kuis yang sama menggunakan sistem proteksi atau reduksi perolehan EXP guna memotivasi siswa mempelajari topik-topik baru.
 
 ---
 
@@ -155,6 +180,7 @@ Sistem progresi dirancang adil dan seimbang agar mendorong pemahaman materi seca
 - **UI Framework:** [Jetpack Compose](https://developer.android.com/jetpack/compose) dengan Material Design 3
 - **Dependency Injection:** [Dagger Hilt](https://dagger.dev/hilt/)
 - **Backend & Database:** [Firebase Firestore](https://firebase.google.com/docs/firestore), [Firebase Authentication](https://firebase.google.com/docs/auth)
+- **Arsitektur Konten:** Server-Driven Content (SDC) dengan renderer blok Compose dinamis
 - **Manajemen State & Navigasi:** Jetpack Navigation Compose, ViewModel, Coroutines & Flow
 
 ---
@@ -164,9 +190,14 @@ Sistem progresi dirancang adil dan seimbang agar mendorong pemahaman materi seca
 ```text
 app/src/main/java/com/LambdaProject/MathArt/
 ├── data/
-│   └── model/
-│       ├── LevelProgression.kt         # Definisi 15 level, sistem reward & kalkulator EXP
-│       └── Mission.kt                  # Definisi objektif & misi penjelajahan Mathventure
+│   ├── model/
+│   │   ├── LevelProgression.kt         # Definisi 15 level, sistem reward & kalkulator EXP
+│   │   ├── MaterialContentModel.kt     # Model data Server-Driven Content (SDC) modular
+│   │   └── Mission.kt                  # Definisi objektif & misi penjelajahan Mathventure
+│   └── repository/
+│       ├── AuthRepository.kt           # Manajemen autentikasi, verifikasi & reset password
+│       ├── MaterialRepository.kt       # Pengambilan & caching konten materi dinamis Firestore
+│       └── SessionRepository.kt        # Pencatatan siklus sesi belajar pengguna
 ├── ui/
 │   ├── Pages/
 │   │   ├── Dashboard/
@@ -174,10 +205,21 @@ app/src/main/java/com/LambdaProject/MathArt/
 │   │   ├── Exploration/
 │   │   │   ├── DynamicMapModal.kt      # Modal peta interaktif untuk eksplorasi Mathventure
 │   │   │   └── BagModal.kt             # Modal inventaris power-up & perlengkapan pemain
+│   │   ├── Material/
+│   │   │   ├── DynamicSectionScreen.kt # Renderer modular blok konten materi dari server
+│   │   │   ├── MaterialPage.kt         # Container utama pager materi, kuis & hasil belajar
+│   │   │   ├── QuizScreen.kt           # Layar evaluasi kuis interaktif per materi
+│   │   │   └── SummaryScreen.kt        # Layar rangkuman hasil belajar & klaim reward EXP
 │   │   ├── Multiplayer/
-│   │   │   └── DuelMatchmakingOverlay.kt # Overlay matchmaking radar untuk mode duel 1v1
+│   │   │   ├── DuelMatchmakingOverlay.kt # Overlay matchmaking radar untuk mode duel 1v1
+│   │   │   ├── LearningExplanationOverlay.kt # Overlay kartu pembahasan instan Mode Belajar
+│   │   │   ├── OnlineQuizLanding.kt    # Beranda Math Arena dengan pembeda Mode Belajar vs Duel
+│   │   │   ├── OnlineQuizLobby.kt      # Lobi kuis dengan penyesuaian Mode Belajar
+│   │   │   └── OnlineQuizMaster.kt     # Engine pengerjaan kuis interaktif & pembahasan
 │   │   └── Profile/
 │   │       ├── AvatarPickerModal.kt    # Dialog pemilihan avatar & bingkai kosmetik
+│   │       ├── EditProfileModal.kt     # Modal pengubahan profil, email & password akun
+│   │       ├── EmailVerificationModal.kt # Dialog verifikasi email pengguna
 │   │       ├── LearningReportPage.kt   # Halaman analitik performa belajar siswa (Eksperimental)
 │   │       ├── LevelRoadModal.kt       # Modal tangga klaim reward 15 level & manajemen gelar
 │   │       └── ProfileHeader.kt        # Header halaman profil dengan avatar berbingkai

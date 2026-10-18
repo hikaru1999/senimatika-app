@@ -28,6 +28,8 @@ fun ProfileScreen(navController: NavController) {
     val unlockedAchievements = profileViewModel.unlockedAchievements
 
     var isLoggingOut by remember { mutableStateOf(false) }
+    var showEditProfileModal by remember { mutableStateOf(false) }
+    var showVerificationModalDirectly by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLoggingOut) {
         if (isLoggingOut) {
@@ -61,6 +63,54 @@ fun ProfileScreen(navController: NavController) {
                     .background(Color(0xFFF8FAFC)),
                 verticalArrangement = Arrangement.Top
             ) {
+                if (showEditProfileModal) {
+                    EditProfileModal(
+                        currentFullName = fullName,
+                        currentGrade = profileViewModel.grade.value,
+                        currentKelas = profileViewModel.kelas.value,
+                        currentEmail = email,
+                        isEmailVerified = profileViewModel.isEmailVerified.value,
+                        onSaveProfile = { name, grade, kelas, onResult ->
+                            profileViewModel.updateProfileInfo(name, grade, kelas, onResult)
+                        },
+                        onUpdateEmail = { newEmail, currentPassword, keepLoggedIn, onResult ->
+                            profileViewModel.updateEmail(newEmail, currentPassword, keepLoggedIn) { success, msg ->
+                                onResult(success, msg)
+                                if (success && !keepLoggedIn) {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            }
+                        },
+                        onUpdatePassword = { currentPassword, newPassword, keepLoggedIn, onResult ->
+                            profileViewModel.updatePassword(currentPassword, newPassword, keepLoggedIn) { success, msg ->
+                                onResult(success, msg)
+                                if (success && !keepLoggedIn) {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            }
+                        },
+                        onOpenEmailVerification = {
+                            showEditProfileModal = false
+                            showVerificationModalDirectly = true
+                        },
+                        onDismiss = { showEditProfileModal = false }
+                    )
+                }
+
+                if (showVerificationModalDirectly) {
+                    EmailVerificationModal(
+                        isEmailVerified = profileViewModel.isEmailVerified.value,
+                        email = email,
+                        onResendEmail = { profileViewModel.resendVerificationEmail(it) },
+                        onCheckStatus = { profileViewModel.checkAndReloadEmailVerification(it) },
+                        onDismiss = { showVerificationModalDirectly = false }
+                    )
+                }
+
                 ProfileHeader(
                     fullName = fullName,
                     email = email,
@@ -81,6 +131,13 @@ fun ProfileScreen(navController: NavController) {
                     onSelectFrame = { profileViewModel.setActiveFrame(it) },
                     onAvatarChanged = { newAvatar ->
                         profileViewModel.updateAvatar(newAvatar)
+                    },
+                    isEmailVerified = profileViewModel.isEmailVerified.value,
+                    onResendVerification = { onResult ->
+                        profileViewModel.resendVerificationEmail(onResult)
+                    },
+                    onCheckVerificationStatus = { onResult ->
+                        profileViewModel.checkAndReloadEmailVerification(onResult)
                     }
                 )
                 ProfileBody(
@@ -89,6 +146,7 @@ fun ProfileScreen(navController: NavController) {
                     activeSessions = activeSessions,
                     unlockedAchievements = unlockedAchievements,
                     isLoggingOut = isLoggingOut,
+                    onEditProfileClicked = { showEditProfileModal = true },
                     onLogoutClicked = { isLoggingOut = true }
                 )
                 Spacer(modifier = Modifier.height(16.dp))

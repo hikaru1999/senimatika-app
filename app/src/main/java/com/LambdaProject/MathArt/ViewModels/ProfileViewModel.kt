@@ -10,20 +10,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.LambdaProject.MathArt.data.DataMaterials
+import com.LambdaProject.MathArt.data.DataAchievements
 import com.LambdaProject.MathArt.data.model.MaterialItem
 import com.LambdaProject.MathArt.data.model.unlockExplorerAchievement
 import com.LambdaProject.MathArt.data.model.StudyDurationManager
+import com.LambdaProject.MathArt.data.model.RecentQuizActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
+import com.LambdaProject.MathArt.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class  ProfileViewModel @Inject constructor(
     private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     private val _username = mutableStateOf("User")
@@ -34,6 +38,15 @@ class  ProfileViewModel @Inject constructor(
 
     private val _email = mutableStateOf("Email Tidak Diketahui")
     val email: State<String> = _email
+
+    private val _grade = mutableStateOf("")
+    val grade: State<String> = _grade
+
+    private val _kelas = mutableStateOf("")
+    val kelas: State<String> = _kelas
+
+    private val _isEmailVerified = mutableStateOf(auth.currentUser?.isEmailVerified == true)
+    val isEmailVerified: State<Boolean> = _isEmailVerified
 
     private val _coins = mutableIntStateOf(0)
     val coins: State<Int> = _coins
@@ -93,8 +106,9 @@ class  ProfileViewModel @Inject constructor(
     private val _totalOnlinePoints = mutableIntStateOf(0)
     val totalOnlinePoints: State<Int> = _totalOnlinePoints
 
-    private val _recentOnlineQuizzes = mutableStateListOf<Pair<String, Int>>()
-    val recentOnlineQuizzes: List<Pair<String, Int>> = _recentOnlineQuizzes
+    private val _recentOnlineQuizzes = mutableStateListOf<RecentQuizActivity>()
+    val recentOnlineQuizzes: List<RecentQuizActivity> = _recentOnlineQuizzes
+    private val quizTitleCache = mutableMapOf<String, String>()
 
     private val _standardQuizCount = mutableIntStateOf(0)
     val standardQuizCount: State<Int> = _standardQuizCount
@@ -105,15 +119,34 @@ class  ProfileViewModel @Inject constructor(
     private val _isReportLoaded = mutableStateOf(false)
     val isReportLoaded: State<Boolean> = _isReportLoaded
 
-    val userId = auth.currentUser?.uid ?: ""
+    val userId: String get() = auth.currentUser?.uid ?: ""
 
     init {
         checkAndResetDuration()
+        checkAndReloadEmailVerification()
         loadUserProfile()
         loadActiveSessions()
         observeStudyDuration()
         observeAchievements()
         loadLearningReport()
+    }
+
+    fun checkAndReloadEmailVerification(onComplete: ((Boolean) -> Unit)? = null) {
+        viewModelScope.launch {
+            val verified = authRepo.reloadEmailVerificationStatus()
+            _isEmailVerified.value = verified
+            onComplete?.invoke(verified)
+        }
+    }
+
+    fun resendVerificationEmail(onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = authRepo.sendEmailVerificationToCurrentUser()
+            result.fold(
+                onSuccess = { onResult(true, it) },
+                onFailure = { onResult(false, it.message ?: "Gagal mengirim email verifikasi") }
+            )
+        }
     }
 
     private fun loadUserProfile() {
@@ -129,7 +162,24 @@ class  ProfileViewModel @Inject constructor(
                 if (doc != null && doc.exists()) {
                     _username.value = doc.getString("username") ?: "User"
                     _fullName.value = doc.getString("fullname") ?: "User"
-                    _email.value = doc.getString("email") ?: "Email Belum Didaftarkan"
+                    
+                    val authEmail = auth.currentUser?.email
+                    val firestoreEmail = doc.getString("email")
+                    val effectiveEmail = if (!authEmail.isNullOrBlank()) authEmail else (firestoreEmail ?: "Email Belum Didaftarkan")
+                    _email.value = effectiveEmail
+
+                    // Auto-sync jika Firestore berbeda dengan Firebase Auth (misal setelah ganti email)
+                    if (!authEmail.isNullOrBlank() && firestoreEmail != authEmail) {
+                        try {
+                            firestore.collection("users").document(uid).update("email", authEmail)
+                        } catch (_: Exception) {}
+                    }
+
+                    _grade.value = doc.getString("grade") ?: ""
+                    _kelas.value = doc.getString("kelas") ?: ""
+                    if (auth.currentUser?.isEmailVerified == true || doc.getBoolean("isEmailVerified") == true) {
+                        _isEmailVerified.value = true
+                    }
                     _coins.intValue = doc.getLong("coins")?.toInt() ?: 0
                     _avatar.value = doc.getString("avatar") ?: com.LambdaProject.MathArt.utils.AvatarHelper.DEFAULT_AVATAR
                     
@@ -218,6 +268,75 @@ class  ProfileViewModel @Inject constructor(
             }
     }
 
+    fun updateProfileInfo(
+        newFullName: String,
+        newGrade: String,
+        newKelas: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val uid = userId
+        if (uid.isEmpty()) {
+            onResult(false, "Sesi login tidak valid")
+            return
+        }
+        viewModelScope.launch {
+            val result = authRepo.updateUserProfile(uid, newFullName, newGrade, newKelas)
+            result.fold(
+                onSuccess = { onResult(true, "Data profil berhasil diperbarui!") },
+                onFailure = { onResult(false, it.message ?: "Gagal memperbarui profil") }
+            )
+        }
+    }
+
+    fun updateEmail(
+        newEmail: String,
+        currentPassword: String,
+        keepLoggedIn: Boolean = true,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        val uid = userId
+        if (uid.isEmpty()) {
+            onResult(false, "Sesi login tidak valid")
+            return
+        }
+        viewModelScope.launch {
+            val result = authRepo.updateUserEmail(
+                userId = uid,
+                newEmail = newEmail,
+                currentPassword = currentPassword,
+                username = _username.value,
+                keepLoggedIn = keepLoggedIn
+            )
+            result.fold(
+                onSuccess = { msg ->
+                    if (keepLoggedIn) {
+                        _email.value = newEmail.trim().lowercase()
+                        _isEmailVerified.value = false
+                    }
+                    onResult(true, msg)
+                },
+                onFailure = { onResult(false, it.message ?: "Gagal memperbarui email") }
+            )
+        }
+    }
+
+    fun updatePassword(
+        currentPassword: String,
+        newPassword: String,
+        keepLoggedIn: Boolean = true,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = authRepo.updateUserPassword(currentPassword, newPassword, keepLoggedIn)
+            result.fold(
+                onSuccess = { 
+                    onResult(true, if (keepLoggedIn) "Kata sandi berhasil diperbarui!" else "Kata sandi berhasil diperbarui. Silakan login kembali.") 
+                },
+                onFailure = { onResult(false, it.message ?: "Gagal memperbarui kata sandi") }
+            )
+        }
+    }
+
     private fun loadActiveSessions() {
         firestore.collection("sessions")
             .whereEqualTo("userId", userId)
@@ -230,8 +349,12 @@ class  ProfileViewModel @Inject constructor(
             }
     }
 
+    private var studyDurationListener: ListenerRegistration? = null
+
     private fun observeStudyDuration() {
-        StudyDurationManager.observeStudyDuration(userId) { duration ->
+        if (userId.isEmpty()) return
+        studyDurationListener?.remove()
+        studyDurationListener = StudyDurationManager.observeStudyDuration(userId) { duration ->
             _studyDuration.longValue = duration
             unlockExplorerAchievement(userId, duration)
         }
@@ -252,9 +375,12 @@ class  ProfileViewModel @Inject constructor(
                 }
 
                 if (snapshots != null) {
+                    val validAchievementNames = DataAchievements.map { a -> a.name }.toSet()
                     _unlockedAchievements.clear()
                     _unlockedAchievements.addAll(
                         snapshots.mapNotNull { it.getString("name") }
+                            .filter { it in validAchievementNames }
+                            .distinct()
                     )
                     Log.d("ProfileViewModel", "Achievements updated: ${_unlockedAchievements.size}")
                 }
@@ -263,9 +389,7 @@ class  ProfileViewModel @Inject constructor(
 
     private fun checkAndResetDuration() {
         if (userId.isNotEmpty()) {
-            StudyDurationManager.checkAndResetWeeklyDuration(userId) {
-                observeStudyDuration()
-            }
+            StudyDurationManager.checkAndResetWeeklyDuration(userId)
         }
     }
 
@@ -301,10 +425,9 @@ class  ProfileViewModel @Inject constructor(
 
         firestore.collection("online_quiz_results")
             .whereEqualTo("userId", uid)
-            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snapshot ->
-                val documents = snapshot.documents
+                val documents = snapshot.documents.sortedByDescending { it.getLong("timestamp") ?: 0L }
                 _onlineQuizCount.intValue = documents.size
                 var maxScore = 0
                 var sumPoints = 0
@@ -313,12 +436,42 @@ class  ProfileViewModel @Inject constructor(
                 documents.forEach { doc ->
                     val points = doc.getLong("totalPoints")?.toInt() ?: 0
                     val materialId = doc.getString("materialId") ?: ""
+                    val storedTitle = doc.getString("quizTitle") ?: doc.getString("title") ?: ""
                     sumPoints += points
                     if (points > maxScore) {
                         maxScore = points
                     }
-                    if (_recentOnlineQuizzes.size < 3) {
-                        _recentOnlineQuizzes.add(Pair(materialId, points))
+                    if (_recentOnlineQuizzes.size < 5 && materialId.isNotBlank()) {
+                        val staticTitle = DataMaterials.find { it.id.equals(materialId, ignoreCase = true) }?.title
+                        val cachedTitle = quizTitleCache[materialId]
+
+                        val resolvedTitle = when {
+                            storedTitle.isNotBlank() -> storedTitle
+                            !cachedTitle.isNullOrBlank() -> cachedTitle
+                            !staticTitle.isNullOrBlank() -> staticTitle
+                            else -> ""
+                        }
+
+                        val displayTitle = if (resolvedTitle.isNotBlank()) {
+                            resolvedTitle
+                        } else if (materialId.length >= 15 && materialId.none { it.isWhitespace() }) {
+                            "Memuat judul..."
+                        } else {
+                            materialId.replace("_", " ")
+                        }
+
+                        _recentOnlineQuizzes.add(
+                            RecentQuizActivity(
+                                id = materialId,
+                                title = displayTitle,
+                                points = points,
+                                category = "Math Arena"
+                            )
+                        )
+
+                        if (resolvedTitle.isBlank()) {
+                            resolveQuizTitle(materialId, doc.reference)
+                        }
                     }
                 }
                 _highestOnlineScore.intValue = maxScore
@@ -338,9 +491,67 @@ class  ProfileViewModel @Inject constructor(
             }
     }
 
+    private fun resolveQuizTitle(materialId: String, docRef: com.google.firebase.firestore.DocumentReference? = null) {
+        if (materialId.isBlank()) return
+
+        firestore.collection("online_quizzes").document(materialId).get()
+            .addOnSuccessListener { doc ->
+                val title = doc.getString("title")
+                    ?: doc.getString("materi")
+                    ?: doc.getString("name")
+                if (!title.isNullOrBlank()) {
+                    updateRecentQuizTitle(materialId, title)
+                    docRef?.update("quizTitle", title)
+                } else {
+                    firestore.collection("materials").document(materialId).get()
+                        .addOnSuccessListener { matDoc ->
+                            val matTitle = matDoc.getString("title")
+                                ?: matDoc.getString("nama")
+                                ?: matDoc.getString("name")
+                            if (!matTitle.isNullOrBlank()) {
+                                updateRecentQuizTitle(materialId, matTitle)
+                                docRef?.update("quizTitle", matTitle)
+                            } else {
+                                updateRecentQuizTitle(materialId, materialId.replace("_", " "))
+                            }
+                        }
+                        .addOnFailureListener {
+                            updateRecentQuizTitle(materialId, materialId.replace("_", " "))
+                        }
+                }
+            }
+            .addOnFailureListener {
+                firestore.collection("materials").document(materialId).get()
+                    .addOnSuccessListener { matDoc ->
+                        val matTitle = matDoc.getString("title")
+                            ?: matDoc.getString("nama")
+                            ?: matDoc.getString("name")
+                        if (!matTitle.isNullOrBlank()) {
+                            updateRecentQuizTitle(materialId, matTitle)
+                            docRef?.update("quizTitle", matTitle)
+                        } else {
+                            updateRecentQuizTitle(materialId, materialId.replace("_", " "))
+                        }
+                    }
+                    .addOnFailureListener {
+                        updateRecentQuizTitle(materialId, materialId.replace("_", " "))
+                    }
+            }
+    }
+
+    private fun updateRecentQuizTitle(materialId: String, newTitle: String) {
+        quizTitleCache[materialId] = newTitle
+        for (i in _recentOnlineQuizzes.indices) {
+            if (_recentOnlineQuizzes[i].id == materialId) {
+                _recentOnlineQuizzes[i] = _recentOnlineQuizzes[i].copy(title = newTitle)
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         achievementListener?.remove()
         userDocListener?.remove()
+        studyDurationListener?.remove()
     }
 }

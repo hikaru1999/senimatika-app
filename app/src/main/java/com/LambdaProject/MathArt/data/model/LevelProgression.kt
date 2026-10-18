@@ -398,3 +398,72 @@ suspend fun claimLevelReward(
         Result.failure(e)
     }
 }
+
+/**
+ * Klaim reward EXP materi (bersifat first-time reward / 1x per materi per akun).
+ * Hanya berhasil jika pengguna mengunjungi SummaryScreen pertama kalinya.
+ * Mengembalikan jumlah EXP yang berhasil diberikan (misal 150), atau 0 jika sudah pernah diklaim sebelumnya.
+ */
+suspend fun claimMaterialExpReward(
+    userId: String,
+    materialId: String,
+    expAmount: Int
+): Result<Int> {
+    if (userId.isBlank() || materialId.isBlank() || expAmount <= 0) {
+        return Result.success(0)
+    }
+    val db = Firebase.firestore
+    val userRef = db.collection("users").document(userId)
+
+    return try {
+        val granted = db.runTransaction { transaction ->
+            val snapshot = transaction.get(userRef)
+            val claimedList = (snapshot.get("claimedMaterialRewards") as? List<*>)
+                ?.mapNotNull { it as? String } ?: emptyList()
+
+            // Jika sudah pernah diklaim untuk materialId ini, jangan berikan EXP lagi
+            if (claimedList.contains(materialId)) {
+                return@runTransaction 0
+            }
+
+            val currentExp = snapshot.getLong("exp") ?: 0L
+            val oldLevel = snapshot.getLong("level")?.toInt() ?: getLevelInfoForExp(currentExp).level
+
+            val newExp = currentExp + expAmount
+            val newLevelInfo = getLevelInfoForExp(newExp)
+            val newLevel = newLevelInfo.level
+
+            val updates = mutableMapOf<String, Any>(
+                "exp" to newExp,
+                "level" to newLevel,
+                "claimedMaterialRewards" to FieldValue.arrayUnion(materialId)
+            )
+
+            // Jika naik level dari reward materi
+            if (newLevel > oldLevel) {
+                val notifDocId = "level_up_${newLevel}_${System.currentTimeMillis()}"
+                val notifRef = userRef.collection("achievements").document(notifDocId)
+                val notifData = hashMapOf(
+                    "name" to "Naik ke Level $newLevel! (${newLevelInfo.title})",
+                    "title" to "Naik ke Level $newLevel! (${newLevelInfo.title})",
+                    "message" to "Selamat! Kamu telah mencapai Level $newLevel setelah menyelesaikan materi!",
+                    "type" to "LEVEL_UP",
+                    "level" to newLevel,
+                    "timestamp" to Timestamp.now(),
+                    "isUnlocked" to true,
+                    "isRead" to false,
+                    "notified" to true
+                )
+                transaction.set(notifRef, notifData, SetOptions.merge())
+            }
+
+            transaction.update(userRef, updates)
+            expAmount
+        }.await()
+
+        Result.success(granted)
+    } catch (e: Exception) {
+        Log.e("LevelProgression", "Gagal klaim EXP materi $materialId: ${e.message}", e)
+        Result.failure(e)
+    }
+}

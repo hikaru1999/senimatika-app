@@ -10,6 +10,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -76,10 +78,17 @@ fun DashboardBody(
     onMaterialSelected: (MaterialItem) -> Unit
 ) {
     val materialStatusMap by viewModel.materialStatusMap.collectAsState()
+    val materials by viewModel.materialsList.collectAsState()
+    val isMaterialsLoading by viewModel.isMaterialsLoading.collectAsState()
     val userLevel by viewModel.level.collectAsState()
-    val isLoading = materialStatusMap.isEmpty()
+    val isLoading = materialStatusMap.isEmpty() && isMaterialsLoading
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid
+
+    // Filter materi rekomendasi / carousel berdasarkan isHighlight == true
+    val highlightedMaterials = remember(materials) {
+        materials.filter { it.isHighlight }
+    }
 
     Box(
         modifier = Modifier
@@ -91,28 +100,63 @@ fun DashboardBody(
         ) {
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 1. Rekomendasi Materi
+            // 1. Rekomendasi Materi (Hanya materi dengan isHighlight == true)
             SectionTitle(title = "Rekomendasi Materi")
-            if (isLoading) {
+            if (isMaterialsLoading) {
                 MaterialCardSkeleton(
                     modifier = Modifier.fillMaxWidth()
                 )
-            } else {
-                Box(
+            } else if (highlightedMaterials.isEmpty()) {
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(235.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .height(130.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
-                    val pagerState = rememberPagerState(pageCount = { DataMaterials.size })
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.School,
+                                contentDescription = null,
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(30.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Belum ada materi rekomendasi",
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val pagerState = rememberPagerState(pageCount = { highlightedMaterials.size })
 
                     HorizontalPager(
                         state = pagerState,
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         pageSpacing = 16.dp,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
                         verticalAlignment = Alignment.Top
                     ) { page ->
-                        val material = DataMaterials[page]
+                        val material = highlightedMaterials.getOrNull(page) ?: return@HorizontalPager
                         val isActive = materialStatusMap[material.id] == true
 
                         MaterialCard(
@@ -128,6 +172,30 @@ fun DashboardBody(
                             }
                         )
                     }
+
+                    if (highlightedMaterials.size > 1) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(highlightedMaterials.size) { iteration ->
+                                val isSelected = pagerState.currentPage == iteration
+                                val color = if (isSelected) Color(0xFF2563EB) else Color(0xFFCBD5E1)
+                                val width = if (isSelected) 18.dp else 6.dp
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 3.dp)
+                                        .height(5.dp)
+                                        .width(width)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -135,10 +203,11 @@ fun DashboardBody(
 
             // 2. Kategori (Carousel: 4 kategori per page)
             SectionTitle(title = "Kategori")
-            val categoryChunks = remember(DataCategories) {
-                DataCategories.chunked(4)
+            val categories by viewModel.categoriesList.collectAsState()
+            val categoryChunks = remember(categories) {
+                if (categories.isEmpty()) listOf(emptyList()) else categories.chunked(4)
             }
-            val categoryPagerState = rememberPagerState(pageCount = { categoryChunks.size })
+            val categoryPagerState = rememberPagerState(pageCount = { categoryChunks.size.coerceAtLeast(1) })
 
             Box(
                 modifier = Modifier
@@ -152,7 +221,7 @@ fun DashboardBody(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) { pageIndex ->
-                    val chunk = categoryChunks[pageIndex]
+                    val chunk = categoryChunks.getOrNull(pageIndex) ?: emptyList()
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -161,7 +230,11 @@ fun DashboardBody(
                         chunk.forEach { category ->
                             CategoryCard(
                                 category = category,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    val encodedCategory = java.net.URLEncoder.encode(category.name, "UTF-8")
+                                    navController.navigate("category_materials/$encodedCategory")
+                                }
                             )
                         }
                         // Isi sisa slot jika kurang dari 4 kategori agar lebar tetap proporsional
@@ -174,12 +247,43 @@ fun DashboardBody(
                 }
             }
 
+            // Dot Indicator jika total kategori > 4 (1 dot mewakili 1 halaman / 4 kategori)
+            if (categoryChunks.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(categoryChunks.size) { iteration ->
+                        val isSelected = categoryPagerState.currentPage == iteration
+                        val color = if (isSelected) Color(0xFF2563EB) else Color(0xFFCBD5E1)
+                        val width = if (isSelected) 18.dp else 6.dp
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .height(5.dp)
+                                .width(width)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(18.dp))
 
             // 3. Sedang Dipelajari
             SectionTitle(title = "Sedang Dipelajari")
-            val activeSessions = remember(materialStatusMap) {
-                DataMaterials.filter { materialStatusMap[it.id] == true }
+            val activeSessions = remember(materialStatusMap, materials) {
+                val combined = materials.toMutableList()
+                DataMaterials.forEach { dm ->
+                    if (combined.none { it.id == dm.id }) {
+                        combined.add(dm)
+                    }
+                }
+                combined.filter { materialStatusMap[it.id] == true }
             }
             val maxPage by viewModel.userProgressMaxPage.collectAsState()
 
@@ -348,7 +452,8 @@ fun Modifier.dashboardShimmer(
 
 @Composable
 fun MaterialCardSkeleton(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    aspectRatio: Float = 16f / 9f
 ) {
     Card(
         modifier = modifier
@@ -362,7 +467,7 @@ fun MaterialCardSkeleton(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(105.dp)
+                    .aspectRatio(aspectRatio)
                     .dashboardShimmer(RoundedCornerShape(14.dp))
             )
 

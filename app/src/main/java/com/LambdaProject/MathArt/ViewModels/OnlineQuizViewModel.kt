@@ -175,7 +175,8 @@ class OnlineQuizViewModel @Inject constructor(
                             } else {
                                 quiz
                             }
-                            fixedQuiz.copy(id = doc.id)
+                            val isLearning = doc.getBoolean("isLearningMode") ?: quiz.isLearningMode
+                            fixedQuiz.copy(id = doc.id, isLearningMode = isLearning)
                         }
                     }
                     _materials.value = quizList
@@ -283,6 +284,7 @@ class OnlineQuizViewModel @Inject constructor(
                 val quizData = quizDoc.toObject(OnlineQuizDesc::class.java)
                 val isActivated = quizDoc.getBoolean("active") ?: (quizData?.active ?: true)
                 val isRandomized = quizDoc.getBoolean("isRandomized") ?: quizDoc.getBoolean("randomized") ?: (quizData?.isRandomized ?: false)
+                val isLearningMode = quizDoc.getBoolean("isLearningMode") ?: (quizData?.isLearningMode ?: false)
                 val rawQuestionsList = quizDoc.get("questions") as? List<*>
                 val parsedQuestionRefs = rawQuestionsList?.mapNotNull { item ->
                     when (item) {
@@ -290,7 +292,8 @@ class OnlineQuizViewModel @Inject constructor(
                             val id = item["id"] as? String ?: return@mapNotNull null
                             val points = (item["points"] as? Number)?.toInt() ?: 10
                             val timer = (item["timer"] as? Number)?.toInt() ?: 30
-                            QuizQuestionRef(id = id, points = points, timer = timer)
+                            val pembahasan = (item["pembahasan"] as? String) ?: (item["explanation"] as? String)
+                            QuizQuestionRef(id = id, points = points, timer = timer, pembahasan = pembahasan)
                         }
                         else -> null
                     }
@@ -340,6 +343,7 @@ class OnlineQuizViewModel @Inject constructor(
 
                     val qPoints = ref.points.takeIf { it > 0 } ?: (qDoc.getLong("points")?.toInt() ?: 10)
                     val qTimer = ref.timer.takeIf { it > 0 } ?: (qDoc.getLong("timer")?.toInt() ?: 30)
+                    val qPembahasan = ref.pembahasan ?: qDoc.getString("pembahasan") ?: qDoc.getString("explanation")
 
                     OnlineQuizQuestion(
                         questionNumber = index + 1,
@@ -350,7 +354,8 @@ class OnlineQuizViewModel @Inject constructor(
                         correctTextAnswers = correctTextAnswers,
                         type = type,
                         durationSeconds = qTimer,
-                        basePoints = qPoints
+                        basePoints = qPoints,
+                        pembahasan = qPembahasan
                     )
                 }
 
@@ -363,6 +368,11 @@ class OnlineQuizViewModel @Inject constructor(
                 }
 
                 _questions.value = finalQuestions
+                _selectedMaterial.value = (quizData ?: OnlineQuizDesc()).copy(
+                    id = quizDoc.id,
+                    isLearningMode = isLearningMode,
+                    isRandomized = isRandomized
+                )
                 _currentQuestionIndex.value = 0
             } catch (e: Exception) {
                 _isQuizNotFound.value = true
@@ -409,11 +419,12 @@ class OnlineQuizViewModel @Inject constructor(
             }
         }
 
+        val isLearningMode = _selectedMaterial.value?.isLearningMode == true
         val basePoint = if (isCorrect) currentQuestion.basePoints else 0
         val duration = currentQuestion.durationSeconds.coerceAtLeast(1)
         val speedRatio = (timeLeft.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
         val maxTimeBonus = (currentQuestion.basePoints * 0.5f).toInt().coerceAtLeast(5)
-        val timeBonus = if (isCorrect) (maxTimeBonus * speedRatio).toInt() else 0
+        val timeBonus = if (isCorrect && !isLearningMode) (maxTimeBonus * speedRatio).toInt() else 0
 
         val streakBonusPercent = when (correctStreak) {
             1 -> 0.10f
@@ -422,7 +433,7 @@ class OnlineQuizViewModel @Inject constructor(
             else -> 0f
         }
 
-        val streakBonus = if (isCorrect) (currentQuestion.basePoints * streakBonusPercent).toInt() else 0
+        val streakBonus = if (isCorrect && !isLearningMode) (currentQuestion.basePoints * streakBonusPercent).toInt() else 0
         val pointsEarned = basePoint + timeBonus + streakBonus
         val coinsEarned = if (isCorrect) 5 else 0
 
@@ -477,8 +488,13 @@ class OnlineQuizViewModel @Inject constructor(
         val totalStreakBonus = _userAnswers.sumOf { it.streakBonusEarned }
         val calculatedPoints = if (totalPoints > 0) totalPoints else (_currentPoints.value.takeIf { it > 0 } ?: (totalBasePoints + totalTimeBonus + totalStreakBonus))
 
+        val resolvedTitle = _selectedMaterial.value?.title?.takeIf { it.isNotBlank() }
+            ?: _materials.value.find { it.id == materialId }?.title
+            ?: ""
+
         val result = QuizResult(
             materialId = materialId,
+            quizTitle = resolvedTitle,
             userId = userId,
             totalBasePoints = totalBasePoints,
             totalTimeBonus = totalTimeBonus,

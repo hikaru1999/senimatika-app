@@ -30,6 +30,7 @@ import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.ViewModels.OnlineQuizViewModel
 import com.LambdaProject.MathArt.data.model.OnlineQuizDesc
 import com.LambdaProject.MathArt.data.model.OnlineUser
+import com.LambdaProject.MathArt.data.model.QuizQuestionRef
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.ui.Pages.NotFoundScreen
 import com.LambdaProject.MathArt.utils.AvatarHelper
@@ -46,11 +47,12 @@ fun OnlineQuizLobby(
     userId: String,
     initialTab: String = "description"
 ) {
-    val tabKeys = listOf("description", "leaderboard")
-    val tabLabels = listOf("Deskripsi", "Leaderboard")
+    val selectedMaterial by viewModel.selectedMaterial.collectAsState()
+    val isLearningMode = selectedMaterial?.isLearningMode == true
+    val tabKeys = if (isLearningMode) listOf("description") else listOf("description", "leaderboard")
+    val tabLabels = if (isLearningMode) listOf("Deskripsi") else listOf("Deskripsi", "Leaderboard")
     val initialPageIndex = tabKeys.indexOf(initialTab.lowercase()).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = initialPageIndex, pageCount = { tabKeys.size })
-    val selectedMaterial by viewModel.selectedMaterial.collectAsState()
     val userOnlineList by viewModel.userOnlineList.collectAsState()
     val questions by viewModel.questions.collectAsState()
     val userAvatar by viewModel.userAvatar.collectAsState()
@@ -62,6 +64,7 @@ fun OnlineQuizLobby(
     val isCurrentlyNotFound = (selectedMaterial == null && checkComplete) || isQuizNotFound
 
     var isVerifying by remember { mutableStateOf(true) }
+    var docJenjang by remember { mutableStateOf("") }
 
     LaunchedEffect(userId) {
         viewModel.loadUserAvatar(userId)
@@ -89,6 +92,52 @@ fun OnlineQuizLobby(
                 if (task.isSuccessful) {
                     val doc = task.result
                     if (doc != null && doc.exists() && doc.getBoolean("active") == true) {
+                        val j = doc.getString("jenjang") ?: doc.getString("classLevel") ?: ""
+                        if (j.isNotBlank() && !j.equals("Umum", ignoreCase = true)) {
+                            docJenjang = j
+                        }
+
+                        val rawQuestionsList = doc.get("questions") as? List<*>
+                        val parsedQuestionRefs = rawQuestionsList?.mapNotNull { item ->
+                            when (item) {
+                                is Map<*, *> -> {
+                                    val qId = item["id"] as? String ?: return@mapNotNull null
+                                    val points = (item["points"] as? Number)?.toInt() ?: 10
+                                    val timer = (item["timer"] as? Number)?.toInt() ?: 30
+                                    QuizQuestionRef(id = qId, points = points, timer = timer)
+                                }
+                                is String -> QuizQuestionRef(id = item, points = 10, timer = 30)
+                                else -> null
+                            }
+                        } ?: emptyList()
+
+                        val currentMat = selectedMaterial
+                        val questionRefs = parsedQuestionRefs.ifEmpty { currentMat?.questions ?: emptyList() }
+                        val numQ = questionRefs.size.takeIf { it > 0 }
+                            ?: (rawQuestionsList?.size ?: (currentMat?.numberQuestion ?: 0))
+                        val totalSeconds = if (questionRefs.isNotEmpty()) questionRefs.sumOf { it.timer } else (numQ * 30)
+                        val docDur = doc.getLong("durationMinutes")?.toInt() ?: 0
+                        val durMin = if (docDur > 0) docDur else ((totalSeconds + 59) / 60).coerceAtLeast(1)
+                        val isLearningDoc = doc.getBoolean("isLearningMode") ?: (currentMat?.isLearningMode ?: false)
+
+                        val baseMat = currentMat ?: OnlineQuizDesc(
+                            id = doc.id,
+                            title = doc.getString("title") ?: "",
+                            active = doc.getBoolean("active") == true,
+                            isRandomized = doc.getBoolean("isRandomized") == true
+                        )
+
+                        val updatedMat = baseMat.copy(
+                            questions = questionRefs,
+                            numberQuestion = numQ,
+                            durationMinutes = durMin,
+                            classLevel = if (j.isNotBlank()) j else baseMat.classLevel,
+                            description = doc.getString("description") ?: baseMat.description,
+                            rewardCoin = doc.getLong("rewardCoin")?.toInt() ?: baseMat.rewardCoin,
+                            exp = doc.getLong("exp")?.toInt() ?: baseMat.exp,
+                            isLearningMode = isLearningDoc
+                        )
+                        viewModel.selectMaterial(updatedMat)
                         isVerifying = false
                     } else {
                         viewModel.clearSelectedMaterial()
@@ -110,10 +159,12 @@ fun OnlineQuizLobby(
         viewModel.startListeningForChallenges()
     }
 
-    LaunchedEffect(userOnlineList, selectedMaterial) {
-        selectedMaterial?.let { material ->
-            val currentMaterialId = material.id
-            viewModel.fetchLeaderboardForMaterial(currentMaterialId)
+    LaunchedEffect(userOnlineList, selectedMaterial, isLearningMode) {
+        if (!isLearningMode) {
+            selectedMaterial?.let { material ->
+                val currentMaterialId = material.id
+                viewModel.fetchLeaderboardForMaterial(currentMaterialId)
+            }
         }
     }
 
@@ -141,15 +192,37 @@ fun OnlineQuizLobby(
                 topBar = {
                     TopAppBar(
                         title = {
-                            Text(
-                                text = selectedMaterial!!.title,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = interFontFamily,
-                                color = Color(0xFF0F172A),
-                                fontSize = 18.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = selectedMaterial!!.title,
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = interFontFamily,
+                                    color = Color(0xFF0F172A),
+                                    fontSize = 18.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+//                                if (isLearningMode) {
+//                                    Surface(
+//                                        color = Color(0xFF059669).copy(alpha = 0.12f),
+//                                        shape = RoundedCornerShape(6.dp),
+//                                        border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.35f))
+//                                    ) {
+//                                        Text(
+//                                            text = "Mode Belajar",
+//                                            fontSize = 10.5.sp,
+//                                            fontWeight = FontWeight.Bold,
+//                                            fontFamily = interFontFamily,
+//                                            color = Color(0xFF059669),
+//                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+//                                        )
+//                                    }
+//                                }
+                            }
                         },
                         navigationIcon = {
                             IconButton(onClick = { navController.popBackStack() }) {
@@ -172,75 +245,91 @@ fun OnlineQuizLobby(
                         .padding(padding)
                         .background(Color(0xFFF8FAFC))
                 ) {
-                    // Modern Tab Row
-                    Surface(
-                        color = Color.White,
-                        shadowElevation = 1.dp
-                    ) {
-                        TabRow(
-                            selectedTabIndex = pagerState.currentPage,
-                            containerColor = Color.White,
-                            indicator = { tabPositions ->
-                                SecondaryIndicator(
-                                    Modifier
-                                        .tabIndicatorOffset(tabPositions[pagerState.currentPage])
-                                        .height(3.dp)
-                                        .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)),
-                                    color = Color(0xFF4F46E5)
-                                )
-                            },
-                            divider = {
-                                HorizontalDivider(color = Color(0xFFF1F5F9))
-                            }
+                    if (!isLearningMode) {
+                        // Modern Tab Row
+                        Surface(
+                            color = Color.White,
+                            shadowElevation = 1.dp
                         ) {
-                            tabLabels.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = pagerState.currentPage == index,
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(index)
+                            TabRow(
+                                selectedTabIndex = pagerState.currentPage,
+                                containerColor = Color.White,
+                                indicator = { tabPositions ->
+                                    SecondaryIndicator(
+                                        Modifier
+                                            .tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                                            .height(3.dp)
+                                            .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)),
+                                        color = Color(0xFF4F46E5)
+                                    )
+                                },
+                                divider = {
+                                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                                }
+                            ) {
+                                tabLabels.forEachIndexed { index, title ->
+                                    Tab(
+                                        selected = pagerState.currentPage == index,
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(index)
+                                            }
+                                        },
+                                        text = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (index == 0) Icons.Default.Description else Icons.Default.EmojiEvents,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = if (pagerState.currentPage == index) Color(0xFF4F46E5) else Color(0xFF94A3B8)
+                                                )
+                                                Text(
+                                                    text = title,
+                                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium,
+                                                    fontFamily = interFontFamily,
+                                                    fontSize = 13.5.sp,
+                                                    color = if (pagerState.currentPage == index) Color(0xFF4F46E5) else Color(0xFF64748B)
+                                                )
+                                            }
                                         }
-                                    },
-                                    text = {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = if (index == 0) Icons.Default.Description else Icons.Default.EmojiEvents,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                                tint = if (pagerState.currentPage == index) Color(0xFF4F46E5) else Color(0xFF94A3B8)
-                                            )
-                                            Text(
-                                                text = title,
-                                                fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium,
-                                                fontFamily = interFontFamily,
-                                                fontSize = 13.5.sp,
-                                                color = if (pagerState.currentPage == index) Color(0xFF4F46E5) else Color(0xFF64748B)
-                                            )
-                                        }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    HorizontalPager(
-                        state = pagerState,
-                        userScrollEnabled = false,
-                        modifier = Modifier.weight(1f)
-                    ) { page ->
-                        when (tabKeys[page]) {
-                            "description" -> DeskripsiContent(
+                        HorizontalPager(
+                            state = pagerState,
+                            userScrollEnabled = false,
+                            modifier = Modifier.weight(1f)
+                        ) { page ->
+                            when (tabKeys[page]) {
+                                "description" -> DeskripsiContent(
+                                    material = selectedMaterial!!,
+                                    docJenjang = docJenjang,
+                                    userOnlineList = userOnlineList,
+                                    onUserSelected = onUserSelected,
+                                    navController = navController,
+                                    userId = userId,
+                                    onStartDuel = { showMatchmaking = true }
+                                )
+                                "leaderboard" -> LeaderboardTab(materialId = selectedMaterial?.id ?: "")
+                            }
+                        }
+                    } else {
+                        // Learning Mode: Direct content without TabRow or Leaderboard
+                        Box(modifier = Modifier.weight(1f)) {
+                            DeskripsiContent(
                                 material = selectedMaterial!!,
+                                docJenjang = docJenjang,
                                 userOnlineList = userOnlineList,
                                 onUserSelected = onUserSelected,
                                 navController = navController,
                                 userId = userId,
-                                onStartDuel = { showMatchmaking = true }
+                                onStartDuel = { }
                             )
-                            "leaderboard" -> LeaderboardTab(materialId = selectedMaterial?.id ?: "")
                         }
                     }
                 }
@@ -274,6 +363,7 @@ fun OnlineQuizLobby(
 @Composable
 private fun DeskripsiContent(
     material: OnlineQuizDesc,
+    docJenjang: String = "",
     userOnlineList: List<OnlineUser>,
     onUserSelected: (String) -> Unit,
     navController: NavController,
@@ -283,6 +373,20 @@ private fun DeskripsiContent(
     val viewModel: OnlineQuizViewModel = hiltViewModel()
     var isLoading by remember { mutableStateOf(false) }
 
+    val capsuleJenjang = remember(docJenjang, material) {
+        when {
+            docJenjang.isNotBlank() && !docJenjang.equals("Umum", ignoreCase = true) -> docJenjang
+            material.classLevel.isNotBlank() && !material.classLevel.equals("Umum", ignoreCase = true) -> material.classLevel
+            material.title.contains("VII", ignoreCase = true) || material.title.contains("Kelas 7") -> "VII SMP"
+            material.title.contains("VIII", ignoreCase = true) || material.title.contains("Kelas 8") -> "VIII SMP"
+            material.title.contains("IX", ignoreCase = true) || material.title.contains("Kelas 9") -> "IX SMP"
+            material.title.contains("XII", ignoreCase = true) || material.title.contains("Kelas 12") -> "XII SMA"
+            material.title.contains("XI", ignoreCase = true) || material.title.contains("Kelas 11") -> "XI SMA"
+            material.title.contains("X", ignoreCase = true) || material.title.contains("Kelas 10") -> "X SMA"
+            else -> "Semua Jenjang"
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -290,7 +394,7 @@ private fun DeskripsiContent(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 110.dp)
         ) {
-            // 1. Hero Map Banner Card
+            // 1. Hero Map Banner Card dengan quiz_banner.png
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -303,31 +407,37 @@ private fun DeskripsiContent(
                         .shadow(
                             elevation = 6.dp,
                             shape = RoundedCornerShape(22.dp),
-                            spotColor = Color(0xFF4F46E5).copy(alpha = 0.25f)
+                            spotColor = Color(0xFF0284C7).copy(alpha = 0.25f)
                         ),
                     shape = RoundedCornerShape(22.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        if (material.imageRes != 0) {
-                            Image(
-                                painter = painterResource(id = material.imageRes),
-                                contentDescription = material.title,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(Color(0xFF4F46E5), Color(0xFF7C3AED))
+                        // Background Banner Image
+                        Image(
+                            painter = painterResource(id = R.drawable.quiz_banner),
+                            contentDescription = material.title,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            alignment = Alignment.CenterEnd
+                        )
+
+                        // Gradient Scrim Horizontal dari kiri agar teks terbaca jelas dan unsur grafis kanan tetap utuh
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colorStops = arrayOf(
+                                            0.0f to Color(0xFF0F172A).copy(alpha = 0.92f),
+                                            0.55f to Color(0xFF0F172A).copy(alpha = 0.70f),
+                                            0.75f to Color(0xFF0F172A).copy(alpha = 0.20f),
+                                            1.0f to Color.Transparent
                                         )
                                     )
-                            )
-                        }
+                                )
+                        )
 
-                        // Gradient Scrim
+                        // Gradient Scrim Vertikal di bagian bawah
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -335,41 +445,44 @@ private fun DeskripsiContent(
                                     Brush.verticalGradient(
                                         colorStops = arrayOf(
                                             0.0f to Color.Transparent,
-                                            0.5f to Color.Black.copy(alpha = 0.3f),
-                                            1.0f to Color.Black.copy(alpha = 0.8f)
+                                            0.6f to Color.Black.copy(alpha = 0.25f),
+                                            1.0f to Color.Black.copy(alpha = 0.75f)
                                         )
                                     )
                                 )
                         )
 
-                        // Title on Banner
+                        // Title on Banner (vertically left-centered, dibatasi 68% agar tidak overlap dengan desain ilustrasi kanan)
                         Column(
                             modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(16.dp)
+                                .align(Alignment.CenterStart)
+                                .fillMaxWidth(0.68f)
+                                .padding(start = 20.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Surface(
-                                color = Color(0xFF4F46E5).copy(alpha = 0.9f),
+                                color = Color(0xFF0284C7).copy(alpha = 0.95f),
                                 shape = RoundedCornerShape(6.dp),
-                                border = BorderStroke(1.dp, Color(0xFF818CF8))
+                                border = BorderStroke(1.dp, Color(0xFF7DD3FC))
                             ) {
                                 Text(
-                                    text = material.classLevel,
-                                    fontSize = 10.sp,
+                                    text = capsuleJenjang,
+                                    fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = interFontFamily,
                                     color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(8.dp))
                             Text(
                                 text = material.title,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Black,
                                 fontFamily = interFontFamily,
                                 color = Color.White,
-                                maxLines = 1,
+                                lineHeight = 23.sp,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
@@ -385,6 +498,22 @@ private fun DeskripsiContent(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 // Stat Cards Row
+                val questionCount = material.questions.size.takeIf { it > 0 }
+                    ?: material.numberQuestion.takeIf { it > 0 }
+                    ?: 0
+
+                val totalTimeMinutes = when {
+                    material.durationMinutes > 0 -> material.durationMinutes
+                    material.questions.isNotEmpty() -> {
+                        val totalSec = material.questions.sumOf { it.timer }
+                        ((totalSec + 59) / 60).coerceAtLeast(1)
+                    }
+                    questionCount > 0 -> {
+                        ((questionCount * 30 + 59) / 60).coerceAtLeast(1)
+                    }
+                    else -> 0
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -394,13 +523,13 @@ private fun DeskripsiContent(
                     QuizStatItem(
                         icon = R.drawable.ic_no_question,
                         label = "Banyak Soal",
-                        value = "${material.questions.size} Soal",
+                        value = "$questionCount Soal",
                         modifier = Modifier.weight(1f)
                     )
                     QuizStatItem(
                         icon = R.drawable.ic_stopwatch,
                         label = "Total Waktu",
-                        value = "${material.questions.sumOf { it.timer } / 60} Menit",
+                        value = "$totalTimeMinutes Menit",
                         modifier = Modifier.weight(1f)
                     )
                     QuizStatItem(
@@ -473,11 +602,19 @@ private fun DeskripsiContent(
                             fontFamily = interFontFamily,
                             color = Color(0xFF3730A3)
                         )
-                        val rules = listOf(
-                            "Setiap soal memiliki batas waktu yang bisa berbeda-beda.",
-                            "Poin dihitung berdasarkan ketepatan, kecepatan, dan streak dalam menjawab.",
-                            "Skor terbaik akan otomatis dicatat di Leaderboard."
-                        )
+                        val rules = if (material.isLearningMode) {
+                            listOf(
+                                "Mode Belajar: fokus pada pemahaman konsep dan langkah penyelesaian.",
+                                "Seusai menjawab setiap soal, pembahasan solusi akan ditampilkan untuk membantumu belajar.",
+                                "Waktu pengerjaan lebih santai dan hasil kuis tidak dicatat di Leaderboard."
+                            )
+                        } else {
+                            listOf(
+                                "Setiap soal memiliki batas waktu yang bisa berbeda-beda.",
+                                "Poin dihitung berdasarkan ketepatan, kecepatan, dan streak dalam menjawab.",
+                                "Skor terbaik akan otomatis dicatat di Leaderboard."
+                            )
+                        }
 
                         rules.forEach { rule ->
                             Row(
@@ -515,85 +652,133 @@ private fun DeskripsiContent(
             color = Color.White,
             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 14.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = {
-                        isLoading = true
-                        viewModel.selectMaterial(material)
-                        CoroutineScope(Dispatchers.Main).launch {
-                            delay(1200)
-                            navController.navigate("StartQuiz/${material.id}/${userId}")
-                            isLoading = false
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+            if (material.isLearningMode) {
+                Box(
                     modifier = Modifier
-                        .weight(1.5f)
-                        .height(52.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+                        .padding(horizontal = 20.dp, vertical = 14.dp)
+                        .fillMaxWidth()
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(22.dp),
-                            strokeWidth = 2.5.dp
-                        )
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Text(
-                                text = "MULAI KUIS",
-                                fontWeight = FontWeight.Black,
-                                fontFamily = interFontFamily,
-                                fontSize = 13.5.sp,
-                                letterSpacing = 0.5.sp
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            viewModel.selectMaterial(material)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(1200)
+                                navController.navigate("StartQuiz/${material.id}/${userId}")
+                                isLoading = false
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.5.dp
                             )
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Text(
+                                    text = "MULAI BELAJAR",
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = interFontFamily,
+                                    fontSize = 13.5.sp,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
                         }
                     }
                 }
-
-                Button(
-                    onClick = {
-                        viewModel.selectMaterial(material)
-                        onStartDuel()
-                    },
-                    shape = RoundedCornerShape(16.dp),
+            } else {
+                Row(
                     modifier = Modifier
-                        .weight(1.1f)
-                        .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF0284C7)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+                        .padding(horizontal = 20.dp, vertical = 14.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            viewModel.selectMaterial(material)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(1200)
+                                navController.navigate("StartQuiz/${material.id}/${userId}")
+                                isLoading = false
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                        modifier = Modifier
+                            .weight(1.5f)
+                            .height(52.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Bolt,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = Color(0xFFFDE047)
-                        )
-                        Text(
-                            text = "DUEL",
-                            fontWeight = FontWeight.Black,
-                            fontFamily = interFontFamily,
-                            fontSize = 13.sp,
-                            color = Color.White,
-                            letterSpacing = 0.5.sp
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.5.dp
+                            )
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Text(
+                                    text = "MULAI KUIS",
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = interFontFamily,
+                                    fontSize = 13.5.sp,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.selectMaterial(material)
+                            onStartDuel()
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .weight(1.1f)
+                            .height(52.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0284C7)
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Bolt,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFFFDE047)
+                            )
+                            Text(
+                                text = "DUEL",
+                                fontWeight = FontWeight.Black,
+                                fontFamily = interFontFamily,
+                                fontSize = 13.sp,
+                                color = Color.White,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
                     }
                 }
             }
@@ -1117,20 +1302,20 @@ fun OnlineQuizLobbySkeleton() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(38.dp)
-                        .onlineLobbyShimmer(RoundedCornerShape(12.dp))
+                        .onlineLobbyShimmer(RoundedCornerShape(10.dp))
                 )
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(38.dp)
-                        .onlineLobbyShimmer(RoundedCornerShape(12.dp))
+                        .onlineLobbyShimmer(RoundedCornerShape(10.dp))
                 )
             }
         }
@@ -1139,109 +1324,109 @@ fun OnlineQuizLobbySkeleton() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 110.dp)
         ) {
-            // Quiz Hero Card Shimmer
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            // Hero Map Banner Card Shimmer (Tinggi 200dp tepat sesuai banner kuis)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp)
-                            .onlineLobbyShimmer(RoundedCornerShape(14.dp))
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Box(
                             modifier = Modifier
-                                .width(150.dp)
-                                .height(22.dp)
-                                .onlineLobbyShimmer(RoundedCornerShape(6.dp))
+                                .fillMaxSize()
+                                .onlineLobbyShimmer(RoundedCornerShape(22.dp))
                         )
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .width(70.dp)
-                                .height(24.dp)
-                                .onlineLobbyShimmer(RoundedCornerShape(8.dp))
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .height(14.dp)
-                            .onlineLobbyShimmer(RoundedCornerShape(4.dp))
-                    )
-                }
-            }
-
-            // Rules / Features Info Card Shimmer
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(130.dp)
-                            .height(18.dp)
-                            .onlineLobbyShimmer(RoundedCornerShape(4.dp))
-                    )
-                    repeat(3) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                .align(Alignment.CenterStart)
+                                .padding(start = 20.dp, end = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(32.dp)
-                                    .onlineLobbyShimmer(CircleShape)
+                                    .width(75.dp)
+                                    .height(22.dp)
+                                    .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
                             )
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.9f)
-                                    .height(14.dp)
-                                    .onlineLobbyShimmer(RoundedCornerShape(4.dp))
+                                    .fillMaxWidth(0.65f)
+                                    .height(20.dp)
+                                    .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                             )
                         }
                     }
                 }
             }
 
-            // Action Buttons Shimmer
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // Details / Rules Info Card Shimmer
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp)
-                        .onlineLobbyShimmer(RoundedCornerShape(14.dp))
-                )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp)
-                        .onlineLobbyShimmer(RoundedCornerShape(14.dp))
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(140.dp)
+                                .height(18.dp)
+                                .onlineLobbyShimmer(RoundedCornerShape(4.dp))
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            repeat(3) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp)
+                                        .onlineLobbyShimmer(RoundedCornerShape(12.dp))
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Action Buttons Shimmer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .onlineLobbyShimmer(RoundedCornerShape(14.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .onlineLobbyShimmer(RoundedCornerShape(14.dp))
+                    )
+                }
             }
         }
     }

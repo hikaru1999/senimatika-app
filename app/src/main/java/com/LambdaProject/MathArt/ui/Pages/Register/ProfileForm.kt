@@ -264,20 +264,20 @@ fun ProfileForm(
                             .fillMaxWidth()
                             .height(56.dp),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 8.dp,
-                            pressedElevation = 2.dp,
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
                             disabledElevation = 0.dp
                         ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF1976D2),
-                            /* disabledContainerColor = Color(0xFFE0E0E0),*/
-                            disabledContentColor = Color.Gray
+                            disabledContainerColor = if (registerState is RegisterViewModel.RegisterState.Loading) Color(0xFF1976D2).copy(alpha = 0.85f) else Color(0xFFE2E8F0),
+                            disabledContentColor = if (registerState is RegisterViewModel.RegisterState.Loading) Color.White else Color(0xFF94A3B8)
                         ),
                         shape = RoundedCornerShape(16.dp),
                         enabled = allValid && registerState !is RegisterViewModel.RegisterState.Loading && !isSubmitted
                     ) {
                         if (registerState is RegisterViewModel.RegisterState.Loading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                            CircularProgressIndicator(color = Color.White, trackColor = Color.Transparent, modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                         } else {
                             Text(
                                 text = "SELESAIKAN PENDAFTARAN",

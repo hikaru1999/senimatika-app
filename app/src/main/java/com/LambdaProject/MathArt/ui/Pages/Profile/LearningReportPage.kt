@@ -18,8 +18,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.TextUnit
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.LambdaProject.MathArt.BottomNavigationMenu
@@ -160,7 +164,10 @@ fun LearningReportScreen(
                         .padding(16.dp)
                 ) {
                     recentOnlineQuizzes.forEachIndexed { index, quiz ->
-                        val materialName = DataMaterials.find { it.id == quiz.first }?.title ?: quiz.first.replace("_", " ").capitalize()
+                        val materialName = quiz.title.ifBlank {
+                            DataMaterials.find { it.id.equals(quiz.id, ignoreCase = true) }?.title
+                                ?: quiz.id.replace("_", " ")
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -184,16 +191,20 @@ fun LearningReportScreen(
                                         fontSize = 14.sp,
                                         color = Color(0xFF1A237E)
                                     )
-                                    Text(
-                                        text = "Math Arena",
-                                        fontFamily = interFontFamily,
-                                        fontSize = 11.sp,
-                                        color = Color.Gray
-                                    )
+                                    if (quiz.category == "Math Arena") {
+                                        MathArenaBrandingText(fontSize = 11.sp)
+                                    } else {
+                                        Text(
+                                            text = quiz.category,
+                                            fontFamily = interFontFamily,
+                                            fontSize = 11.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
                                 }
                             }
                             Text(
-                                text = "+${quiz.second} Pts",
+                                text = "+${quiz.points} Pts",
                                 fontFamily = interFontFamily,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 14.sp,
@@ -367,7 +378,7 @@ fun StatsOverviewCard(
                     modifier = Modifier.weight(1f),
                     iconRes = R.drawable.ic_quiz_icon,
                     value = "$onlineQuizCount",
-                    label = "Kuis Online",
+                    label = "Math Arena",
                     tint = Color(0xFF2979FF)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -444,14 +455,53 @@ fun StatItemBox(
                     fontSize = 16.sp,
                     color = Color(0xFF1A237E)
                 )
-                Text(
-                    text = label,
-                    fontFamily = interFontFamily,
-                    fontSize = 10.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Bold
-                )
+                if (label == "Math Arena") {
+                    MathArenaBrandingText(fontSize = 10.sp)
+                } else {
+                    Text(
+                        text = label,
+                        fontFamily = interFontFamily,
+                        fontSize = 10.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+fun MathArenaBrandingText(
+    fontSize: TextUnit = 11.sp,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = buildAnnotatedString {
+            withStyle(
+                SpanStyle(
+                    color = Color(0xFF0F172A),
+                    fontWeight = FontWeight.Bold
+                )
+            ) {
+                append("Math ")
+            }
+            withStyle(
+                SpanStyle(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF2563EB),
+                            Color(0xFF0284C7)
+                        )
+                    ),
+                    fontWeight = FontWeight.ExtraBold
+                )
+            ) {
+                append("Arena")
+            }
+        },
+        fontFamily = interFontFamily,
+        fontSize = fontSize,
+        modifier = modifier
+    )
 }

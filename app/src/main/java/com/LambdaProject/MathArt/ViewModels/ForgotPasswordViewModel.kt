@@ -16,11 +16,35 @@ class ForgotPasswordViewModel @Inject constructor(
         object Idle : ForgotPasswordState()
         object Loading : ForgotPasswordState()
         data class Success(val message: String) : ForgotPasswordState()
+        data class OtpSent(val email: String, val username: String) : ForgotPasswordState()
+        object ResetSuccess : ForgotPasswordState()
         data class Error(val message: String) : ForgotPasswordState()
     }
 
     private val _state = MutableStateFlow<ForgotPasswordState>(ForgotPasswordState.Idle)
     val state: StateFlow<ForgotPasswordState> = _state
+
+    fun sendResetOtp(identifier: String) {
+        viewModelScope.launch {
+            _state.value = ForgotPasswordState.Loading
+            val result = authRepo.sendPasswordResetOtp(identifier)
+            _state.value = result.fold(
+                onSuccess = { (email, username) -> ForgotPasswordState.OtpSent(email, username) },
+                onFailure = { ForgotPasswordState.Error(it.message ?: "Terjadi kesalahan") }
+            )
+        }
+    }
+
+    fun verifyAndResetPassword(email: String, otpCode: String, newPassword: String) {
+        viewModelScope.launch {
+            _state.value = ForgotPasswordState.Loading
+            val result = authRepo.verifyAndResetPasswordWithOtp(email, otpCode, newPassword)
+            _state.value = result.fold(
+                onSuccess = { ForgotPasswordState.ResetSuccess },
+                onFailure = { ForgotPasswordState.Error(it.message ?: "Gagal memperbarui kata sandi") }
+            )
+        }
+    }
 
     fun sendResetPassword(identifier: String) {
         viewModelScope.launch {

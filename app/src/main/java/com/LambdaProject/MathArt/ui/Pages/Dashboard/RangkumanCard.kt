@@ -8,8 +8,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -23,17 +25,47 @@ import com.LambdaProject.MathArt.data.*
 import com.LambdaProject.MathArt.data.repository.SessionRepository
 import com.LambdaProject.MathArt.interFontFamily
 import com.LambdaProject.MathArt.data.model.MaterialItem
+import com.LambdaProject.MathArt.data.model.MaterialDocument
 import com.LambdaProject.MathArt.data.model.unlockPemulaAchievement
 import com.LambdaProject.MathArt.ui.Pages.Material.updateAccessiblePage
+import com.LambdaProject.MathArt.ui.components.MathText
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 
 @SuppressLint("FrequentlyChangingValue")
 @Composable
 fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, onSesiDisimpan: () -> Unit) {
     val scrollState = rememberScrollState()
     val isScrolled = scrollState.value > 10
-    val steps = DataMaterialStep[material.id] ?: emptyList()
-    val goals = materialGoals[material.id] ?: emptyList()
-    val deskripsi = materialDescriptions[material.id] ?: "Deskripsi tidak tersedia."
+
+    var materialDoc by remember { mutableStateOf<MaterialDocument?>(null) }
+
+    LaunchedEffect(material.id) {
+        com.LambdaProject.MathArt.data.repository.MaterialRepository.getMaterial(
+            materialId = material.id,
+            onSuccess = { doc ->
+                materialDoc = doc
+            }
+        )
+    }
+
+    val deskripsi = materialDoc?.description?.ifBlank { null }
+        ?: materialDescriptions[material.id]
+        ?: "Deskripsi tidak tersedia."
+
+    val goals = if (materialDoc?.learningGoals?.isNotEmpty() == true) {
+        materialDoc!!.learningGoals
+    } else {
+        materialGoals[material.id] ?: emptyList()
+    }
+
+    val steps = if (materialDoc?.learningSteps?.isNotEmpty() == true) {
+        materialDoc!!.learningSteps
+    } else {
+        DataMaterialStep[material.id] ?: emptyList()
+    }
+
+    val displayTitle = materialDoc?.title?.ifBlank { material.title } ?: material.title
 
     Surface(
         modifier = Modifier
@@ -74,14 +106,25 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = material.title,
-                            fontFamily = interFontFamily,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 20.sp,
-                            color = Color(0xFF1A237E),
-                            modifier = Modifier.weight(1f)
-                        )
+                        val titleHasFormatting = remember(displayTitle) { hasMathOrFormatting(displayTitle) }
+                        if (titleHasFormatting) {
+                            MathText(
+                                text = displayTitle,
+                                fontSize = 20,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFF1A237E),
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            Text(
+                                text = displayTitle,
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 20.sp,
+                                color = Color(0xFF1A237E),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                         IconButton(
                             onClick = onClose,
                             modifier = Modifier.background(Color(0xFFF5F5F5), CircleShape)
@@ -102,15 +145,26 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
 
                 // Section: Deskripsi
                 RangkumanSectionHeader(title = "Deskripsi Materi")
-                Text(
-                    text = deskripsi,
-                    fontFamily = interFontFamily,
-                    fontSize = 15.sp,
-                    lineHeight = 22.sp,
-                    color = Color.DarkGray,
-                    textAlign = TextAlign.Justify,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
+                val descHasFormatting = remember(deskripsi) { hasMathOrFormatting(deskripsi) }
+                if (descHasFormatting) {
+                    MathText(
+                        text = deskripsi,
+                        fontSize = 15,
+                        color = Color.DarkGray,
+                        textAlign = "justify",
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+                } else {
+                    Text(
+                        text = deskripsi,
+                        fontFamily = interFontFamily,
+                        fontSize = 15.sp,
+                        lineHeight = 22.sp,
+                        color = Color.DarkGray,
+                        textAlign = TextAlign.Justify,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+                }
 
                 // Section: Tujuan
                 RangkumanSectionHeader(title = "Tujuan Pembelajaran")
@@ -121,7 +175,110 @@ fun RangkumanCard(material: MaterialItem, userId: String?, onClose: () -> Unit, 
                 RangkumanSectionHeader(title = "Alur Belajar")
                 TimelineLayout(steps)
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // EXP Reward Banner Card (Placed after Alur Belajar)
+                val expReward = materialDoc?.exp ?: material.exp
+                val isHighlighted = materialDoc?.isHighlight ?: material.isHighlight
+
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color(0xFFFEF3C7),
+                    border = BorderStroke(1.2.dp, Color(0xFFFDE68A)),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFF59E0B),
+                            shadowElevation = 3.dp,
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Bolt,
+                                    contentDescription = "EXP",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(26.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Hadiah Penyelesaian Materi",
+                                    fontFamily = interFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.5.sp,
+                                    color = Color(0xFF92400E)
+                                )
+//                                if (isHighlighted) {
+//                                    Surface(
+//                                        shape = RoundedCornerShape(6.dp),
+//                                        color = Color(0xFFFDE68A),
+//                                        border = BorderStroke(0.6.dp, Color(0xFFF59E0B))
+//                                    ) {
+//                                        Row(
+//                                            verticalAlignment = Alignment.CenterVertically,
+//                                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+//                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+//                                        ) {
+//                                            Icon(
+//                                                imageVector = Icons.Default.Star,
+//                                                contentDescription = null,
+//                                                tint = Color(0xFFB45309),
+//                                                modifier = Modifier.size(10.dp)
+//                                            )
+//                                            Text(
+//                                                text = "Highlight",
+//                                                fontSize = 9.5.sp,
+//                                                fontWeight = FontWeight.Bold,
+//                                                fontFamily = interFontFamily,
+//                                                color = Color(0xFFB45309)
+//                                            )
+//                                        }
+//                                    }
+//                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(2.dp))
+
+                            Text(
+                                text = "+$expReward EXP",
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp,
+                                color = Color(0xFFB45309)
+                            )
+
+                            Spacer(modifier = Modifier.height(2.dp))
+
+                            Text(
+                                text = "Klaim bonus $expReward EXP pertama kali setelah menuntaskan seluruh materi hingga kuis evaluasi.",
+                                fontFamily = interFontFamily,
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF78350F),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Action Button
                 Button(
@@ -216,14 +373,29 @@ fun TimelineLayout(steps: List<String>) {
                     }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = step,
-                    fontFamily = interFontFamily,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.DarkGray,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
+                val stepHasFormatting = remember(step) { hasMathOrFormatting(step) }
+                if (stepHasFormatting) {
+                    MathText(
+                        text = step,
+                        fontSize = 15,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(bottom = 24.dp)
+                    )
+                } else {
+                    Text(
+                        text = step,
+                        fontFamily = interFontFamily,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(bottom = 24.dp)
+                    )
+                }
             }
         }
     }
@@ -251,15 +423,42 @@ fun LearningGoals(goals: List<String>) {
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = goal,
-                        fontFamily = interFontFamily,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.DarkGray
-                    )
+                    val goalHasFormatting = remember(goal) { hasMathOrFormatting(goal) }
+                    if (goalHasFormatting) {
+                        MathText(
+                            text = goal,
+                            fontSize = 14,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.DarkGray,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Text(
+                            text = goal,
+                            fontFamily = interFontFamily,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.DarkGray,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+private fun hasMathOrFormatting(text: String): Boolean {
+    return text.contains("$") ||
+            text.contains("\\") ||
+            text.contains("**") ||
+            text.contains("_") ||
+            text.contains("![") ||
+            text.contains("[") ||
+            text.contains("* ") ||
+            text.contains("- ") ||
+            text.contains("+ ") ||
+            text.contains("•") ||
+            text.contains(Regex("""\d+[\.\)]\s"""))
+}
+

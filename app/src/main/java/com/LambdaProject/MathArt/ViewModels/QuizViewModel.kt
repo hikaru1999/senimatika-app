@@ -5,7 +5,8 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.model.UserAnswer
-import com.LambdaProject.MathArt.data.model.QuizQuestion
+import com.LambdaProject.MathArt.data.model.QuizQuestionItem
+import com.LambdaProject.MathArt.data.model.MaterialDocument
 import com.LambdaProject.MathArt.R
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
@@ -15,31 +16,50 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class QuizViewModel : ViewModel() {
+    private val defaultQuestions = listOf(
+        QuizQuestionItem(
+            id = "q1",
+            imageUrl = "https://i.ibb.co/fYWyyccR/img-kain-besurek.jpg",
+            instruction = "Pilih jenis transformasi yang terjadi pada motif batik tersebut!",
+            options = listOf("Translasi", "Refleksi", "Rotasi", "Dilatasi"),
+            correctAnswers = listOf("Dilatasi", "Rotasi", "Translasi"),
+            questionType = "complex",
+            type = "complex",
+            imageResId = R.drawable.img_kain_besurek
+        ),
+        QuizQuestionItem(
+            id = "q2",
+            imageUrl = "https://i.ibb.co/q3xLxsFt/img-batik-tujuh-rupa.jpg",
+            instruction = "Pilih jenis transformasi yang terjadi pada motif batik tersebut!",
+            options = listOf("Translasi", "Refleksi", "Rotasi", "Dilatasi"),
+            correctAnswers = listOf("Translasi", "Rotasi"),
+            questionType = "complex",
+            type = "complex",
+            imageResId = R.drawable.img_batik_tujuh_rupa
+        ),
+        QuizQuestionItem(
+            id = "q3",
+            imageUrl = "https://i.ibb.co/ycvjK0Cd/img-batik-bunga-melati.jpg",
+            instruction = "Pilih jenis transformasi yang terjadi pada motif batik tersebut!",
+            options = listOf("Translasi", "Refleksi", "Rotasi", "Dilatasi"),
+            correctAnswers = listOf("Translasi", "Refleksi", "Rotasi"),
+            questionType = "complex",
+            type = "complex",
+            imageResId = R.drawable.img_batik_bunga_melati
+        )
+    )
+
+    private val _questions = mutableStateListOf<QuizQuestionItem>().apply {
+        addAll(defaultQuestions)
+    }
+    val questions: List<QuizQuestionItem> get() = _questions
+
     private val _correctAnswers = mutableListOf<List<String>>()
     val correctAnswers: List<List<String>> get() = _correctAnswers
 
-    private val _questions = listOf(
-        QuizQuestion(
-            id = "q1",
-            imageResId = R.drawable.img_kain_besurek,
-            correctAnswers = listOf("Dilatasi", "Rotasi", "Translasi")
-
-        ),
-        QuizQuestion(
-            id = "q2",
-            imageResId = R.drawable.img_batik_tujuh_rupa,
-            correctAnswers = listOf("Translasi", "Rotasi")
-        ),
-        QuizQuestion(
-            id = "q3",
-            imageResId = R.drawable.img_batik_bunga_melati,
-            correctAnswers = listOf("Translasi, Rotasi, Refleksi")
-        )
-    )
-    private val questions: List<QuizQuestion> get() = _questions
-
     var currentQuestionIndex by mutableIntStateOf(0)
-    private var showValidationError by mutableStateOf(false)
+    var isAnswerChecked by mutableStateOf(false)
+    var lastAnswerIsCorrect by mutableStateOf(false)
 
     var selectedAnswers by mutableStateOf(listOf<String>())
         private set
@@ -53,92 +73,115 @@ class QuizViewModel : ViewModel() {
     val isFinished: Boolean
         get() = currentQuestionIndex >= questions.lastIndex
 
-    val currentQuestion: QuizQuestion
-        get() = questions[currentQuestionIndex]
+    val currentQuestion: QuizQuestionItem
+        get() = if (questions.isNotEmpty() && currentQuestionIndex in questions.indices) {
+            questions[currentQuestionIndex]
+        } else {
+            defaultQuestions[0]
+        }
 
     val totalQuestions: Int
         get() = questions.size
 
-    fun initializeQuiz(userId: String, materialId: String, onReady: () -> Unit) {
-
-        if (userId.isBlank()) {
-            Log.e("QuizViewModel", "Error: userId is blank!")
-            _isQuizReady.value = true
-            onReady()
-            return
-        }
-
-        _userAnswers.clear()
-        selectedAnswers = emptyList()
-        currentQuestionIndex = 0
-
-        getSessionStatus(userId, materialId) { status ->
-            if (status == "active") {
-                Log.d("QuizViewModel", "Session is active, starting from question 0")
-                currentQuestionIndex = 0
-                onReady()
-            } else {
-                Log.d("QuizViewModel", "Session inactive/completed, loading previous results")
-                loadQuizResults(userId, materialId) {
-                    val lastIndex = _userAnswers.size
-                    if (lastIndex < questions.size) {
-                        currentQuestionIndex = lastIndex
-                    }
-                    onReady()
-                }
-            }
+    fun loadQuizFromDocument(materialDoc: MaterialDocument) {
+        val serverQuestions = materialDoc.quiz?.questions
+        if (!serverQuestions.isNullOrEmpty()) {
+            _questions.clear()
+            _questions.addAll(serverQuestions)
+            _correctAnswers.clear()
+            serverQuestions.forEach { _correctAnswers.add(it.correctAnswers) }
         }
     }
 
     fun toggleAnswer(answer: String) {
-        selectedAnswers = if (selectedAnswers.contains(answer)) {
-            selectedAnswers - answer
+        if (isAnswerChecked) return
+
+        val q = currentQuestion
+        val isSingle = q.questionType.equals("single", ignoreCase = true) || q.type.equals("single", ignoreCase = true)
+
+        selectedAnswers = if (isSingle) {
+            listOf(answer)
         } else {
-            selectedAnswers + answer
+            if (selectedAnswers.contains(answer)) {
+                selectedAnswers - answer
+            } else {
+                selectedAnswers + answer
+            }
         }
     }
 
-    fun submitAnswer(userId: String?, materialId: String) {
-        if (currentQuestionIndex >= questions.size) {
-            Log.d("QuizViewModel", "currentQuestionIndex: $currentQuestionIndex, jumlah soal: ${questions.size}")
-            return
+    /**
+     * Memeriksa jawaban soal yang aktif saat ini secara instan (seperti OnlineQuizMaster).
+     * Menghitung kebenaran jawaban dan menyimpan hasil ke _userAnswers.
+     */
+    fun checkCurrentAnswer(): Boolean {
+        if (selectedAnswers.isEmpty() || currentQuestionIndex >= questions.size || isAnswerChecked) {
+            return false
         }
 
-        if (selectedAnswers.isEmpty()) {
-            showValidationError = true
-            return
-        }
+        val current = currentQuestion
+        val userSet = selectedAnswers.map { it.trim().lowercase() }.toSet()
+        val correctSet = current.correctAnswers.map { it.trim().lowercase() }.toSet()
+        val isCorrect = userSet == correctSet
 
-        val current = questions[currentQuestionIndex]
-        val correct = current.correctAnswers
-        val isCorrect = selectedAnswers.toSet() == correct.toSet()
+        lastAnswerIsCorrect = isCorrect
+        isAnswerChecked = true
 
-        _userAnswers.add(
-            UserAnswer(
-                questionId = current.id,
-                selectedAnswers = selectedAnswers,
-                correctAnswers = correct,
-                isCorrect = isCorrect
-            )
+        val existingIdx = _userAnswers.indexOfFirst { it.questionId == current.id }
+        val userAnswer = UserAnswer(
+            questionId = current.id,
+            selectedAnswers = selectedAnswers.toList(),
+            correctAnswers = current.correctAnswers,
+            isCorrect = isCorrect
         )
 
-        selectedAnswers = emptyList()
+        if (existingIdx >= 0) {
+            _userAnswers[existingIdx] = userAnswer
+        } else {
+            _userAnswers.add(userAnswer)
+        }
 
-        Log.d("QuizViewModel", "Jawaban soal ${currentQuestionIndex + 1} disimpan")
+        Log.d("QuizViewModel", "Jawaban diperiksa: isCorrect=$isCorrect, selected=$selectedAnswers, correct=${current.correctAnswers}")
+        return isCorrect
+    }
 
+    /**
+     * Melangkah ke soal berikutnya setelah jawaban diperiksa.
+     */
+    fun nextQuestion() {
         if (currentQuestionIndex < questions.lastIndex) {
             currentQuestionIndex++
+            selectedAnswers = emptyList()
+            isAnswerChecked = false
+            lastAnswerIsCorrect = false
+        }
+    }
+
+    /**
+     * Menyelesaikan kuis: menyimpan hasil ke Firestore dan membuka achievement.
+     */
+    fun finishQuiz(userId: String?, materialId: String, onFinished: () -> Unit = {}) {
+        if (userId != null && userId.isNotBlank()) {
+            saveQuizResultsToFirestore(userId, materialId)
+            com.LambdaProject.MathArt.data.model.unlockProAchievement(userId)
+        }
+        onFinished()
+    }
+
+    // Untuk kompatibilitas kode lama jika dipanggil
+    fun submitAnswer(userId: String?, materialId: String) {
+        if (!isAnswerChecked) {
+            checkCurrentAnswer()
+        }
+        if (currentQuestionIndex < questions.lastIndex) {
+            nextQuestion()
         } else {
-            if (userId != null) {
-                Log.d("QuizViewModel", "Menyimpan hasil kuis ke Firestore untuk userId: $userId, materialId: $materialId")
-                saveQuizResultsToFirestore(userId, materialId)
-            }
+            finishQuiz(userId, materialId)
         }
     }
 
     private fun saveQuizResultsToFirestore(userId: String, materialId: String) {
         val db = Firebase.firestore
-
         val data = _userAnswers.map {
             hashMapOf(
                 "questionId" to it.questionId,
@@ -148,9 +191,18 @@ class QuizViewModel : ViewModel() {
             )
         }
 
+        val totalCount = _questions.size.coerceAtLeast(_userAnswers.size)
+        val correctCount = _userAnswers.count { it.isCorrect }
+        val score = if (totalCount > 0) (correctCount * 100) / totalCount else 0
+
         val resultDoc = hashMapOf(
             "userId" to userId,
             "materialId" to materialId,
+            "score" to score,
+            "accuracy" to score,
+            "correctCount" to correctCount,
+            "totalQuestions" to totalCount,
+            "isPassed" to (score >= 60),
             "results" to data,
             "timestamp" to FieldValue.serverTimestamp()
         )
@@ -158,14 +210,18 @@ class QuizViewModel : ViewModel() {
         db.collection("quizResults")
             .add(resultDoc)
             .addOnSuccessListener {
-                Log.d("QuizViewModel", "Hasil kuis berhasil disimpan ke Firestore")
+                Log.d("QuizViewModel", "Hasil kuis berhasil disimpan ke Firestore (skor: $score)")
             }
             .addOnFailureListener {
                 Log.e("QuizViewModel", "Gagal menyimpan hasil kuis: ${it.message}")
             }
+
+        // Tandai sesi selesai di Firestore secara otomatis
+        com.LambdaProject.MathArt.data.repository.SessionRepository.markSessionCompleted(userId, materialId)
     }
 
     fun loadCorrectAnswers() {
+        _correctAnswers.clear()
         questions.forEach { question ->
             _correctAnswers.add(question.correctAnswers)
         }
@@ -174,14 +230,15 @@ class QuizViewModel : ViewModel() {
     fun loadQuizResults(userId: String, materialId: String, onLoaded: () -> Unit) {
         val db = Firebase.firestore
 
+        // Query tanpa orderBy agar tidak membutuhkan pembuatan composite index di Firebase Console
         db.collection("quizResults")
             .whereEqualTo("userId", userId)
             .whereEqualTo("materialId", materialId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(1)
             .get()
             .addOnSuccessListener { result ->
-                val document = result.documents.firstOrNull()
+                val document = result.documents.maxByOrNull { doc ->
+                    doc.getTimestamp("timestamp")?.toDate()?.time ?: 0L
+                }
                 val results = document?.get("results") as? List<Map<String, *>>
 
                 if (results != null) {
@@ -214,21 +271,40 @@ class QuizViewModel : ViewModel() {
     fun prepareQuiz(userId: String, materialId: String, onReady: () -> Unit = {}) {
         viewModelScope.launch {
             _isQuizReady.value = false
-            delay(300)
-        }
 
-
-        getSessionStatus(userId, materialId) { status ->
-            if (status == "active") {
-                currentQuestionIndex = 0
+            // Fetch dynamic quiz from MaterialRepository cache or Firestore
+            try {
+                com.LambdaProject.MathArt.data.repository.MaterialRepository.getMaterial(
+                    materialId = materialId,
+                    onSuccess = { materialDoc ->
+                        loadQuizFromDocument(materialDoc)
+                        getSessionStatus(userId, materialId) { status ->
+                            if (status == "active") {
+                                currentQuestionIndex = 0
+                                selectedAnswers = emptyList()
+                                isAnswerChecked = false
+                                _isQuizReady.value = true
+                                onReady()
+                            } else {
+                                loadQuizResults(userId, materialId) {
+                                    val lastIndex = _userAnswers.size
+                                    currentQuestionIndex = if (lastIndex < questions.size) lastIndex else 0
+                                    selectedAnswers = emptyList()
+                                    isAnswerChecked = false
+                                    _isQuizReady.value = true
+                                    onReady()
+                                }
+                            }
+                        }
+                    },
+                    onError = {
+                        _isQuizReady.value = true
+                        onReady()
+                    }
+                )
+            } catch (_: Exception) {
                 _isQuizReady.value = true
-            } else {
-                loadQuizResults(userId, materialId) {
-
-                    val lastIndex = _userAnswers.size
-                    currentQuestionIndex = if (lastIndex < questions.size) lastIndex else 0
-                    _isQuizReady.value = true
-                }
+                onReady()
             }
         }
     }
@@ -241,6 +317,8 @@ class QuizViewModel : ViewModel() {
         _userAnswers.clear()
         selectedAnswers = emptyList()
         currentQuestionIndex = 0
+        isAnswerChecked = false
+        lastAnswerIsCorrect = false
     }
 
     private fun getSessionStatus(userId: String, materialId: String, onComplete: (String) -> Unit) {
@@ -260,7 +338,7 @@ class QuizViewModel : ViewModel() {
             }
     }
 
-    private fun clearPreviousQuizResults(userId: String, materialId: String, onComplete: () -> Unit = {}) {
+    fun clearPreviousQuizResults(userId: String, materialId: String, onComplete: () -> Unit = {}) {
         val db = Firebase.firestore
         db.collection("quizResults")
             .whereEqualTo("userId", userId)

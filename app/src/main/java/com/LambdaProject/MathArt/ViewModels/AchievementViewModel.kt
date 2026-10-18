@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.LambdaProject.MathArt.data.model.AchievementItem
+import com.LambdaProject.MathArt.data.DataAchievements
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.firestore
@@ -86,13 +87,17 @@ class AchievementViewModel : ViewModel() {
             .whereEqualTo("isUnlocked", true)
             .whereEqualTo("notified", false)
             .addSnapshotListener { snapshot, _ ->
+                val validAchievementNames = DataAchievements.map { it.name }.toSet()
                 snapshot?.documentChanges?.forEach { change ->
                     if (change.type == com.google.firebase.firestore.DocumentChange.Type.ADDED ||
                         change.type == com.google.firebase.firestore.DocumentChange.Type.MODIFIED) {
 
                         val ach = change.document.toObject(AchievementItem::class.java)
+                        val type = change.document.getString("type")
 
-                        triggerAchievement(ach)
+                        if (type != "LEVEL_UP" && ach.name in validAchievementNames) {
+                            triggerAchievement(ach)
+                        }
 
                         db.collection("users").document(userId)
                             .collection("achievements").document(change.document.id)
@@ -112,8 +117,12 @@ class AchievementViewModel : ViewModel() {
             .addSnapshotListener { snapshots, exception ->
                 if (exception != null) return@addSnapshotListener
 
-                snapshots?. let {
-                    val newList = it.documents.mapNotNull { doc -> doc.getString("name") }
+                snapshots?.let {
+                    val validAchievementNames = DataAchievements.map { it.name }.toSet()
+                    val newList = it.documents
+                        .mapNotNull { doc -> doc.getString("name") }
+                        .filter { name -> name in validAchievementNames }
+                        .distinct()
                     _unlockedAchievements.clear()
                     _unlockedAchievements.addAll(newList)
                 }

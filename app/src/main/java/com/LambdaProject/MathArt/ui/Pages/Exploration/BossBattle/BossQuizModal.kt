@@ -352,7 +352,10 @@ fun QuizContent(
                                     singleLine = true
                                 )
                             } else {
-                                question.options.forEachIndexed { index, option ->
+                                val validOptions = remember(question.options) {
+                                    question.options.filter { it.isNotBlank() }
+                                }
+                                validOptions.forEachIndexed { index, option ->
                                     if (!viewModel.removedOptions.contains(option)) {
                                         val isSelected = viewModel.selectedAnswers.contains(option)
                                         val letter = optionLetters.getOrElse(index) { "${index + 1}" }

@@ -4,12 +4,15 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.LambdaProject.MathArt.data.model.CategoryItem
 import com.LambdaProject.MathArt.data.model.MaterialItem
+import com.LambdaProject.MathArt.data.DataCategories
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.Date
 
 class DashboardViewModel : ViewModel() {
@@ -18,8 +21,25 @@ class DashboardViewModel : ViewModel() {
     private val _materialStatusMap = MutableStateFlow<Map<String, Boolean>>(emptyMap())
     val materialStatusMap: StateFlow<Map<String, Boolean>> = _materialStatusMap.asStateFlow()
 
+    private val _materialsList = MutableStateFlow<List<MaterialItem>>(emptyList())
+    val materialsList: StateFlow<List<MaterialItem>> = _materialsList.asStateFlow()
+
+    private val _categoriesList = MutableStateFlow<List<CategoryItem>>(DataCategories)
+    val categoriesList: StateFlow<List<CategoryItem>> = _categoriesList.asStateFlow()
+
+    private var rawCategories: List<CategoryItem> = DataCategories
+    private var categoriesListener: ListenerRegistration? = null
+
+    private val _isMaterialsLoading = MutableStateFlow<Boolean>(true)
+    val isMaterialsLoading: StateFlow<Boolean> = _isMaterialsLoading.asStateFlow()
+
+    private var materialsListener: ListenerRegistration? = null
+
     private val _hasNewNotification = MutableLiveData(false)
     val hasNewNotification: LiveData<Boolean> = _hasNewNotification
+
+    private val _isEmailVerified = MutableStateFlow(FirebaseAuth.getInstance().currentUser?.isEmailVerified == true)
+    val isEmailVerified: StateFlow<Boolean> = _isEmailVerified.asStateFlow()
 
     private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username.asStateFlow()
@@ -66,13 +86,32 @@ class DashboardViewModel : ViewModel() {
     private var challengeListener: ListenerRegistration? = null
     private var progressListener: ListenerRegistration? = null
 
+    fun checkAndReloadEmailVerification() {
+        viewModelScope.launch {
+            try {
+                val user = FirebaseAuth.getInstance().currentUser
+                user?.reload()?.await()
+                val firestoreVerified = user?.uid?.let { uid ->
+                    try {
+                        firestore.collection("users").document(uid).get().await().getBoolean("isEmailVerified") == true
+                    } catch (_: Exception) { false }
+                } ?: false
+                _isEmailVerified.value = (user?.isEmailVerified == true) || firestoreVerified
+            } catch (_: Exception) {}
+        }
+    }
+
     fun loadUserProfile(userId: String) {
+        checkAndReloadEmailVerification()
         userDocListener?.remove()
         userDocListener = firestore.collection("users").document(userId)
             .addSnapshotListener { doc, _ ->
                 if (doc != null && doc.exists()) {
                     _username.value = doc.getString("username") ?: "User"
                     _email.value = doc.getString("email") ?: "Email Tidak Diketahui"
+                    if (doc.getBoolean("isEmailVerified") == true) {
+                        _isEmailVerified.value = true
+                    }
                     _avatar.value = doc.getString("avatar") ?: com.LambdaProject.MathArt.utils.AvatarHelper.DEFAULT_AVATAR
                     
                     val rawExp = doc.getLong("exp") ?: 0L
@@ -134,6 +173,160 @@ class DashboardViewModel : ViewModel() {
                 val activeIds = snapshot.documents.mapNotNull { it.getString("materialId") }
                 _materialStatusMap.value = materials.associate { it.id to (it.id in activeIds) }
             }
+    }
+
+    fun listenToActiveMaterials(userId: String = "") {
+        _isMaterialsLoading.value = true
+        materialsListener?.remove()
+        materialsListener = firestore.collection("materials")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    _isMaterialsLoading.value = false
+                    return@addSnapshotListener
+                }
+
+                val fetched = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        try {
+                            val matDoc = com.LambdaProject.MathArt.data.model.MaterialDocument.fromSnapshot(doc)
+                            com.LambdaProject.MathArt.data.repository.MaterialRepository.cacheMaterial(matDoc)
+                        } catch (_: Exception) {}
+
+                        val id = doc.getString("id") ?: doc.id
+                        val rawTitle = doc.getString("title") ?: doc.getString("name") ?: ""
+                        val title = if (rawTitle.isNotBlank()) rawTitle else {
+                            when (id.lowercase()) {
+                                "transformasi_geometri" -> "Transformasi Geometri"
+                                "lingkaran" -> "Lingkaran"
+                                else -> id.replace("_", " ").split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+                            }
+                        }
+                        val classLevel = doc.getString("classLevel") ?: "11"
+                        val coverUrl = (doc.getString("coverUrl")
+                            ?: (doc.get("coverUrl") as? String)
+                            ?: doc.getString("cover_url")
+                            ?: doc.getString("imageUrl")
+                            ?: doc.getString("thumbnailUrl")
+                            ?: "").trim()
+                        val order = doc.getLong("order")?.toInt() ?: 0
+                        val isDraft = doc.getBoolean("isDraft") ?: false
+                        val status = doc.getString("status") ?: if (isDraft) "draft" else "published"
+                        val category = doc.getString("category") ?: "Geometri"
+                        val exp = doc.getLong("exp")?.toInt() ?: 100
+                        val isHighlight = doc.getBoolean("isHighlight")
+                            ?: (doc.get("isHighlight") as? Boolean)
+                            ?: (doc.getString("isHighlight")?.toBooleanStrictOrNull())
+                            ?: false
+                        val defaultFallbackRes = when (id.lowercase()) {
+                            "transformasi_geometri" -> com.LambdaProject.MathArt.R.drawable.img_geo
+                            else -> com.LambdaProject.MathArt.R.drawable.img_kain_besurek
+                        }
+
+                        MaterialItem(
+                            id = id,
+                            title = title,
+                            imageRes = defaultFallbackRes,
+                            classLevel = classLevel,
+                            coverUrl = coverUrl.ifBlank { null },
+                            order = order,
+                            isDraft = isDraft,
+                            status = status,
+                            category = category,
+                            exp = exp,
+                            isHighlight = isHighlight
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("DashboardViewModel", "Error parsing doc ${doc.id}", e)
+                        null
+                    }
+                }.sortedBy { it.order }
+
+                // Materi hanya muncul jika status bernilai "published"
+                val publishedMaterials = fetched.filter { item ->
+                    item.status.equals("published", ignoreCase = true)
+                }
+
+                android.util.Log.d("DashboardViewModel", "Fetched ${fetched.size} materials, published: ${publishedMaterials.size}")
+                publishedMaterials.forEach {
+                    android.util.Log.d("DashboardViewModel", "Material item: id=${it.id}, title=${it.title}, isHighlight=${it.isHighlight}, coverUrl=${it.coverUrl}")
+                }
+
+                _materialsList.value = publishedMaterials
+                _isMaterialsLoading.value = false
+                updateCategoriesLockedStatus()
+
+                val uid = userId.ifBlank { FirebaseAuth.getInstance().currentUser?.uid.orEmpty() }
+                if (uid.isNotEmpty()) {
+                    checkActiveSessions(uid, publishedMaterials)
+                }
+            }
+    }
+
+    init {
+        listenToCategories()
+    }
+
+    fun listenToCategories() {
+        categoriesListener?.remove()
+        categoriesListener = firestore.collection("categories")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null || snapshot.isEmpty) {
+                    // Fallback ke DataCategories jika koleksi Firestore categories belum dibuat atau kosong
+                    rawCategories = DataCategories
+                    updateCategoriesLockedStatus()
+                    return@addSnapshotListener
+                }
+
+                val list = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        val name = doc.getString("name") ?: doc.id
+                        val iconUrl = (doc.getString("iconUrl")
+                            ?: doc.getString("icon")
+                            ?: doc.getString("imageUrl")
+                            ?: "").trim()
+                        val order = doc.getLong("order")?.toInt() ?: 0
+                        val description = (doc.getString("description")
+                            ?: doc.getString("deskripsi")
+                            ?: "").trim()
+                        val defaultRes = when (name.lowercase().trim()) {
+                            "geometri" -> com.LambdaProject.MathArt.R.drawable.ico_geometry
+                            "kalkulus" -> com.LambdaProject.MathArt.R.drawable.ico_calculus
+                            "trigonometri" -> com.LambdaProject.MathArt.R.drawable.ico_trigo
+                            "statistika" -> com.LambdaProject.MathArt.R.drawable.ico_statistic
+                            else -> com.LambdaProject.MathArt.R.drawable.ic_material
+                        }
+                        val category = CategoryItem(
+                            id = doc.id,
+                            name = name,
+                            imageRes = defaultRes,
+                            iconUrl = iconUrl.ifBlank { null },
+                            order = order,
+                            description = description
+                        )
+                        android.util.Log.d("DashboardViewModel", "Category parsed: id=${doc.id}, name=$name, desc=$description")
+                        category
+                    } catch (e: Exception) {
+                        android.util.Log.e("DashboardViewModel", "Error parsing category ${doc.id}", e)
+                        null
+                    }
+                }.sortedBy { it.order }
+
+                rawCategories = if (list.isNotEmpty()) list else DataCategories
+                updateCategoriesLockedStatus()
+            }
+    }
+
+    private fun updateCategoriesLockedStatus() {
+        val published = _materialsList.value
+        val updated = rawCategories.map { cat ->
+            val count = published.count { it.category.trim().equals(cat.name.trim(), ignoreCase = true) }
+            cat.copy(
+                isLocked = (count == 0),
+                materialCount = count
+            )
+        }
+        _categoriesList.value = updated
+    }
 
 
         /* FirebaseFirestore.getInstance()
@@ -149,7 +342,6 @@ class DashboardViewModel : ViewModel() {
                 val statusMap = materials.associate { it.id to (it.id in activeIds) }
                 _materialStatusMap.value = statusMap
             } */
-    }
 
     private var levelNotifListener: ListenerRegistration? = null
     private var lastSeenListener: ListenerRegistration? = null
@@ -274,5 +466,7 @@ class DashboardViewModel : ViewModel() {
         challengeListener?.remove()
         levelNotifListener?.remove()
         progressListener?.remove()
+        materialsListener?.remove()
+        categoriesListener?.remove()
     }
 }

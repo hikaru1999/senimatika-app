@@ -145,6 +145,8 @@ fun LoginScreen(navController: NavController) {
                                 Text("Wajib diisi", color = Color.Red, fontSize = 11.sp, fontFamily = interFontFamily)
                             }
                         },
+                        singleLine = true,
+                        maxLines = 1,
                         keyboardOptions = KeyboardOptions.Default.copy(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
@@ -173,6 +175,8 @@ fun LoginScreen(navController: NavController) {
                                 Text("Wajib diisi", color = Color.Red, fontSize = 11.sp, fontFamily = interFontFamily)
                             }
                         },
+                        singleLine = true,
+                        maxLines = 1,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -220,14 +224,18 @@ fun LoginScreen(navController: NavController) {
                                 loginViewModel.login(identifier.text, password.text)
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1976D2),
+                            disabledContainerColor = Color(0xFF1976D2).copy(alpha = 0.85f),
+                            disabledContentColor = Color.White
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 8.dp,
-                            pressedElevation = 2.dp,
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
                             disabledElevation = 0.dp
                         ),
                         enabled = loginState !is LoginResult.Loading
@@ -235,6 +243,7 @@ fun LoginScreen(navController: NavController) {
                         if (loginState is LoginResult.Loading) {
                             CircularProgressIndicator(
                                 color = Color.White,
+                                trackColor = Color.Transparent,
                                 modifier = Modifier.size(24.dp),
                                 strokeWidth = 3.dp
                             )

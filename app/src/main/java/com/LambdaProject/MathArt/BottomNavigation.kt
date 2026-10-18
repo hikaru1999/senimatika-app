@@ -62,7 +62,7 @@ fun BottomNavigationMenu(navController: NavController) {
             )
 
             CustomNavItem(
-                label = "Quiz",
+                label = "Math Arena",
                 iconRes = R.drawable.ic_quiz_icon,
                 isSelected = currentRoute == "OnlineQuizPage" || currentRoute?.startsWith("OnlineQuizLobby") == true,
                 onClick = {

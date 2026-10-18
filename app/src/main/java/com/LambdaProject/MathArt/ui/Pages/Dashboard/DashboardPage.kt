@@ -74,7 +74,7 @@ fun DashboardScreen(navController: NavController, userName: String, viewModel: D
     LaunchedEffect(currentUserId) {
         if (currentUserId.isNotEmpty()) {
             viewModel.loadUserProfile(currentUserId)
-            viewModel.checkActiveSessions(currentUserId, DataMaterials)
+            viewModel.listenToActiveMaterials(currentUserId)
             viewModel.listenForProgress(currentUserId)
         } else {
             navController.navigate("login") {

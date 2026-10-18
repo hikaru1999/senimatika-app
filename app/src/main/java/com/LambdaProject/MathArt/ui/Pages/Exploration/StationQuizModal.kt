@@ -254,10 +254,15 @@ fun StationQuizModal(
                                             )
                                         } else {
                                             val optionLetters = listOf("A", "B", "C", "D", "E", "F")
-                                            question.options.forEachIndexed { index, option ->
+                                            val validOptions = remember(question.options) {
+                                                question.options
+                                                    .mapIndexed { originalIndex, option -> originalIndex to option }
+                                                    .filter { it.second.isNotBlank() }
+                                            }
+                                            validOptions.forEachIndexed { displayIndex, (originalIndex, option) ->
                                                 var isOptionEquationReady by remember(option) { mutableStateOf(false) }
-                                                val isSelected = selectedOption == index
-                                                val letter = optionLetters.getOrElse(index) { "${index + 1}" }
+                                                val isSelected = selectedOption == originalIndex
+                                                val letter = optionLetters.getOrElse(displayIndex) { "${displayIndex + 1}" }
 
                                                 val cardBg by animateColorAsState(
                                                     targetValue = if (isSelected) Color(0xFFEADBCE) else Color(0xFFFDF8E1),
@@ -313,7 +318,7 @@ fun StationQuizModal(
                                                             Box(
                                                                 modifier = Modifier.weight(1f),
                                                                 contentAlignment = Alignment.CenterStart
-                              ) {
+                                                            ) {
                                                                 val hasFormatting = option.contains("$") ||
                                                                         option.contains("**") ||
                                                                         option.contains("_") ||
@@ -359,7 +364,7 @@ fun StationQuizModal(
                                                             .matchParentSize()
                                                             .clip(RoundedCornerShape(14.dp))
                                                             .clickable(enabled = !isAnswered) {
-                                                                selectedOption = index
+                                                                selectedOption = originalIndex
                                                             }
                                                     )
                                                 }

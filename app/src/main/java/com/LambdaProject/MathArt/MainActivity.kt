@@ -24,6 +24,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.copy
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -47,6 +49,7 @@ import com.LambdaProject.MathArt.ui.Pages.IntroScreen
 import com.LambdaProject.MathArt.ui.Pages.LoginScreen
 import com.LambdaProject.MathArt.ui.Pages.Material.MaterialScreen
 import com.LambdaProject.MathArt.ui.Pages.Dashboard.NotificationScreen
+import com.LambdaProject.MathArt.ui.Pages.Dashboard.CategoryMaterialsScreen
 import com.LambdaProject.MathArt.ui.Pages.Multiplayer.OnlineQuizLobby
 import com.LambdaProject.MathArt.ui.Pages.Profile.ProfileScreen
 import com.LambdaProject.MathArt.ui.Pages.Profile.LearningReportScreen
@@ -77,6 +80,10 @@ import com.LambdaProject.MathArt.ui.Pages.Profile.ValidatorRoleScreen
 import com.LambdaProject.MathArt.ViewModels.MapViewModel
 import com.LambdaProject.MathArt.data.NetworkObserver
 import com.LambdaProject.MathArt.data.model.AppAudioManager
+import android.content.Intent
+import android.net.Uri
+import com.LambdaProject.MathArt.ui.Pages.ResetPasswordScreen
+import com.LambdaProject.MathArt.ui.Pages.EmailVerificationResultScreen
 import com.LambdaProject.MathArt.ui.Pages.Exploration.Lobby.ExplorationLobbyScreen
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
@@ -84,13 +91,22 @@ import kotlinx.coroutines.delay
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private var pendingDeepLinkUri by mutableStateOf<Uri?>(null)
+
     private fun forceLightMode() {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingDeepLinkUri = intent.data
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingDeepLinkUri = intent?.data
         AppAudioManager.initialize(this)
         forceLightMode()
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -134,7 +150,34 @@ class MainActivity : ComponentActivity() {
                         currentRoute == "login" ||
                         currentRoute == "register" ||
                         currentRoute == "ForgotPassword" ||
+                        currentRoute?.startsWith("reset_password") == true ||
+                        currentRoute?.startsWith("verify_email_result") == true ||
                         isNestedNotFound == true
+
+                LaunchedEffect(pendingDeepLinkUri) {
+                    val uri = pendingDeepLinkUri ?: return@LaunchedEffect
+                    val mode = uri.getQueryParameter("mode")
+                    val oobCode = uri.getQueryParameter("oobCode")
+
+                    if (!oobCode.isNullOrBlank()) {
+                        when (mode) {
+                            "resetPassword" -> {
+                                // Fitur redirect tautan reset password dinonaktifkan sementara (eksplorasi alur OTP)
+                                /*
+                                navController.navigate("reset_password/$oobCode") {
+                                    launchSingleTop = true
+                                }
+                                */
+                            }
+                            "verifyEmail" -> {
+                                navController.navigate("verify_email_result/$oobCode") {
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                    }
+                    pendingDeepLinkUri = null
+                }
 
                 val isSnackbarVisible = (showNetworkSnackbar || currentAchievement != null) && !isSafeZone
 
@@ -195,7 +238,11 @@ class MainActivity : ComponentActivity() {
                                 arguments = listOf(
                                     navArgument("userId") { type = NavType.StringType },
                                     navArgument("materialId") { type = NavType.StringType }
-                                )
+                                ),
+                                enterTransition = { EnterTransition.None },
+                                exitTransition = { ExitTransition.None },
+                                popEnterTransition = { EnterTransition.None },
+                                popExitTransition = { ExitTransition.None }
                             ) { backStackEntry ->
                                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
                                 val materialId = backStackEntry.arguments?.getString("materialId") ?: ""
@@ -246,6 +293,20 @@ class MainActivity : ComponentActivity() {
                             composable("login") { LoginScreen(navController) }
                             composable("register") { RegisterScreen(navController) }
                             composable("ForgotPassword") { ForgotPasswordScreen(navController) }
+                            composable(
+                                route = "reset_password/{oobCode}",
+                                arguments = listOf(navArgument("oobCode") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val oobCode = backStackEntry.arguments?.getString("oobCode") ?: ""
+                                ResetPasswordScreen(navController = navController, oobCode = oobCode)
+                            }
+                            composable(
+                                route = "verify_email_result/{oobCode}",
+                                arguments = listOf(navArgument("oobCode") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val oobCode = backStackEntry.arguments?.getString("oobCode") ?: ""
+                                EmailVerificationResultScreen(navController = navController, oobCode = oobCode)
+                            }
                             composable("ExplorationLandingPage") { ExplorationLandingScreen(navController) }
 
                             composable(
@@ -314,6 +375,28 @@ class MainActivity : ComponentActivity() {
                                 val DashViewModel: DashboardViewModel = viewModel()
                                 val userName = backStackEntry.arguments?.getString("userName") ?: "User"
                                 DashboardScreen(navController, userName, DashViewModel)
+                            }
+
+                            composable(
+                                route = "category_materials/{categoryName}",
+                                arguments = listOf(
+                                    navArgument("categoryName") {
+                                        type = NavType.StringType
+                                    }
+                                )
+                            ) { backStackEntry ->
+                                val rawCategory = backStackEntry.arguments?.getString("categoryName") ?: ""
+                                val categoryName = try {
+                                    java.net.URLDecoder.decode(rawCategory, "UTF-8")
+                                } catch (_: Exception) {
+                                    rawCategory
+                                }
+                                val dashViewModel: DashboardViewModel = viewModel()
+                                CategoryMaterialsScreen(
+                                    navController = navController,
+                                    categoryName = categoryName,
+                                    viewModel = dashViewModel
+                                )
                             }
 
                             composable(

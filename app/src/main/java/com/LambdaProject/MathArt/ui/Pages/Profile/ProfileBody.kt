@@ -36,6 +36,7 @@ fun ProfileBody(
     activeSessions: List<MaterialItem>,
     unlockedAchievements: List<String>,
     isLoggingOut: Boolean,
+    onEditProfileClicked: () -> Unit = {},
     onLogoutClicked: () -> Unit
 ) {
     val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -99,6 +100,17 @@ fun ProfileBody(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 ProfileMenuItem(
+                    label = "Edit Profil",
+                    subtitle = "Ubah nama, kelas, email & kata sandi",
+                    iconRes = R.drawable.ic_gear,
+                    iconBgColor = Color(0xFFEFF6FF),
+                    iconTint = Color(0xFF2563EB),
+                    onClick = onEditProfileClicked
+                )
+
+                HorizontalDivider(color = Color(0xFFF8FAFC), thickness = 1.dp)
+
+                ProfileMenuItem(
                     label = "Laporan Belajarku",
                     subtitle = "Grafik & rangkuman aktivitas kuis",
                     iconRes = R.drawable.ic_assessment,
@@ -112,7 +124,7 @@ fun ProfileBody(
                 ProfileMenuItem(
                     label = "Beri Penilaian Aplikasi",
                     subtitle = "Evaluasi & masukan instrumen pembelajaran",
-                    iconRes = R.drawable.ic_explorer,
+                    iconRes = R.drawable.ic_star_1,
                     iconBgColor = Color(0xFFFAF5FF),
                     iconTint = Color(0xFF9333EA),
                     onClick = { navController.navigate("validator_screen") }
@@ -137,23 +149,31 @@ fun ProfileBody(
         Button(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp)),
+                .height(56.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFFEF2F2),
-                contentColor = Color(0xFFDC2626)
+                contentColor = Color(0xFFDC2626),
+                disabledContainerColor = Color(0xFFFEF2F2),
+                disabledContentColor = Color(0xFFDC2626)
             ),
             border = BorderStroke(1.dp, Color(0xFFFECACA)),
-            onClick = { onLogoutClicked() },
+            onClick = { if (!isLoggingOut) onLogoutClicked() },
             enabled = !isLoggingOut,
             shape = RoundedCornerShape(16.dp),
-            elevation = null
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp,
+                disabledElevation = 0.dp,
+                hoveredElevation = 0.dp,
+                focusedElevation = 0.dp
+            )
         ) {
             if (isLoggingOut) {
                 CircularProgressIndicator(
                     color = Color(0xFFDC2626),
+                    trackColor = Color.Transparent,
                     modifier = Modifier.size(22.dp),
-                    strokeWidth = 3.dp
+                    strokeWidth = 2.5.dp
                 )
             } else {
                 Row(
@@ -493,9 +513,25 @@ fun EmptyStateCard(text: String, subtext: String? = null) {
 
 @Composable
 fun AchievementSection(unlockedAchievements: List<String>, navController: NavController) {
+    val unlockedCount by remember(unlockedAchievements) {
+        derivedStateOf {
+            DataAchievements.count { it.name in unlockedAchievements }
+        }
+    }
+
     val sortedAchievements by remember(unlockedAchievements) {
         derivedStateOf {
-            DataAchievements.sortedByDescending { it.name in unlockedAchievements }
+            DataAchievements.sortedWith(
+                compareBy<AchievementItem> { item ->
+                    val isUnlocked = item.name in unlockedAchievements
+                    val isComingSoon = item.description.contains("Akan ditambahkan", ignoreCase = true)
+                    when {
+                        isUnlocked -> 0
+                        !isComingSoon -> 1
+                        else -> 2
+                    }
+                }.thenBy { DataAchievements.indexOf(it) }
+            )
         }
     }
 
@@ -519,7 +555,7 @@ fun AchievementSection(unlockedAchievements: List<String>, navController: NavCon
                 border = BorderStroke(1.dp, Color(0xFFFDE68A))
             ) {
                 Text(
-                    text = "${unlockedAchievements.size}/${DataAchievements.size}",
+                    text = "${unlockedCount}/${DataAchievements.size}",
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,

@@ -13,8 +13,25 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import java.util.concurrent.ConcurrentHashMap
+
+// Global height cache for instant render without layout shift
+private val mathTextHeightCache = ConcurrentHashMap<String, Dp>()
+
+@SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
+private class MathWebView(context: android.content.Context) : WebView(context) {
+    var hasInteractiveElements: Boolean = false
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        if (!hasInteractiveElements) {
+            return false
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+}
 
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility", "RememberReturnType")
 @Composable
@@ -29,9 +46,18 @@ fun MathText(
     fontWeight: FontWeight = FontWeight.Normal,
 ) {
     val density = LocalDensity.current
-    var isReady by remember(text) { mutableStateOf(false) }
-//    var webViewHeight by remember { mutableStateOf(100.dp) }
-    var webViewHeight by remember(text) { mutableStateOf(1.dp) }
+    val cacheKey = remember(text, fontSize, textAlign) { "$text-$fontSize-$textAlign" }
+    val cachedHeight = mathTextHeightCache[cacheKey]
+
+    var isReady by remember(cacheKey) { mutableStateOf(false) }
+    var webViewHeight by remember(cacheKey) {
+        mutableStateOf(
+            cachedHeight ?: run {
+                val estimatedLines = text.split("\n").sumOf { (it.length / 45) + 1 }.coerceAtLeast(1)
+                (estimatedLines * (fontSize * 1.6f) + 12f).coerceIn(24f, 600f).dp
+            }
+        )
+    }
 
     val textColor = String.format("#%06X", 0xFFFFFF and color.toArgb())
     val cssFontWeight = fontWeight.weight
@@ -236,7 +262,6 @@ fun MathText(
                     window.requestAnimationFrame(function() {
                         var wrapper = document.getElementById('math-wrapper');
                         if (wrapper) {
-                            // getBoundingClientRect lebih akurat untuk konten yang di-skew/render
                             var height = wrapper.getBoundingClientRect().height;
                             Android.updateHeight(height);
                         }
@@ -264,22 +289,7 @@ fun MathText(
                     }
                     
                     updateHeight();
-                    setTimeout(updateHeight, 100);
-                    setTimeout(updateHeight, 500);
-                    setTimeout(updateHeight, 2500);
-                }
-                
-                function observeChanges() {
-                    const wrapper = document.getElementById('math-wrapper');
-                    const observer = new MutationObserver(function() {
-                        updateHeight();
-                    });
-
-                    observer.observe(wrapper, {
-                        childList: true,
-                        subtree: true,
-                        characterData: true
-                    });
+                    setTimeout(updateHeight, 150);
                 }
                 
                 window.onload = updateHeight;
@@ -294,20 +304,31 @@ fun MathText(
     AndroidView(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(webViewHeight)
+            .heightIn(min = webViewHeight)
             .graphicsLayer {
                 alpha = if (isReady && webViewHeight > 10.dp) 1f else 0f
-//                alpha = if (isReady) 1f else 0f
             },
         factory = { context ->
-            WebView(context).apply {
-                setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            MathWebView(context).apply {
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                this.hasInteractiveElements = text.contains("![")
 
-                settings.javaScriptEnabled = true
-                settings.allowFileAccess = true
-                settings.domStorageEnabled = true
+                isClickable = false
+                isFocusable = false
+                isFocusableInTouchMode = false
+                isVerticalScrollBarEnabled = false
+                isHorizontalScrollBarEnabled = false
+                overScrollMode = View.OVER_SCROLL_NEVER
 
-                settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+                settings.apply {
+                    javaScriptEnabled = true
+                    allowFileAccess = true
+                    domStorageEnabled = false
+                    cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                    setSupportZoom(false)
+                    builtInZoomControls = false
+                    displayZoomControls = false
+                }
 
                 setBackgroundColor(0)
 
@@ -315,18 +336,21 @@ fun MathText(
                     @JavascriptInterface
                     fun updateHeight(height: Float) {
                         val heightInDp = (height / context.resources.displayMetrics.density).dp
-                        if (heightInDp != webViewHeight) {
+                        val diff = kotlin.math.abs(heightInDp.value - webViewHeight.value)
+                        if (diff > 1.5f || !isReady) {
                             post {
-                                webViewHeight = heightInDp + 4.dp
+                                val finalHeight = heightInDp + 2.dp
+                                webViewHeight = finalHeight
+                                mathTextHeightCache[cacheKey] = finalHeight
+                                isReady = true
+                                onRenderComplete()
+                            }
+                        } else if (!isReady) {
+                            post {
                                 isReady = true
                                 onRenderComplete()
                             }
                         }
-//                        if (heightInDp > 1.dp) {
-//                            webViewHeight = heightInDp + 12.dp
-//                            isReady = true
-//                            onRenderComplete()
-//                        }
                     }
 
                     @JavascriptInterface
@@ -334,16 +358,6 @@ fun MathText(
                         post { onImageClick(url) }
                     }
                 }, "Android")
-//                webViewClient = WebViewClient()
-
-                isClickable = true
-                isFocusable = true
-                isEnabled = true
-
-                setOnTouchListener { v, event ->
-                    v.onTouchEvent(event)
-                    false
-                }
 
                 webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView?, url: String?) {
@@ -353,10 +367,30 @@ fun MathText(
             }
         },
         update = { webView ->
-            if (webView.tag != text) {
-                webView.loadDataWithBaseURL(baseUrl, htmlData, "text/html", "utf-8", null)
-                webView.tag = text
+            (webView as? MathWebView)?.hasInteractiveElements = text.contains("![")
+            val tagKey = "$cacheKey-$textColor"
+            if (webView.tag != tagKey) {
+                val oldTag = webView.tag as? String
+                if (oldTag != null && oldTag.startsWith(cacheKey)) {
+                    webView.evaluateJavascript("document.body.style.color = '$textColor';", null)
+                    webView.tag = tagKey
+                } else {
+                    webView.loadDataWithBaseURL(baseUrl, htmlData, "text/html", "utf-8", null)
+                    webView.tag = tagKey
+                }
             }
+        },
+        onRelease = { webView ->
+            try {
+                webView.stopLoading()
+                webView.loadUrl("about:blank")
+                webView.post {
+                    try {
+                        webView.removeAllViews()
+                        webView.destroy()
+                    } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
         }
     )
 }

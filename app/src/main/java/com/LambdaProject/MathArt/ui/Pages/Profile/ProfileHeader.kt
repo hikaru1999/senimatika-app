@@ -14,8 +14,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Redeem
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -30,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.data.model.*
@@ -58,15 +61,29 @@ fun ProfileHeader(
     unlockedTitles: List<String> = listOf("Novice"),
     unlockedEmblems: List<String> = emptyList(),
     unlockedFrames: List<String> = emptyList(),
+    isEmailVerified: Boolean = false,
     onClaimReward: (Int) -> Unit = {},
     onSelectTitle: (String) -> Unit = {},
     onSelectEmblem: (String) -> Unit = {},
     onSelectFrame: (String) -> Unit = {},
-    onAvatarChanged: (String) -> Unit = {}
+    onAvatarChanged: (String) -> Unit = {},
+    onResendVerification: ((onResult: (Boolean, String) -> Unit) -> Unit) = {},
+    onCheckVerificationStatus: ((onResult: (Boolean) -> Unit) -> Unit) = {}
 ) {
     var showAvatarPicker by remember { mutableStateOf(false) }
     var showLevelRoadModal by remember { mutableStateOf(false) }
     var showDebugModal by remember { mutableStateOf(false) }
+    var showVerificationModal by remember { mutableStateOf(false) }
+
+    if (showVerificationModal) {
+        EmailVerificationModal(
+            isEmailVerified = isEmailVerified,
+            email = email,
+            onResendEmail = onResendVerification,
+            onCheckStatus = onCheckVerificationStatus,
+            onDismiss = { showVerificationModal = false }
+        )
+    }
 
     if (showAvatarPicker) {
         AvatarPickerModal(
@@ -212,27 +229,108 @@ fun ProfileHeader(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // User Name
-            Text(
-                text = fullName.ifEmpty { "Pengguna Senimatika" },
-                fontFamily = interFontFamily,
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 22.sp,
-                color = Color(0xFF0F172A),
-                textAlign = TextAlign.Center
-            )
+            // User Name & Verified Badge (Instagram / Twitter style)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = fullName.ifEmpty { "Pengguna Senimatika" },
+                    fontFamily = interFontFamily,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 22.sp,
+                    color = Color(0xFF0F172A),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+
+                if (isEmailVerified) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .clickable { showVerificationModal = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // White backing so the cutout checkmark in the badge is crisp white
+                        Box(
+                            modifier = Modifier
+                                .size(11.dp)
+                                .background(Color.White, CircleShape)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Verified,
+                            contentDescription = "Akun Terverifikasi",
+                            tint = Color(0xFF1D9BF0),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // Email
+            // Email (Clickable untuk membuka modal verifikasi)
             Text(
                 text = email.ifEmpty { "email@senimatika.id" },
                 fontFamily = interFontFamily,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF64748B),
                 fontSize = 12.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .clickable { showVerificationModal = true }
             )
+
+            // Email Verification Status Pill (Hanya muncul jika BELUM terverifikasi)
+            if (!isEmailVerified) {
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Surface(
+                    onClick = { showVerificationModal = true },
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFFFEF3C7),
+                    border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                    shadowElevation = 0.5.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color(0xFFF59E0B).copy(alpha = 0.15f), CircleShape)
+                                .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Text(
+                            text = "Belum Terverifikasi",
+                            fontFamily = interFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.5.sp,
+                            color = Color(0xFFB45309)
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(14.dp))
 

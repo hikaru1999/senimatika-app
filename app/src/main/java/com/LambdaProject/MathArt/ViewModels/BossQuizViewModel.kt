@@ -463,7 +463,7 @@ class BossQuizViewModel : ViewModel() {
                 if (isMultiAnswer) {
                     // Pilihan ganda kompleks: memunculkan centang 1 opsi jawaban yang benar
                     val unselectedCorrectAnswers = question.answerKey.filter {
-                        !selectedAnswers.contains(it) && question.options.contains(it)
+                        !selectedAnswers.contains(it) && question.options.contains(it) && it.isNotBlank()
                     }
                     val optionToReveal = unselectedCorrectAnswers.randomOrNull()
                     if (optionToReveal != null) {
@@ -472,7 +472,7 @@ class BossQuizViewModel : ViewModel() {
                 } else {
                     // Pilihan ganda 1 jawaban: menghapus 2 opsi salah
                     val incorrectOptions = question.options.filter {
-                        !question.answerKey.contains(it) && !removedOptions.contains(it)
+                        it.isNotBlank() && !question.answerKey.contains(it) && !removedOptions.contains(it)
                     }
                     removedOptions.addAll(incorrectOptions.shuffled().take(2))
                 }

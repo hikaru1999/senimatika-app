@@ -16,6 +16,7 @@ import com.google.firebase.firestore.PropertyName
 data class OnlineQuizDesc (
     val id: String = "",
     val title: String = "",
+    val materi: String = "",
     val active: Boolean = true,
     val description: String = "",
     val questions: List<QuizQuestionRef> = emptyList(),
@@ -26,14 +27,16 @@ data class OnlineQuizDesc (
     val imageUrl: String? = null,
     val classLevel: String = "Umum",
     val numberQuestion: Int = 0,
-    val isRandomized: Boolean = false
+    val isRandomized: Boolean = false,
+    val isLearningMode: Boolean = false
 )
 
 @Keep
 data class QuizQuestionRef(
     val id: String = "",
     val points: Int = 10,
-    val timer: Int = 30
+    val timer: Int = 30,
+    val pembahasan: String? = null
 )
 
 @Keep
@@ -47,7 +50,8 @@ data class OnlineQuizQuestion (
     val correctTextAnswers: List<String> = emptyList(),
     val type: QuestionType = QuestionType.MULTIPLE_CHOICE,
     val durationSeconds: Int = 30,
-    val basePoints: Int = 10
+    val basePoints: Int = 10,
+    val pembahasan: String? = null
 )
 
 @Keep

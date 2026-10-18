@@ -5,147 +5,147 @@ import com.LambdaProject.MathArt.R
 import com.LambdaProject.MathArt.data.model.*
 import com.LambdaProject.MathArt.data.mallItems
 
-val transform_geo = mapOf(
-    "transformasi_geometri" to listOf(
-        OnlineQuizQuestion(
-            questionNumber = 1,
-            questionText = "Bayangan titik A(2,3) jika dicerminkan terhadap sumbu-Y adalah...",
-            imageRes = null,
-            choices = listOf(
-                "(-2,3)",
-                "(2,-3)",
-                "(-2,-3)",
-                "(3,2)"
-            ),
-            correctAnswers = listOf(0),
-            type = QuestionType.MULTIPLE_CHOICE,
-            durationSeconds = 90,
-            basePoints = 100
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 2,
-            questionText = "Tentukan jenis transformasi geometri yang terjadi pada batik di atas",
-            imageRes = R.drawable.img_batik_bunga_melati,
-            choices = listOf(
-                "Dilatasi",
-                "Rotasi",
-                "Translasi",
-                "Refleksi"
-            ),
-            correctAnswers = listOf(1, 2, 3),
-            type = QuestionType.CHECKBOX,
-            durationSeconds = 45,
-            basePoints = 100
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 3,
-            questionText = "Suatu segitiga memiliki titik-titik A(2,1), B(6,1), dan C(2,5). Segitiga ini didilatasi terhadap titik pusat (2,1) dengan faktor skala 1/4. Tentukan luas segitiga hasil dilatasi tersebut!",
-            imageRes = null,
-            correctTextAnswers = listOf("0.5", "0,5", "0, 5", "0. 5"),
-            type = QuestionType.SHORT_ANSWER,
-            durationSeconds = 180,
-            basePoints = 300
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 4,
-            questionText = "Pilih semua pernyataan yang benar mengenai transformasi geometri:",
-            choices = listOf(
-                "Refleksi mempertahankan bentuk dan ukuran",
-                "Dilatasi bisa mengubah ukuran bangun",
-                "Translasi memutar bangun",
-                "Rotasi mengubah posisi bangun"
-            ),
-            correctAnswers = listOf(0, 1, 3),
-            type = QuestionType.CHECKBOX,
-            durationSeconds = 45,
-            basePoints = 100
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 5,
-            questionText = "Bayangan titik D(a,b) oleh rotasi terhadap titik pusat O sebesar 90 derajat searah jarum jam adalah D'(-6,4). Tentukan nilai 3a + 2b",
-            imageRes = null,
-            type = QuestionType.SHORT_ANSWER,
-            correctTextAnswers = listOf("-24", "- 24"),
-            durationSeconds = 120,
-            basePoints = 250
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 6,
-            questionText = "Perhatikan soal di atas!",
-            imageRes = R.drawable.oq_soal_1,
-            type = QuestionType.MULTIPLE_CHOICE,
-            choices = listOf(
-                "B(24,-26)",
-                "B(-26,24)",
-                "B(-10, -20)",
-                "B(10,20)"
-            ),
-            correctAnswers = listOf(0),
-            durationSeconds = 90,
-            basePoints = 150
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 7,
-            questionText = "Berikan tanda centang pada koordinat bayangan yang sesuai!",
-            imageRes = R.drawable.oq_soal_2,
-            type = QuestionType.CHECKBOX,
-            choices = listOf(
-                "C'(4, 5)",
-                "D'(0.7, 2.1)",
-                "E'(-2.8, 3)",
-                "F'(3.1, 1.2)"
-            ),
-            correctAnswers = listOf(1,2,3),
-            durationSeconds = 120,
-            basePoints = 250
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 8,
-            questionText = "Tentukan jenis transformasi geometri yang terjadi pada perisai Talawang di atas!",
-            imageRes = R.drawable.oq_soal_3,
-            type = QuestionType.CHECKBOX,
-            choices = listOf(
-                "Translasi",
-                "Refleksi",
-                "Rotasi",
-                "Dilatasi"
-            ),
-            correctAnswers = listOf(0,1),
-            durationSeconds = 45,
-            basePoints = 100
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 9,
-            questionText = "Tentukan jenis transformasi geometri yang terjadi pada batik di atas",
-            imageRes = R.drawable.img_kain_besurek,
-            type = QuestionType.CHECKBOX,
-            choices = listOf(
-                "Translasi",
-                "Refleksi",
-                "Rotasi",
-                "Dilatasi"
-            ),
-            correctAnswers = listOf(0,2,3),
-            durationSeconds = 45,
-            basePoints = 100
-        ),
-        OnlineQuizQuestion(
-            questionNumber = 10,
-            questionText = "Bayangan kurva y = 2x² - 4x + 5 jika dicerminkan terhadap sumbu Y, lalu dilanjutkan dengan dilatasi terhadap pusat (1, −2) dan faktor skala 2 adalah ...",
-            imageRes = null,
-            choices = listOf(
-                "x² − 6x − y + 17 = 0",
-                "2x² + 4x − y + 5 = 0",
-                "x² + 6x + y + 17 = 0",
-                "x² + 6x − y + 17 = 0"
-            ),
-            correctAnswers = listOf(3),
-            type = QuestionType.MULTIPLE_CHOICE,
-            durationSeconds = 240,
-            basePoints = 500
-        ),
-    )
-)
+//val transform_geo = mapOf(
+//    "transformasi_geometri" to listOf(
+//        OnlineQuizQuestion(
+//            questionNumber = 1,
+//            questionText = "Bayangan titik A(2,3) jika dicerminkan terhadap sumbu-Y adalah...",
+//            imageRes = null,
+//            choices = listOf(
+//                "(-2,3)",
+//                "(2,-3)",
+//                "(-2,-3)",
+//                "(3,2)"
+//            ),
+//            correctAnswers = listOf(0),
+//            type = QuestionType.MULTIPLE_CHOICE,
+//            durationSeconds = 90,
+//            basePoints = 100
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 2,
+//            questionText = "Tentukan jenis transformasi geometri yang terjadi pada batik di atas",
+//            imageRes = R.drawable.img_batik_bunga_melati,
+//            choices = listOf(
+//                "Dilatasi",
+//                "Rotasi",
+//                "Translasi",
+//                "Refleksi"
+//            ),
+//            correctAnswers = listOf(1, 2, 3),
+//            type = QuestionType.CHECKBOX,
+//            durationSeconds = 45,
+//            basePoints = 100
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 3,
+//            questionText = "Suatu segitiga memiliki titik-titik A(2,1), B(6,1), dan C(2,5). Segitiga ini didilatasi terhadap titik pusat (2,1) dengan faktor skala 1/4. Tentukan luas segitiga hasil dilatasi tersebut!",
+//            imageRes = null,
+//            correctTextAnswers = listOf("0.5", "0,5", "0, 5", "0. 5"),
+//            type = QuestionType.SHORT_ANSWER,
+//            durationSeconds = 180,
+//            basePoints = 300
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 4,
+//            questionText = "Pilih semua pernyataan yang benar mengenai transformasi geometri:",
+//            choices = listOf(
+//                "Refleksi mempertahankan bentuk dan ukuran",
+//                "Dilatasi bisa mengubah ukuran bangun",
+//                "Translasi memutar bangun",
+//                "Rotasi mengubah posisi bangun"
+//            ),
+//            correctAnswers = listOf(0, 1, 3),
+//            type = QuestionType.CHECKBOX,
+//            durationSeconds = 45,
+//            basePoints = 100
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 5,
+//            questionText = "Bayangan titik D(a,b) oleh rotasi terhadap titik pusat O sebesar 90 derajat searah jarum jam adalah D'(-6,4). Tentukan nilai 3a + 2b",
+//            imageRes = null,
+//            type = QuestionType.SHORT_ANSWER,
+//            correctTextAnswers = listOf("-24", "- 24"),
+//            durationSeconds = 120,
+//            basePoints = 250
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 6,
+//            questionText = "Perhatikan soal di atas!",
+//            imageRes = R.drawable.oq_soal_1,
+//            type = QuestionType.MULTIPLE_CHOICE,
+//            choices = listOf(
+//                "B(24,-26)",
+//                "B(-26,24)",
+//                "B(-10, -20)",
+//                "B(10,20)"
+//            ),
+//            correctAnswers = listOf(0),
+//            durationSeconds = 90,
+//            basePoints = 150
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 7,
+//            questionText = "Berikan tanda centang pada koordinat bayangan yang sesuai!",
+//            imageRes = R.drawable.oq_soal_2,
+//            type = QuestionType.CHECKBOX,
+//            choices = listOf(
+//                "C'(4, 5)",
+//                "D'(0.7, 2.1)",
+//                "E'(-2.8, 3)",
+//                "F'(3.1, 1.2)"
+//            ),
+//            correctAnswers = listOf(1,2,3),
+//            durationSeconds = 120,
+//            basePoints = 250
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 8,
+//            questionText = "Tentukan jenis transformasi geometri yang terjadi pada perisai Talawang di atas!",
+//            imageRes = R.drawable.oq_soal_3,
+//            type = QuestionType.CHECKBOX,
+//            choices = listOf(
+//                "Translasi",
+//                "Refleksi",
+//                "Rotasi",
+//                "Dilatasi"
+//            ),
+//            correctAnswers = listOf(0,1),
+//            durationSeconds = 45,
+//            basePoints = 100
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 9,
+//            questionText = "Tentukan jenis transformasi geometri yang terjadi pada batik di atas",
+//            imageRes = R.drawable.img_kain_besurek,
+//            type = QuestionType.CHECKBOX,
+//            choices = listOf(
+//                "Translasi",
+//                "Refleksi",
+//                "Rotasi",
+//                "Dilatasi"
+//            ),
+//            correctAnswers = listOf(0,2,3),
+//            durationSeconds = 45,
+//            basePoints = 100
+//        ),
+//        OnlineQuizQuestion(
+//            questionNumber = 10,
+//            questionText = "Bayangan kurva y = 2x² - 4x + 5 jika dicerminkan terhadap sumbu Y, lalu dilanjutkan dengan dilatasi terhadap pusat (1, −2) dan faktor skala 2 adalah ...",
+//            imageRes = null,
+//            choices = listOf(
+//                "x² − 6x − y + 17 = 0",
+//                "2x² + 4x − y + 5 = 0",
+//                "x² + 6x + y + 17 = 0",
+//                "x² + 6x − y + 17 = 0"
+//            ),
+//            correctAnswers = listOf(3),
+//            type = QuestionType.MULTIPLE_CHOICE,
+//            durationSeconds = 240,
+//            basePoints = 500
+//        ),
+//    )
+//)
 
 val powerUpColors = listOf(
     Color(0xF1E5E5E5),
@@ -177,25 +177,6 @@ val DataMaterialTopic = mapOf(
     "lingkaran" to listOf("Pengantar", "Unsur-unsur", "Keliling", "Luas", "Kuis")
 )
 
-val TranslateIndicator = listOf(
-    "Bangun geometri yang digeser (ditranslasikan) tidak mengalami perubahan bentuk dan ukuran.",
-    "Bangun geometri yang digeser (ditranslasikan) mengalami perubahan posisi."
-)
-
-val ReflectIndicator = listOf(
-    "Bangun geometri yang dicerminkan (direfleksikan) tidak mengalami perubahan bentuk dan ukuran.",
-    "Bangun geometri yang dicerminkan (direfleksikan) mengalami perubahan posisi dengan jarak objek ke cermin sama dengan jarak bayangan ke cermin."
-)
-
-val RotateIndicator = listOf(
-    "Bangun geometri yang diputar (dirotasikan) tidak mengalami perubahan bentuk dan ukuran.",
-    "Bangun geometri yang diputar (dirotasikan) mengalami perubahan posisi."
-)
-
-val DilateIndicator = listOf(
-    "Bangun geometri yang diperbesar (didilatasi) akan mengalami perubahan ukuran tetapi tidak mengalami peruabah bentuk jika faktor skala yang ditentukan bernilai positif.",
-    "Bangun geometri yang diperbesar (didilatasi) akan mengalami perubahan ukuran dan bentuk jika faktor skala yang ditentukan bernilai negatif."
-)
 
 val DataMaterialStep = mapOf(
     "transformasi_geometri" to listOf(
@@ -207,8 +188,25 @@ val DataMaterialStep = mapOf(
 )
 
 val DataMaterials = listOf(
-    MaterialItem("transformasi_geometri", "Transformasi Geometri", R.drawable.img_geo, "11"),
-    MaterialItem("lingkaran", "Lingkaran", R.drawable.img_geo, "11")
+    MaterialItem(
+        id = "transformasi_geometri",
+        title = "Transformasi Geometri",
+        imageRes = R.drawable.img_geo,
+        classLevel = "11",
+        coverUrl = "https://i.ibb.co/CKzJnqqR/0-math-subject-for-high-school-10th-grade-geometric-transformations-media-library-original-1600-90.jpg",
+        category = "Geometri",
+        exp = 150,
+        isHighlight = true
+    ),
+    MaterialItem(
+        id = "lingkaran",
+        title = "Lingkaran",
+        imageRes = R.drawable.img_geo,
+        classLevel = "11",
+        category = "Geometri",
+        exp = 100,
+        isHighlight = false
+    )
 )
 
 val DataCategories = listOf(
@@ -216,8 +214,6 @@ val DataCategories = listOf(
     CategoryItem("Kalkulus", R.drawable.ico_calculus, isLocked = true),
     CategoryItem("Trigonometri", R.drawable.ico_trigo, isLocked = true),
     CategoryItem("Statistika", R.drawable.ico_statistic, isLocked = true)
-
-
 )
 
 val DataAchievements = listOf(

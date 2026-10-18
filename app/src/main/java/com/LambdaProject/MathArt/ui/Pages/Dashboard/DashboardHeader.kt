@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NightlightRound
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
@@ -64,6 +65,7 @@ fun DashboardHeader(
     val unlockedFrames by viewModel.unlockedFrames.collectAsState()
     val hasNewNotification by viewModel.hasNewNotification.observeAsState(false)
     val materialStatusMap by viewModel.materialStatusMap.collectAsState()
+    val isEmailVerified by viewModel.isEmailVerified.collectAsState()
     var showLevelRoadModal by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
@@ -415,6 +417,79 @@ fun DashboardHeader(
                             frameId = activeFrame,
                             avatarSize = 52.dp
                         )
+
+//                        if (!isEmailVerified) {
+//                            Box(
+//                                modifier = Modifier
+//                                    .align(Alignment.TopEnd)
+//                                    .offset(x = 2.dp, y = (-2).dp)
+//                                    .size(17.dp)
+//                                    .background(Color(0xFFF59E0B), CircleShape)
+//                                    .border(1.5.dp, Color.White, CircleShape),
+//                                contentAlignment = Alignment.Center
+//                            ) {
+//                                Text(
+//                                    text = "!",
+//                                    fontFamily = interFontFamily,
+//                                    color = Color.White,
+//                                    fontWeight = FontWeight.Black,
+//                                    fontSize = 8.sp
+//                                )
+//                            }
+//                        }
+                    }
+                }
+
+                if (!isEmailVerified) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        onClick = { navController.navigate("profile") },
+                        shape = RoundedCornerShape(16.dp),
+                        // Menggunakan warna Amber yang lebih soft dengan transparansi
+                        color = Color(0xFFFFFBEB).copy(alpha = 0.8f),
+                        border = BorderStroke(1.dp, Color(0xFFFDE68A).copy(alpha = 0.6f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Icon Container yang lebih bergaya
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(Color(0xFFF59E0B).copy(alpha = 0.15f), CircleShape)
+                                    .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD97706),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+
+                            Text(
+                                text = "Akun belum diverifikasi. Ketuk untuk verifikasi email.",
+                                fontFamily = interFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                color = Color(0xFF92400E),
+                                modifier = Modifier.weight(1f),
+                                letterSpacing = 0.2.sp
+                            )
+
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = Color(0xFFB45309).copy(alpha = 0.7f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
 

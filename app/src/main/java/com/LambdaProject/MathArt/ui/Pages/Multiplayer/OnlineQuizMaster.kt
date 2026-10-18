@@ -130,6 +130,9 @@ fun OnlineQuizMaster(
         }
     }
 
+    val selectedMaterial by viewModel.selectedMaterial.collectAsState()
+    val isLearningMode = selectedMaterial?.isLearningMode == true && !isDuel
+
     val questions by viewModel.questions.collectAsState()
     val isQuizNotFound by viewModel.isQuizNotFound.collectAsState()
     val currentIndex by viewModel.currentQuestionIndex.collectAsState()
@@ -137,6 +140,8 @@ fun OnlineQuizMaster(
     val currentPoints by viewModel.currentPoints.collectAsState()
     val scorestreakState by viewModel.scorestreakState.collectAsState()
 
+    var showLearningExplanation by remember(currentIndex) { mutableStateOf(false) }
+    var learningAnswerIsCorrect by remember(currentIndex) { mutableStateOf(false) }
     var duelDisplayedPoints by remember { mutableIntStateOf(0) }
 
 //    if (questions.isEmpty() || currentIndex >= questions.size) {
@@ -244,6 +249,7 @@ fun OnlineQuizMaster(
         isReadyToRender = false
         showBotAnsweredAlert = false
         showScoreSnackbar = false
+        showLearningExplanation = false
         isPlayerDone = false
         isBotDone = false
         bothDoneHandled = false
@@ -392,18 +398,26 @@ fun OnlineQuizMaster(
                                     onTriggerScorestreak(streakState)
                                 }
                             )
+                            if (isLearningMode) {
+                                learningAnswerIsCorrect = false
+                                delay(1500)
+                                showLearningExplanation = true
+                                break
+                            }
                         }
 
-                        if (currentIndex < questions.lastIndex) {
-                            delay(600)
-                            viewModel.nextQuestion()
-                        } else if (!isNavigating) {
-                            isNavigating = true
-                            delay(1000)
-                            val uid = viewModel.getCurrentUserId() ?: userId
-                            viewModel.saveQuizResult(uid, materialId)
-                            navController.navigate("OnlineQuizResult/${materialId}/${userId}") {
-                                popUpTo("StartQuiz") { inclusive = true }
+                        if (!isLearningMode) {
+                            if (currentIndex < questions.lastIndex) {
+                                delay(600)
+                                viewModel.nextQuestion()
+                            } else if (!isNavigating) {
+                                isNavigating = true
+                                delay(1000)
+                                val uid = viewModel.getCurrentUserId() ?: userId
+                                viewModel.saveQuizResult(uid, materialId)
+                                navController.navigate("OnlineQuizResult/${materialId}/${userId}") {
+                                    popUpTo("StartQuiz") { inclusive = true }
+                                }
                             }
                         }
                         break
@@ -423,7 +437,22 @@ fun OnlineQuizMaster(
         }
     }
 
-    BackHandler(enabled = true) {
+    BackHandler(enabled = showLearningExplanation) {
+        showLearningExplanation = false
+        showScoreSnackbar = false
+        if (currentIndex < questions.lastIndex) {
+            viewModel.nextQuestion()
+        } else if (!isNavigating) {
+            isNavigating = true
+            val uid = viewModel.getCurrentUserId() ?: userId
+            viewModel.saveQuizResult(uid, materialId)
+            navController.navigate("OnlineQuizResult/${materialId}/${userId}") {
+                popUpTo("StartQuiz") { inclusive = true }
+            }
+        }
+    }
+
+    BackHandler(enabled = !showLearningExplanation) {
         showDialog = true
     }
 
@@ -733,6 +762,11 @@ fun OnlineQuizMaster(
                             currentIndex = currentIndex,
                             totalQuestions = questions.size,
                             isDuel = false,
+                            isLearningMode = isLearningMode,
+                            onShowExplanation = { isCorrect ->
+                                learningAnswerIsCorrect = isCorrect
+                                showLearningExplanation = true
+                            },
                             onNextClick = {
                                 if (currentIndex < questions.lastIndex) {
                                     viewModel.nextQuestion()
@@ -912,11 +946,11 @@ fun OnlineQuizMaster(
                             OutlinedTextField(
                                 value = typedAnswer.value,
                                 onValueChange = { 
-                                    if (!isPlayerDone) {
+                                    if (!isPlayerDone && !isAnswered) {
                                         typedAnswer.value = it 
                                     }
                                 },
-                                enabled = !isPlayerDone,
+                                enabled = !isPlayerDone && !isAnswered,
                                 modifier = Modifier.fillMaxWidth(),
                                 placeholder = { Text("Ketik jawabanmu di sini...", fontFamily = interFontFamily, color = Color(0xFF94A3B8)) },
                                 shape = RoundedCornerShape(14.dp),
@@ -940,9 +974,14 @@ fun OnlineQuizMaster(
                         }
                     } else {
                         val optionLetters = listOf("A", "B", "C", "D", "E", "F")
-                        question.choices.forEachIndexed { index, choice ->
-                            val isSelected = selectedAnswers.value.contains(index)
-                            val letter = optionLetters.getOrElse(index) { "${index + 1}" }
+                        val validChoices = remember(question.choices) {
+                            question.choices
+                                .mapIndexed { originalIndex, choice -> originalIndex to choice }
+                                .filter { it.second.isNotBlank() }
+                        }
+                        validChoices.forEachIndexed { displayIndex, (originalIndex, choice) ->
+                            val isSelected = selectedAnswers.value.contains(originalIndex)
+                            val letter = optionLetters.getOrElse(displayIndex) { "${displayIndex + 1}" }
 
                             val surfaceColor = if (isSelected) Color(0xFFF0F7FF) else Color.White
                             val borderColor = if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)
@@ -1028,15 +1067,15 @@ fun OnlineQuizMaster(
                                         .matchParentSize()
                                         .clip(RoundedCornerShape(14.dp))
                                         .clickable {
-                                            if (isPlayerDone) return@clickable
+                                            if (isPlayerDone || isAnswered) return@clickable
 
                                             if (question.type == QuestionType.CHECKBOX) {
                                                 val newSet = selectedAnswers.value.toMutableSet()
-                                                if (isSelected) newSet.remove(index)
-                                                else newSet.add(index)
+                                                if (isSelected) newSet.remove(originalIndex)
+                                                else newSet.add(originalIndex)
                                                 selectedAnswers.value = newSet
                                             } else {
-                                                selectedAnswers.value = mutableSetOf(index)
+                                                selectedAnswers.value = mutableSetOf(originalIndex)
                                             }
                                         }
                                 )
@@ -1102,6 +1141,29 @@ fun OnlineQuizMaster(
                     .statusBarsPadding()
                     .padding(top = 12.dp)
                     .align(Alignment.TopCenter)
+            )
+        }
+
+        if (isLearningMode) {
+            LearningExplanationOverlay(
+                visible = showLearningExplanation,
+                isCorrect = learningAnswerIsCorrect,
+                pembahasan = question.pembahasan,
+                isLastQuestion = currentIndex >= questions.lastIndex,
+                onContinue = {
+                    showLearningExplanation = false
+                    showScoreSnackbar = false
+                    if (currentIndex < questions.lastIndex) {
+                        viewModel.nextQuestion()
+                    } else if (!isNavigating) {
+                        isNavigating = true
+                        val uid = viewModel.getCurrentUserId() ?: userId
+                        viewModel.saveQuizResult(uid, materialId)
+                        navController.navigate("OnlineQuizResult/${materialId}/${userId}") {
+                            popUpTo("StartQuiz") { inclusive = true }
+                        }
+                    }
+                }
             )
         }
     }

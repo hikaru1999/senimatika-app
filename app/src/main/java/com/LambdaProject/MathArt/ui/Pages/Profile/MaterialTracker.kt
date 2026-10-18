@@ -117,7 +117,7 @@ fun MaterialTracker(userId: String, material: MaterialItem) {
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = if (progress >= 1f) "Kamu telah mennuntaskan materi ini!" else "Yuk lanjutkan proses belajarmu",
+                    text = if (progress >= 1f) "Kamu telah menuntaskan materi ini!" else "Yuk lanjutkan progres belajarmu",
                     fontFamily = interFontFamily,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,

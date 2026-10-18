@@ -53,11 +53,13 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var passwordStrength by remember { mutableIntStateOf(0) }
     var isSubmitted by remember { mutableStateOf(false) }
+    var isCheckingAccount by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         registerViewModel.resetRegisterForm()
+        isCheckingAccount = false
     }
 
     LaunchedEffect(showError) {
@@ -156,6 +158,7 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true,
+                        maxLines = 1,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF1976D2),
                             unfocusedBorderColor = Color(0xFFE0E0E0),
@@ -174,6 +177,7 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true,
+                        maxLines = 1,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF1976D2),
@@ -207,6 +211,7 @@ fun RegisterScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true,
+                            maxLines = 1,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF1976D2),
@@ -228,10 +233,12 @@ fun RegisterScreen(
                         onClick = {
                             isSubmitted = true
                             if (allValid) {
+                                isCheckingAccount = true
                                 registerViewModel.checkUsernameOrEmailExists(
                                     username = registerViewModel.username,
                                     email = registerViewModel.email
                                 ) { exists ->
+                                    isCheckingAccount = false
                                     if (exists) {
                                         errorMessage = "Username atau Email telah terdaftar"
                                         showError = true
@@ -263,9 +270,9 @@ fun RegisterScreen(
                             pressedElevation = 2.dp,
                             disabledElevation = 0.dp
                         ),
-                        enabled = registerState !is RegisterViewModel.RegisterState.Loading
+                        enabled = !isCheckingAccount && registerState !is RegisterViewModel.RegisterState.Loading
                     ) {
-                        if (registerState is RegisterViewModel.RegisterState.Loading) {
+                        if (isCheckingAccount || registerState is RegisterViewModel.RegisterState.Loading) {
                             CircularProgressIndicator(
                                 color = Color.White,
                                 modifier = Modifier.size(24.dp),
